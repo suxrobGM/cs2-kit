@@ -1,8 +1,6 @@
-#include <CS2Kit/Utils/Translations.hpp>
-
 #include <CS2Kit/Core/Paths.hpp>
 #include <CS2Kit/Utils/Log.hpp>
-
+#include <CS2Kit/Utils/Translations.hpp>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>

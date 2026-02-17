@@ -1,5 +1,4 @@
 #include <CS2Kit/Sdk/GameEventService.hpp>
-
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 

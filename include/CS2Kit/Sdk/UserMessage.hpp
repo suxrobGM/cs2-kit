@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Core/Singleton.hpp>
-
 #include <string>
 
 class IGameEventListener2;
@@ -14,7 +13,7 @@ namespace CS2Kit::Sdk
 constexpr int UmSayText2 = 118;
 
 /**
- * Message system for sending chat and center HTML messages to players.
+ * @brief Message system for sending chat and center HTML messages to players.
  */
 class MessageSystem : public Core::Singleton<MessageSystem>
 {

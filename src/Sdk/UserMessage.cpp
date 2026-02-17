@@ -1,13 +1,11 @@
-#include <CS2Kit/Sdk/UserMessage.hpp>
-
-#include <CS2Kit/Sdk/GameData.hpp>
-#include <CS2Kit/Sdk/GameInterfaces.hpp>
-#include <CS2Kit/Utils/Log.hpp>
-
 #include "Sdk/SigScanner.hpp"
 
 #include <igameevents.h>
 
+#include <CS2Kit/Sdk/GameData.hpp>
+#include <CS2Kit/Sdk/GameInterfaces.hpp>
+#include <CS2Kit/Sdk/UserMessage.hpp>
+#include <CS2Kit/Utils/Log.hpp>
 #include <engine/igameeventsystem.h>
 #include <irecipientfilter.h>
 #include <networksystem/inetworkmessages.h>

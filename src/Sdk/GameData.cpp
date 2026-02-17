@@ -1,10 +1,8 @@
-#include <CS2Kit/Sdk/GameData.hpp>
-
-#include <CS2Kit/Core/Paths.hpp>
-#include <CS2Kit/Utils/Log.hpp>
-
 #include "Sdk/SigScanner.hpp"
 
+#include <CS2Kit/Core/Paths.hpp>
+#include <CS2Kit/Sdk/GameData.hpp>
+#include <CS2Kit/Utils/Log.hpp>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>

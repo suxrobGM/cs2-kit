@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Core/Singleton.hpp>
-
 #include <cstdint>
 #include <functional>
 #include <vector>

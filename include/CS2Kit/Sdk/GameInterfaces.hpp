@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Core/Singleton.hpp>
-
 #include <eiface.h>
 #include <icvar.h>
 #include <interfaces/interfaces.h>
@@ -17,7 +16,7 @@ namespace CS2Kit::Sdk
 {
 
 /**
- * Centralized holder for all HL2SDK interface pointers.
+ * @brief Centralized holder for all HL2SDK interface pointers.
  *
  * All fields are populated during Plugin::Load() via Metamod's
  * `GET_V_IFACE_ANY` / `GET_V_IFACE_CURRENT` macros.

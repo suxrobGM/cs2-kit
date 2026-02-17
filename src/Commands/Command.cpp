@@ -1,5 +1,4 @@
 #include <CS2Kit/Commands/Command.hpp>
-
 #include <CS2Kit/Utils/StringUtils.hpp>
 
 namespace CS2Kit::Commands

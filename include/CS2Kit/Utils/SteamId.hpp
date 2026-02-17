@@ -7,7 +7,7 @@
 namespace CS2Kit::Utils
 {
 
-/** Static utilities for converting between SteamID formats (64-bit, SteamID2, SteamID3). */
+/** @brief Static utilities for converting between SteamID formats (64-bit, SteamID2, SteamID3). */
 class SteamId
 {
 public:

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Core/Singleton.hpp>
-
 #include <string>
 #include <unordered_map>
 
@@ -9,7 +8,7 @@ namespace CS2Kit::Utils
 {
 
 /**
- * Localization system. Loads JSON translation files from a directory (one per language),
+ * @brief Localization system. Loads JSON translation files from a directory (one per language),
  * and provides key-based string lookup for the active language.
  */
 class Translations : public Core::Singleton<Translations>

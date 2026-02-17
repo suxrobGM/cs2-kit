@@ -1,15 +1,14 @@
 #pragma once
 
-#include <CS2Kit/Menu/Menu.hpp>
 #include <CS2Kit/Core/Singleton.hpp>
-
+#include <CS2Kit/Menu/Menu.hpp>
 #include <array>
 
 namespace CS2Kit::Menu
 {
 
 /**
- * Manages WASD-navigated center-HTML menus for all players.
+ * @brief WASD-navigated center-HTML menus for all players.
  * Supports a per-player menu stack (submenus push, R pops back).
  * Driven by OnGameFrame() — reads button state each tick for input.
  */

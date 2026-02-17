@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Core/Singleton.hpp>
-
 #include <cstdint>
 #include <string>
 
@@ -35,7 +34,7 @@ constexpr uint64_t IN_LOOK_AT_WEAPON = 0x800000000ULL;
 constexpr int MaxPlayers = 64;
 
 /**
- * Entity system access layer for the Source 2 engine.
+ * @brief Entity system access layer for the Source 2 engine.
  * Resolves CGameEntitySystem from IGameResourceService, provides player
  * controller lookup by slot, entity handle resolution, and button state reading.
  */

@@ -2,7 +2,6 @@
 
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Utils/Log.hpp>
-
 #include <schemasystem/schemasystem.h>
 
 namespace CS2Kit::Sdk

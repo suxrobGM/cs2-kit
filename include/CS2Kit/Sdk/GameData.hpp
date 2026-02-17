@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Core/Singleton.hpp>
-
 #include <string>
 #include <unordered_map>
 
@@ -9,7 +8,7 @@ namespace CS2Kit::Sdk
 {
 
 /**
- * Centralized gamedata manager for platform-specific signatures and offsets.
+ * @brief Centralized gamedata manager for platform-specific signatures and offsets.
  * Loads byte-pattern signatures and named integer offsets from a JSON file,
  * then resolves signatures at runtime via SigScanner.
  */

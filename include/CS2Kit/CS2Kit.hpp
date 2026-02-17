@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Core/ILogger.hpp>
-
 #include <eiface.h>
 #include <icvar.h>
 
@@ -15,7 +14,7 @@ namespace CS2Kit
 {
 
 /**
- * Initialization parameters for CS2Kit.
+ * @brief Initialization parameters for CS2Kit.
  * Consumers populate SDK interfaces (via Metamod's GET_V_IFACE macros)
  * and pass them here. CS2Kit stores them in GameInterfaces and initializes
  * all internal subsystems.
@@ -36,32 +35,32 @@ struct InitParams
     IGameResourceService* GameResourceService = nullptr;
 
     // Configuration
-    const char* LogPrefix = "CS2Kit";        ///< Prefix for console log messages (e.g., "[AdminSystem]")
-    const char* GameDataPath = nullptr;       ///< Path to signatures.jsonc (relative to server base dir)
-    Core::ILogger* Logger = nullptr;          ///< Optional custom logger. If null, uses built-in ConsoleLogger.
+    const char* LogPrefix = "CS2Kit";    ///< Prefix for console log messages (e.g., "[AdminSystem]")
+    const char* GameDataPath = nullptr;  ///< Path to signatures.jsonc (relative to server base dir)
+    Core::ILogger* Logger = nullptr;     ///< Optional custom logger. If null, uses built-in ConsoleLogger.
 };
 
 /**
- * Initialize all CS2Kit subsystems.
+ * @brief Initialize all CS2Kit subsystems.
  * Call from Plugin::Load() after populating InitParams with SDK interfaces.
  * @return true on success, false if critical subsystems failed to initialize.
  */
 bool Initialize(const InitParams& params);
 
 /**
- * Shut down all CS2Kit subsystems.
+ * @brief Shut down all CS2Kit subsystems.
  * Call from Plugin::Unload().
  */
 void Shutdown();
 
 /**
- * Process one game frame. Drives Scheduler and MenuManager.
+ * @brief Process one game frame. Drives Scheduler and MenuManager.
  * Call from Hook_GameFrame().
  */
 void OnGameFrame();
 
 /**
- * Clean up state when a player disconnects.
+ * @brief Clean up state when a player disconnects.
  * Call from Hook_ClientDisconnect().
  */
 void OnPlayerDisconnect(int slot);

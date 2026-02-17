@@ -6,7 +6,7 @@ namespace CS2Kit::Menu
 {
 
 /**
- * Fluent builder for constructing Menu instances.
+ * @brief Fluent builder for constructing Menu instances.
  * Usage: MenuBuilder("Title").AddItem("Foo", handler).AddItem("Bar", handler, false).Build()
  */
 class MenuBuilder
@@ -36,8 +36,7 @@ public:
                 [fn](int slot) {
                     auto submenu = fn(slot);
                     if (submenu)
-                    {
-                    }
+                    {}
                 },
             .Enabled = enabled,
         });

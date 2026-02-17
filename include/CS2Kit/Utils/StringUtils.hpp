@@ -6,7 +6,7 @@
 namespace CS2Kit::Utils
 {
 
-/** Collection of static string manipulation utilities. */
+/** @brief Collection of static string manipulation utilities. */
 class StringUtils
 {
 public:

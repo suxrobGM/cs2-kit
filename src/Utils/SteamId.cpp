@@ -1,5 +1,4 @@
 #include <CS2Kit/Utils/SteamId.hpp>
-
 #include <format>
 #include <regex>
 

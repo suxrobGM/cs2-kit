@@ -8,7 +8,7 @@ namespace CS2Kit::Sdk
 {
 
 /**
- * Transient engine-side player wrapper around CCSPlayerController.
+ * @brief Transient engine-side player wrapper around CCSPlayerController.
  * Provides typed access to entity fields via the schema system,
  * engine operations (kick), and vtable operations (slay, change team, respawn).
  */

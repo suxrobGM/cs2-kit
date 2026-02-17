@@ -6,7 +6,7 @@
 namespace CS2Kit::Utils
 {
 
-/** Static utilities for Unix timestamps, duration parsing/formatting, and expiration checks. */
+/** @brief Static utilities for Unix timestamps, duration parsing/formatting, and expiration checks. */
 class TimeUtils
 {
 public:

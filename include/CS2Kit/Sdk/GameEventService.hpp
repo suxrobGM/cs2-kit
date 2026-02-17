@@ -1,9 +1,8 @@
 #pragma once
 
-#include <CS2Kit/Core/Singleton.hpp>
-
 #include <igameevents.h>
 
+#include <CS2Kit/Core/Singleton.hpp>
 #include <cstdint>
 #include <functional>
 #include <set>
@@ -14,7 +13,7 @@ namespace CS2Kit::Sdk
 {
 
 /**
- * Wrapper for IGameEventManager2 providing event creation, firing, and listener registration.
+ * @brief Wrapper for IGameEventManager2 providing event creation, firing, and listener registration.
  */
 class GameEventService : public Core::Singleton<GameEventService>, public IGameEventListener2
 {

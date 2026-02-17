@@ -1,19 +1,18 @@
+#include "Core/ConsoleLogger.hpp"
+#include "Core/Scheduler.hpp"
+#include "Sdk/Schema.hpp"
+
 #include <CS2Kit/CS2Kit.hpp>
 #include <CS2Kit/Core/ILogger.hpp>
 #include <CS2Kit/Core/Paths.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
-#include <CS2Kit/Sdk/GameInterfaces.hpp>
-#include <CS2Kit/Utils/Log.hpp>
-
 #include <CS2Kit/Sdk/ConVarService.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/GameEventService.hpp>
+#include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
-
-#include "Core/ConsoleLogger.hpp"
-#include "Core/Scheduler.hpp"
-#include "Sdk/Schema.hpp"
+#include <CS2Kit/Utils/Log.hpp>
 
 namespace CS2Kit
 {
