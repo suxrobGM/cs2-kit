@@ -1,4 +1,4 @@
-#include <CS2Kit/Core/ConsoleLogger.hpp>
+#include "Core/ConsoleLogger.hpp"
 
 #include <Color.h>
 #include <format>

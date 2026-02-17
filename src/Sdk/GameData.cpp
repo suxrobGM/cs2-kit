@@ -2,7 +2,8 @@
 
 #include <CS2Kit/Core/Paths.hpp>
 #include <CS2Kit/Utils/Log.hpp>
-#include <CS2Kit/Sdk/SigScanner.hpp>
+
+#include "Sdk/SigScanner.hpp"
 
 #include <filesystem>
 #include <fstream>

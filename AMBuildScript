@@ -191,9 +191,14 @@ class LibraryConfig:
         cxx = binary.compiler
         mms_core = os.path.join(self.mms_root, "core")
 
-        # Public include directory
+        # Public include directory (for #include <CS2Kit/...>)
         cxx.cxxincludes += [
             os.path.join(builder.sourcePath, "include"),
+        ]
+
+        # Internal include directory (for #include "Sdk/Entity.hpp" etc.)
+        cxx.cxxincludes += [
+            os.path.join(builder.sourcePath, "src"),
         ]
 
         # Metamod includes (needed for ISmmAPI, etc.)

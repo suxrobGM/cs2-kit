@@ -1,9 +1,11 @@
 #include <CS2Kit/Menu/MenuManager.hpp>
 
+#include <CS2Kit/Utils/Log.hpp>
+
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
-#include <CS2Kit/Utils/Log.hpp>
-#include <CS2Kit/Menu/MenuRenderer.hpp>
+
+#include "Menu/MenuRenderer.hpp"
 
 #include <chrono>
 

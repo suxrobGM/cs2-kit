@@ -1,8 +1,7 @@
 #pragma once
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <CS2Kit/Commands/Command.hpp>
-
+#include <CS2Kit/Core/Singleton.hpp>
 #include <functional>
 #include <unordered_map>
 #include <vector>
@@ -11,7 +10,8 @@ namespace CS2Kit::Commands
 {
 
 /**
- * Permission check callback type.
+ * @brief check callback type.
+ *
  * @param steamId  Caller's SteamID (0 for console).
  * @param permission Required permission flags (e.g., "c" for kick, "d" for ban).
  * @return True if the caller has the required permission.
@@ -19,7 +19,7 @@ namespace CS2Kit::Commands
 using PermissionCallback = std::function<bool(int64_t steamId, const std::string& permission)>;
 
 /**
- * Dispatches chat commands (prefixed with ! or .) to registered handlers.
+ * @brief Dispatches chat commands (prefixed with ! or .) to registered handlers.
  * Handles prefix matching, argument parsing, and permission enforcement.
  */
 class CommandManager : public Core::Singleton<CommandManager>

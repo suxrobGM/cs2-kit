@@ -1,11 +1,12 @@
 #include <CS2Kit/Sdk/PlayerController.hpp>
 
-#include <CS2Kit/Utils/Log.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
-#include <CS2Kit/Sdk/Schema.hpp>
-#include <CS2Kit/Sdk/VirtualCall.hpp>
+#include <CS2Kit/Utils/Log.hpp>
+
+#include "Sdk/Schema.hpp"
+#include "Sdk/VirtualCall.hpp"
 
 #include <eiface.h>
 #include <entity2/entityinstance.h>

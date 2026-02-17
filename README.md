@@ -171,24 +171,6 @@ auto menu = MenuBuilder("Admin Panel")
 MenuManager::Instance().OpenMenu(playerSlot, menu);
 ```
 
-### Schedule a Task
-
-```cpp
-#include <CS2Kit/Core/Scheduler.hpp>
-
-auto& scheduler = CS2Kit::Core::Scheduler::Instance();
-
-// One-shot delay (5 seconds)
-scheduler.Delay(5000, []() { /* execute once */ });
-
-// Repeating timer (every 1 second)
-scheduler.Repeat(1000, []() { /* execute repeatedly */ });
-
-// Cancel a scheduled task
-uint64_t id = scheduler.Delay(10000, []() {});
-scheduler.Cancel(id);
-```
-
 ### Custom Logger
 
 CS2-Kit ships a built-in `ConsoleLogger` (used by default). To provide your own:
@@ -213,14 +195,18 @@ params.Logger = new FileLogger();  // CS2Kit does NOT take ownership
 
 ```text
 include/
-└── CS2Kit/                Public headers (add include/ to your include path)
+└── CS2Kit/                Public API headers (#include <CS2Kit/...>)
     ├── CS2Kit.hpp         Umbrella header: InitParams, Initialize/Shutdown API
-    ├── Commands/          Command system (Command, CommandBuilder, CommandManager, ICommandCaller)
-    ├── Core/              Singleton, Scheduler, ILogger, ConsoleLogger, Paths
-    ├── Menu/              Menu system (Menu, MenuBuilder, MenuManager, MenuRenderer)
-    ├── Sdk/               SDK wrappers (GameInterfaces, GameData, Entity, Schema, ...)
+    ├── Commands/          Command, CommandBuilder, CommandManager, ICommandCaller
+    ├── Core/              Singleton, ILogger, Paths
+    ├── Menu/              Menu, MenuBuilder, MenuManager
+    ├── Sdk/               GameInterfaces, Entity, GameData, PlayerController, ConVarService,
+    │                      GameEventService, UserMessage
     └── Utils/             SteamId, StringUtils, TimeUtils, Translations, Log
-src/                       Implementation files (.cpp)
+src/                       Implementation (.cpp) + internal headers (not accessible to consumers)
+    ├── Core/              ConsoleLogger, Scheduler
+    ├── Menu/              MenuRenderer
+    └── Sdk/               Schema, SigScanner, VirtualCall
 vendor/                    SDK submodules (hl2sdk-cs2, hl2sdk-manifests, mmsource-2.0)
 ```
 

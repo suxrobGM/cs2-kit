@@ -6,7 +6,7 @@ namespace CS2Kit::Core
 {
 
 /**
- * Logger interface that consumers implement to provide their own logging backend.
+ * @brief interface that consumers implement to provide their own logging backend.
  *
  * The library uses this interface for all log output instead of directly calling
  * HL2SDK's ConColorMsg. Consumers implement this to log to console, file, or

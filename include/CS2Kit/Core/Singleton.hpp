@@ -4,7 +4,7 @@ namespace CS2Kit::Core
 {
 
 /**
- * CRTP singleton base using the pass-key idiom.
+ * @brief CRTP singleton base using the pass-key idiom.
  *
  * Derived classes inherit via `class Foo : public Singleton<Foo>` and declare
  * a public constructor taking Token: `explicit Foo(Token) {}`.

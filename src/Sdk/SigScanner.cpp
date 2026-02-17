@@ -1,4 +1,4 @@
-#include <CS2Kit/Sdk/SigScanner.hpp>
+#include "Sdk/SigScanner.hpp"
 
 #include <CS2Kit/Utils/Log.hpp>
 

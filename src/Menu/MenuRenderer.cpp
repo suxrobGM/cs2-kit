@@ -1,4 +1,4 @@
-#include <CS2Kit/Menu/MenuRenderer.hpp>
+#include "Menu/MenuRenderer.hpp"
 
 #include <sstream>
 
