@@ -12,7 +12,7 @@ namespace CS2Kit::Utils
  * Localization system. Loads JSON translation files from a directory (one per language),
  * and provides key-based string lookup for the active language.
  */
-class Translations : public Singleton<Translations>
+class Translations : public Core::Singleton<Translations>
 {
 public:
     explicit Translations(Token) {}

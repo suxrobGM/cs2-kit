@@ -17,7 +17,7 @@ public:
 
     virtual int64_t GetSteamID() const = 0;
     virtual std::string GetName() const = 0;
-    virtual bool IsConsole() const = 0;
+    virtual bool IsServerConsole() const = 0;
 };
 
 }  // namespace CS2Kit::Commands
