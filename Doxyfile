@@ -51,7 +51,6 @@ HTML_EXTRA_FILES       = vendor/doxygen-awesome-css/doxygen-awesome-darkmode-tog
                          vendor/doxygen-awesome-css/doxygen-awesome-interactive-toc.js
 HTML_COLORSTYLE        = LIGHT
 HTML_DYNAMIC_SECTIONS  = YES
-HTML_COPY_CLIPBOARD    = NO
 
 GENERATE_TREEVIEW      = YES
 DISABLE_INDEX          = NO
