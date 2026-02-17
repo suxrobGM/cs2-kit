@@ -19,24 +19,25 @@ constexpr const char* NavClose = "#AA4422";
 std::string DefaultHeader(const std::string& title)
 {
     std::ostringstream html;
-    html << "<font color='" << Theme::Gold << "'>* ===================== *</font><br>";
-    html << "<font color='" << Theme::Gold << "'><b>* " << title << " *</b></font><br>";
-    html << "<font color='" << Theme::WarmGray << "'>cs2-kit v1.0</font><br>";
-    html << "<font color='" << Theme::Gold << "'>=======================</font><br>";
-    html << "<br>";
+    html << "<font color='" << Theme::Gold << "'><b>" << title << "</b></font><br>";
+    html << "<font class='fontSize-s' color='" << Theme::Gold << "'>──────────────────────────</font><br>";
     return html.str();
 }
 
 std::string DefaultFooter()
 {
     std::ostringstream html;
-    html << "<br>";
-    html << "<font color='" << Theme::Gold << "'>=======================</font><br>";
-    html << "<font color='" << Theme::NavGold << "'>W/S Navigate</font>"
-         << "   "
-         << "<font color='" << Theme::Gold << "'>E Select</font>"
-         << "   "
-         << "<font color='" << Theme::NavClose << "'>R Close</font>";
+    html << "<font class='fontSize-s' color='" << Theme::Gold << "'>──────────────────────────</font><br>";
+    html << "<font class='fontSize-sm'>"
+         << "<font color='" << Theme::NavGold << "'>[W/S]</font> "
+         << "<font color='" << Theme::WarmGray << "'>Navigate</font>"
+         << " · "
+         << "<font color='" << Theme::Gold << "'>[E]</font> "
+         << "<font color='" << Theme::WarmGray << "'>Select</font>"
+         << " · "
+         << "<font color='" << Theme::NavClose << "'>[R]</font> "
+         << "<font color='" << Theme::WarmGray << "'>Close</font>"
+         << "</font>";
     return html.str();
 }
 
