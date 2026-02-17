@@ -4,7 +4,7 @@
 
 **CS2-Kit** is a C++23 library for building [Counter-Strike 2](https://www.counter-strike.net/) server plugins with [Metamod:Source 2.0](https://www.metamodsource.net/). It provides reusable abstractions over the HL2SDK so plugin developers can focus on game logic instead of engine internals.
 
-## Modules
+<h2>Modules</h2>
 
 | Module | Namespace | Description |
 |--------|-----------|-------------|
@@ -14,7 +14,7 @@
 | **Sdk** | `CS2Kit::Sdk` | Engine SDK wrappers: entities, schema, signatures, convars, events, messages |
 | **Utils** | `CS2Kit::Utils` | SteamID conversions, string utilities, time formatting, translations |
 
-## Quick Links
+<h2>Guides</h2>
 
 - @subpage getting_started — Prerequisites and integration guide
 - @subpage architecture — Design patterns and module overview
@@ -22,6 +22,6 @@
 - @subpage menus_guide — Menu system usage
 - @subpage sdk_guide — SDK wrappers guide
 
-## License
+<h2>License</h2>
 
 CS2-Kit is released under the [MIT License](https://github.com/suxrobGM/cs2-kit/blob/main/LICENSE).
