@@ -1,12 +1,12 @@
 #include "GameEventService.hpp"
 
-#include "GameInterfaces.hpp"
 #include "../Utils/Log.hpp"
-
-using namespace CS2Kit::Utils;
+#include "GameInterfaces.hpp"
 
 namespace CS2Kit::Sdk
 {
+
+using namespace CS2Kit::Utils;
 
 bool GameEventService::Initialize()
 {

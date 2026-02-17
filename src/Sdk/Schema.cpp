@@ -1,14 +1,14 @@
 #include "Schema.hpp"
 
-#include "GameInterfaces.hpp"
 #include "../Utils/Log.hpp"
+#include "GameInterfaces.hpp"
 
 #include <schemasystem/schemasystem.h>
 
-using namespace CS2Kit::Utils;
-
 namespace CS2Kit::Sdk
 {
+
+using namespace CS2Kit::Utils;
 
 bool SchemaService::Initialize()
 {

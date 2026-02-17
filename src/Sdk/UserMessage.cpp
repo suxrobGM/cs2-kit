@@ -1,9 +1,9 @@
 #include "UserMessage.hpp"
 
+#include "../Utils/Log.hpp"
 #include "GameData.hpp"
 #include "GameInterfaces.hpp"
 #include "SigScanner.hpp"
-#include "../Utils/Log.hpp"
 
 #include <igameevents.h>
 
@@ -13,10 +13,10 @@
 #include <networksystem/netmessage.h>
 #include <usermessages.pb.h>
 
-using namespace CS2Kit::Utils;
-
 namespace CS2Kit::Sdk
 {
+
+using namespace CS2Kit::Utils;
 
 bool MessageSystem::Initialize()
 {

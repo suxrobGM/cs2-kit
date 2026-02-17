@@ -13,10 +13,10 @@
 #include <link.h>
 #endif
 
-using namespace CS2Kit::Utils;
-
 namespace CS2Kit::Sdk
 {
+
+using namespace CS2Kit::Utils;
 
 struct PatternByte
 {

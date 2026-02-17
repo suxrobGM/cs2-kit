@@ -1,16 +1,16 @@
 #include "MenuManager.hpp"
 
-#include "MenuRenderer.hpp"
 #include "../Sdk/Entity.hpp"
 #include "../Utils/Log.hpp"
+#include "MenuRenderer.hpp"
 
 #include <chrono>
 
-using namespace CS2Kit::Utils;
-using namespace CS2Kit::Sdk;
-
 namespace CS2Kit::Menu
 {
+
+using namespace CS2Kit::Utils;
+using namespace CS2Kit::Sdk;
 
 static int64_t GetCurrentTimeMs()
 {

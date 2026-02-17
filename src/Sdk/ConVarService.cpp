@@ -1,12 +1,10 @@
 #include "ConVarService.hpp"
 
-#include "GameInterfaces.hpp"
 #include "../Utils/Log.hpp"
+#include "GameInterfaces.hpp"
 
 #include <icvar.h>
 #include <tier1/convar.h>
-
-using namespace CS2Kit::Utils;
 
 namespace
 {
@@ -25,6 +23,7 @@ void GlobalConVarChangeCallback(ConVarRefAbstract* ref, CSplitScreenSlot /*slot*
 
 namespace CS2Kit::Sdk
 {
+using namespace CS2Kit::Utils;
 
 bool ConVarService::Initialize()
 {

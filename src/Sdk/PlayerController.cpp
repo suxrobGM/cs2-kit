@@ -1,19 +1,19 @@
 #include "PlayerController.hpp"
 
+#include "../Utils/Log.hpp"
 #include "Entity.hpp"
 #include "GameData.hpp"
 #include "GameInterfaces.hpp"
 #include "Schema.hpp"
 #include "VirtualCall.hpp"
-#include "../Utils/Log.hpp"
 
 #include <eiface.h>
 #include <entity2/entityinstance.h>
 
-using namespace CS2Kit::Utils;
-
 namespace CS2Kit::Sdk
 {
+
+using namespace CS2Kit::Utils;
 
 PlayerController::PlayerController(int slot) : _slot(slot)
 {

@@ -1,19 +1,18 @@
 #include "Entity.hpp"
 
+#include "../Utils/Log.hpp"
 #include "GameData.hpp"
 #include "GameInterfaces.hpp"
 #include "Schema.hpp"
-#include "../Utils/Log.hpp"
 
 #include <entity2/concreteentitylist.h>
 #include <entity2/entityidentity.h>
 #include <entity2/entityinstance.h>
 #include <entity2/entitysystem.h>
 
-using namespace CS2Kit::Utils;
-
 namespace CS2Kit::Sdk
 {
+using namespace CS2Kit::Utils;
 
 void EntitySystem::ResolveSchemaOffsets()
 {

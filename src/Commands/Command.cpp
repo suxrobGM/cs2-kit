@@ -2,10 +2,10 @@
 
 #include "../Utils/StringUtils.hpp"
 
-using namespace CS2Kit::Utils;
-
 namespace CS2Kit::Commands
 {
+
+using namespace CS2Kit::Utils;
 
 bool Command::Matches(const std::string& cmd) const
 {

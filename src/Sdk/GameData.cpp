@@ -1,17 +1,16 @@
 #include "GameData.hpp"
 
 #include "../Core/IPathResolver.hpp"
-#include "SigScanner.hpp"
 #include "../Utils/Log.hpp"
+#include "SigScanner.hpp"
 
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
 
-using namespace CS2Kit::Utils;
-
 namespace CS2Kit::Sdk
 {
+using namespace CS2Kit::Utils;
 
 bool GameData::Load(const std::string& path)
 {
