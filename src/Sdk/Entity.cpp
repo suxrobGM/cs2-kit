@@ -68,10 +68,6 @@ bool EntitySystem::Initialize()
     {
         Log::Info("Entity system initialized.");
     }
-    else
-    {
-        Log::Warn("Entity system not available. Menu button detection disabled.");
-    }
 
     return true;
 }
