@@ -1,8 +1,8 @@
-#include "GameData.hpp"
+#include <CS2Kit/Sdk/GameData.hpp>
 
-#include "../Core/IPathResolver.hpp"
-#include "../Utils/Log.hpp"
-#include "SigScanner.hpp"
+#include <CS2Kit/Core/Paths.hpp>
+#include <CS2Kit/Utils/Log.hpp>
+#include <CS2Kit/Sdk/SigScanner.hpp>
 
 #include <filesystem>
 #include <fstream>
@@ -16,8 +16,7 @@ bool GameData::Load(const std::string& path)
 {
     try
     {
-        auto* resolver = Core::GetGlobalPathResolver();
-        auto fullPath = resolver ? resolver->ResolvePath(path) : std::filesystem::path(path);
+        auto fullPath = Core::ResolvePath(path);
         std::ifstream file(fullPath);
         if (!file.is_open())
         {

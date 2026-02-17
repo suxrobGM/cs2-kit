@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ICommandCaller.hpp"
+#include <CS2Kit/Commands/ICommandCaller.hpp>
 
 #include <functional>
 #include <string>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Singleton.hpp"
+#include <CS2Kit/Core/Singleton.hpp>
 
 #include <cstdint>
 #include <functional>

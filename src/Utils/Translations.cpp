@@ -1,7 +1,7 @@
-#include "Translations.hpp"
+#include <CS2Kit/Utils/Translations.hpp>
 
-#include "../Core/IPathResolver.hpp"
-#include "Log.hpp"
+#include <CS2Kit/Core/Paths.hpp>
+#include <CS2Kit/Utils/Log.hpp>
 
 #include <filesystem>
 #include <fstream>
@@ -15,8 +15,7 @@ bool Translations::Load(const std::string& dirPath)
     _translations.clear();
     namespace fs = std::filesystem;
 
-    auto* resolver = Core::GetGlobalPathResolver();
-    auto resolvedPath = resolver ? resolver->ResolvePath(dirPath) : fs::path(dirPath);
+    auto resolvedPath = Core::ResolvePath(dirPath);
 
     if (!fs::exists(resolvedPath) || !fs::is_directory(resolvedPath))
     {

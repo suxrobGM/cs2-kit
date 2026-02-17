@@ -402,6 +402,7 @@ FodyWeavers.xsd
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+!.vscode/c_cpp_properties.json
 !.vscode/*.code-snippets
 
 # Local History for Visual Studio Code
@@ -416,6 +417,12 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# AMBuild output
+objdir/
+
+# PDM
+.pdm-python
 
 # Doxygen build output
 build/docs/

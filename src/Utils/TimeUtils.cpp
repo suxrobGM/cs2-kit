@@ -1,4 +1,4 @@
-#include "TimeUtils.hpp"
+#include <CS2Kit/Utils/TimeUtils.hpp>
 
 #include <algorithm>
 #include <cctype>

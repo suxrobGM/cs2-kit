@@ -1,6 +1,6 @@
-#include "StringUtils.hpp"
+#include <CS2Kit/Utils/StringUtils.hpp>
 
-#include "SteamId.hpp"
+#include <CS2Kit/Utils/SteamId.hpp>
 
 #include <algorithm>
 #include <cctype>

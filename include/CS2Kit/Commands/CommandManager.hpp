@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Core/Singleton.hpp"
-#include "Command.hpp"
+#include <CS2Kit/Core/Singleton.hpp>
+#include <CS2Kit/Commands/Command.hpp>
 
 #include <functional>
 #include <unordered_map>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/Singleton.hpp"
+#include <CS2Kit/Core/Singleton.hpp>
 
 #include <igameevents.h>
 

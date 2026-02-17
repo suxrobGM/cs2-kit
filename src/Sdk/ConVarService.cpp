@@ -1,7 +1,7 @@
-#include "ConVarService.hpp"
+#include <CS2Kit/Sdk/ConVarService.hpp>
 
-#include "../Utils/Log.hpp"
-#include "GameInterfaces.hpp"
+#include <CS2Kit/Utils/Log.hpp>
+#include <CS2Kit/Sdk/GameInterfaces.hpp>
 
 #include <icvar.h>
 #include <tier1/convar.h>

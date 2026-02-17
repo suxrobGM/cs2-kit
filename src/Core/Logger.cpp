@@ -1,4 +1,4 @@
-#include "ILogger.hpp"
+#include <CS2Kit/Core/ILogger.hpp>
 
 namespace CS2Kit::Core
 {

@@ -1,0 +1,15 @@
+{
+  "recommendations": [
+    // C++ development
+    "ms-vscode.cpptools",
+
+    // Python (for AMBuild)
+    "ms-python.python",
+    "charliermarsh.ruff",
+    "ms-python.mypy-type-checker",
+
+    // JSON
+    "esbenp.prettier-vscode"
+  ],
+  "unwantedRecommendations": ["llvm-vs-code-extensions.vscode-clangd"]
+}

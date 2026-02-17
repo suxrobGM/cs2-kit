@@ -1,0 +1,40 @@
+# vim: set ts=8 sts=4 sw=4 tw=99 et ft=python:
+# ruff: noqa: F821
+# mypy: ignore-errors
+#
+# CS2-Kit Source AMBuilder - Static library build definition
+
+import os
+
+# =============================================================================
+# SOURCE FILES - Auto-discovered from src/
+# =============================================================================
+SRC_DIR = os.path.join(builder.sourcePath, "src")
+
+SOURCES = []
+for root, dirs, files in os.walk(SRC_DIR):
+    for f in files:
+        if f.endswith(".cpp"):
+            SOURCES.append(os.path.join(root, f))
+
+SOURCES.sort()
+
+# =============================================================================
+# BUILD - Static library
+# =============================================================================
+
+for sdk_target in Library.sdk_targets:
+    sdk = sdk_target.sdk
+    cxx = sdk_target.cxx
+
+    binary = Library.create_static_library(builder, cxx, sdk)
+
+    # Add source files
+    for src in SOURCES:
+        binary.sources += [src]
+
+    # Platform-specific libs for SigScanner
+    if binary.compiler.like("msvc"):
+        binary.compiler.linkflags += ["psapi.lib"]
+
+    Library.binaries += [builder.Add(binary)]

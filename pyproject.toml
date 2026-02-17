@@ -1,0 +1,41 @@
+[project]
+name = "cs2-kit"
+version = "1.0.0"
+description = "C++23 library for CS2 Metamod:Source plugins - build tools"
+readme = "README.md"
+requires-python = ">=3.14"
+license = { text = "MIT" }
+
+dependencies = [
+    "ambuild @ git+https://github.com/alliedmodders/ambuild.git",
+    "ruff>=0.14.0",
+    "mypy>=1.19.0",
+]
+
+[tool.pdm]
+distribution = false
+
+[tool.pdm.scripts]
+configure = "python configure.py"
+configure-vs = "python configure.py --gen=vs --vs-version 19"
+build = "cd scripts && ./build.sh"
+clean = "rm -rf objdir"
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+extend-exclude = ["AMBuildScript", "**/AMBuilder"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.14"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+exclude = ["AMBuildScript", "AMBuilder"]
+
+[[tool.mypy.overrides]]
+module = "ambuild2.*"
+ignore_missing_imports = true

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "IMenuIO.hpp"
-#include "Menu.hpp"
-#include "../Core/Singleton.hpp"
+#include <CS2Kit/Menu/Menu.hpp>
+#include <CS2Kit/Core/Singleton.hpp>
+
 #include <array>
 
 namespace CS2Kit::Menu
@@ -18,9 +18,6 @@ class MenuManager : public Core::Singleton<MenuManager>
 public:
     explicit MenuManager(Token) {}
 
-    /** Set the menu I/O backend. Must be called before menus are used. */
-    void SetMenuIO(IMenuIO* menuIO) { _menuIO = menuIO; }
-
     void OpenMenu(int slot, std::shared_ptr<Menu> menu);
     void CloseMenu(int slot);
     void CloseAllMenus(int slot);
@@ -32,7 +29,6 @@ private:
     void HandleInput(int slot, uint64_t buttons, uint64_t prevButtons);
     void RenderMenu(int slot);
 
-    IMenuIO* _menuIO = nullptr;
     std::array<PlayerMenuState, 64> _states;
     static constexpr int64_t InputDebounceMs = 200;
 };

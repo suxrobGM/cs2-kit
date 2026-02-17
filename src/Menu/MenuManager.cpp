@@ -1,8 +1,9 @@
-#include "MenuManager.hpp"
+#include <CS2Kit/Menu/MenuManager.hpp>
 
-#include "../Sdk/Entity.hpp"
-#include "../Utils/Log.hpp"
-#include "MenuRenderer.hpp"
+#include <CS2Kit/Sdk/Entity.hpp>
+#include <CS2Kit/Sdk/UserMessage.hpp>
+#include <CS2Kit/Utils/Log.hpp>
+#include <CS2Kit/Menu/MenuRenderer.hpp>
 
 #include <chrono>
 
@@ -52,8 +53,7 @@ void MenuManager::CloseMenu(int slot)
 
     if (state.MenuStack.empty())
     {
-        if (_menuIO)
-            _menuIO->ClearCenterHtml(slot);
+        MessageSystem::Instance().ClearCenterHtml(slot);
         state.Reset();
     }
     else
@@ -69,8 +69,7 @@ void MenuManager::CloseAllMenus(int slot)
 
     auto& state = _states[slot];
     state.Reset();
-    if (_menuIO)
-        _menuIO->ClearCenterHtml(slot);
+    MessageSystem::Instance().ClearCenterHtml(slot);
 }
 
 bool MenuManager::HasActiveMenu(int slot) const
@@ -89,7 +88,7 @@ void MenuManager::OnGameFrame()
         if (!state.HasMenu())
             continue;
 
-        uint64_t buttons = _menuIO ? _menuIO->GetPlayerButtons(slot) : 0;
+        uint64_t buttons = EntitySystem::Instance().GetPlayerButtons(slot);
         auto prev = state.PrevButtons;
         state.PrevButtons = buttons;
 
@@ -169,8 +168,7 @@ void MenuManager::RenderMenu(int slot)
         return;
 
     auto html = RenderMenuHtml(menu, state.SelectedIndex);
-    if (_menuIO)
-        _menuIO->SendCenterHtml(slot, html);
+    MessageSystem::Instance().SendCenterHtml(slot, html);
 }
 
 void MenuManager::OnPlayerDisconnect(int slot)

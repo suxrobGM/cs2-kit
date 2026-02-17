@@ -1,9 +1,9 @@
-#include "UserMessage.hpp"
+#include <CS2Kit/Sdk/UserMessage.hpp>
 
-#include "../Utils/Log.hpp"
-#include "GameData.hpp"
-#include "GameInterfaces.hpp"
-#include "SigScanner.hpp"
+#include <CS2Kit/Utils/Log.hpp>
+#include <CS2Kit/Sdk/GameData.hpp>
+#include <CS2Kit/Sdk/GameInterfaces.hpp>
+#include <CS2Kit/Sdk/SigScanner.hpp>
 
 #include <igameevents.h>
 

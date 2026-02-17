@@ -1,6 +1,6 @@
-#include "CommandManager.hpp"
+#include <CS2Kit/Commands/CommandManager.hpp>
 
-#include "../Utils/StringUtils.hpp"
+#include <CS2Kit/Utils/StringUtils.hpp>
 
 namespace CS2Kit::Commands
 {

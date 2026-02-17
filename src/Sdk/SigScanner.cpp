@@ -1,6 +1,6 @@
-#include "SigScanner.hpp"
+#include <CS2Kit/Sdk/SigScanner.hpp>
 
-#include "../Utils/Log.hpp"
+#include <CS2Kit/Utils/Log.hpp>
 
 #include <sstream>
 #include <vector>

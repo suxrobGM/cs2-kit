@@ -1,7 +1,7 @@
-#include "Schema.hpp"
+#include <CS2Kit/Sdk/Schema.hpp>
 
-#include "../Utils/Log.hpp"
-#include "GameInterfaces.hpp"
+#include <CS2Kit/Utils/Log.hpp>
+#include <CS2Kit/Sdk/GameInterfaces.hpp>
 
 #include <schemasystem/schemasystem.h>
 
