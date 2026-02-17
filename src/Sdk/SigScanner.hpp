@@ -3,6 +3,10 @@
 #include <cstdint>
 #include <string>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 namespace CS2Kit::Sdk
 {
 

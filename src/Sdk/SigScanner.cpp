@@ -6,11 +6,7 @@
 #include <vector>
 
 #ifdef _WIN32
-
-// clang-format off
-#include <windows.h>
 #include <psapi.h>
-// clang-format on
 #else
 #include <cstring>
 #include <dlfcn.h>
