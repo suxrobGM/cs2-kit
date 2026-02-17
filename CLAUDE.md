@@ -1,10 +1,6 @@
 # CS2-Kit — C++23 CS2 Plugin Development Library
 
-## Project Overview
-
-Reusable C++23 library for building Counter-Strike 2 server plugins with Metamod:Source 2.0. Extracted from the [admin-system](https://github.com/m9snoi/admin-system) project to be a standalone, general-purpose toolkit.
-
-**Status:** Work in progress — API is unstable and subject to breaking changes.
+Reusable C++23 library for building Counter-Strike 2 server plugins with Metamod:Source 2.0.
 
 ## Tech Stack
 
@@ -75,7 +71,6 @@ Doxyfile                        # Doxygen configuration
 - **C++17 nested namespaces:** `namespace CS2Kit::Sdk { ... }`
 - **`.hpp` headers** (not `.h`)
 - **CRTP Singleton** with pass-key idiom (`Token` struct)
-- **No mutexes** — all code runs on the game thread
 - **Designated initializers** for struct construction
 - **`std::format`** for string formatting
 - **`std::function`** for all callbacks
