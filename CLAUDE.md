@@ -6,49 +6,34 @@ Reusable C++23 library for building Counter-Strike 2 server plugins with Metamod
 
 - **Language:** C++23
 - **Framework:** Metamod:Source 2.0 + hl2sdk-cs2
-- **Build:** No standalone build — compiled as source by consuming projects (e.g., via AMBuild)
+- **Build:** Source inclusion (recommended) or standalone static library via AMBuild
 - **Docs:** Doxygen + doxygen-awesome-css, deployed to GitHub Pages
 
 ## Project Structure
 
 ```text
-src/
-├── Commands/
-│   ├── Command.hpp/cpp         # Command struct + CommandBuilder (fluent API)
-│   ├── CommandManager.hpp/cpp  # Registration, prefix handling (!/.), dispatch
-│   └── ICommandCaller.hpp      # Abstract command invoker interface
-├── Core/
-│   ├── Singleton.hpp           # CRTP singleton base with pass-key idiom (header-only)
-│   ├── Scheduler.hpp/cpp       # Tick-based task scheduler (Delay, Repeat, NextTick, Cancel)
-│   ├── ILogger.hpp + Logger.cpp        # Logger interface + global accessor
-│   └── IPathResolver.hpp + PathResolver.cpp  # Path resolution interface
-├── Menu/
-│   ├── Menu.hpp                # Data structures (Menu, MenuItem, MenuLayout, PlayerMenuState)
-│   ├── MenuBuilder.hpp         # Fluent builder pattern (header-only)
-│   ├── MenuManager.hpp/cpp     # WASD menu lifecycle, input debounce, menu stack
-│   ├── MenuRenderer.hpp/cpp    # HTML rendering (3-section layout)
-│   └── IMenuIO.hpp             # Menu I/O interface (buttons, center HTML)
-├── Sdk/
-│   ├── GameInterfaces.hpp      # Centralized SDK interface pointer holder (header-only)
-│   ├── GameData.hpp/cpp        # Signature/offset JSON loader
-│   ├── Entity.hpp/cpp          # Entity system access, button flags
-│   ├── Schema.hpp/cpp          # Runtime schema field offset resolution with caching
-│   ├── SigScanner.hpp/cpp      # Byte-pattern signature scanning + RIP-relative resolution
-│   ├── UserMessage.hpp/cpp     # MessageSystem singleton (chat, center HTML)
-│   ├── PlayerController.hpp/cpp  # Typed CCSPlayerController wrapper
-│   ├── ConVarService.hpp/cpp   # ConVar read/write with change listeners
-│   ├── GameEventService.hpp/cpp  # Event creation, firing, listener registration
-│   └── VirtualCall.hpp         # Virtual function call template (header-only)
-└── Utils/
-    ├── Log.hpp                 # Format-based logging templates (header-only)
-    ├── SteamId.hpp/cpp         # SteamID conversions (64-bit, SteamID2, SteamID3)
-    ├── StringUtils.hpp/cpp     # String manipulation, target parsing (@all, #3, name)
-    ├── TimeUtils.hpp/cpp       # Timestamps, duration parsing/formatting
-    └── Translations.hpp/cpp    # JSON-based i18n system
+include/CS2Kit/                 # Public API headers (#include <CS2Kit/...>)
+├── CS2Kit.hpp                  # InitParams, Initialize/Shutdown/OnGameFrame API
+├── Commands/                   # Command, CommandBuilder, CommandManager, ICommandCaller
+├── Core/                       # Singleton, ILogger, Paths
+├── Menu/                       # Menu, MenuBuilder, MenuManager
+├── Sdk/                        # GameInterfaces, Entity, GameData, PlayerController,
+│                               # ConVarService, GameEventService, UserMessage
+└── Utils/                      # SteamId, StringUtils, TimeUtils, Translations, Log
+
+src/                            # Implementation (.cpp) + internal headers
+├── CS2Kit.cpp                  # Initialize impl (resolves SDK interfaces via ISmmAPI)
+├── Commands/                   # Command dispatch implementation
+├── Core/                       # ConsoleLogger, Scheduler, Paths
+├── Menu/                       # MenuManager, MenuRenderer
+├── Sdk/                        # Schema, SigScanner, VirtualCall, Entity, GameData, etc.
+└── Utils/                      # SteamId, StringUtils, TimeUtils, Translations
+
+gamedata/                       # Engine signatures and offsets (auto-loaded)
+└── signatures.jsonc            # Platform-specific byte patterns, vtable offsets
 
 docs/                           # Doxygen extra pages (mainpage, guides)
-vendor/
-└── doxygen-awesome-css/        # Doxygen theme (submodule)
+vendor/                         # SDK submodules (hl2sdk-cs2, mmsource-2.0, nlohmann)
 Doxyfile                        # Doxygen configuration
 .github/workflows/docs.yml     # Auto-deploy docs to GitHub Pages
 ```
@@ -111,14 +96,10 @@ CS2Kit::Menu::MenuBuilder("Title")
 
 ### Interface Contracts
 
-Consuming plugins must implement these interfaces:
-
-| Interface | Purpose | Registration |
+| Interface | Purpose | Required? |
 | --- | --- | --- |
-| `ILogger` | Logging backend | `SetGlobalLogger()` |
-| `IPathResolver` | Resolve config paths | `SetGlobalPathResolver()` |
-| `IMenuIO` | Button reading, HTML display | `MenuManager::SetIO()` |
-| `ICommandCaller` | Command sender abstraction | Per-command invocation |
+| `ILogger` | Logging backend | No — built-in `ConsoleLogger` used by default |
+| `ICommandCaller` | Command sender abstraction | Yes — implement per-plugin (wraps your Player type) |
 
 ## Build Commands
 
@@ -128,7 +109,7 @@ doxygen Doxyfile
 # Output: build/docs/html/index.html
 ```
 
-No standalone build — the library is compiled as part of the consuming project.
+Source inclusion: compiled as part of the consuming project. Static library: `python configure.py --sdks cs2 && cd build && ambuild`.
 
 ## Documentation
 

@@ -1,0 +1,69 @@
+{
+  // ───────────────────────────────────────────────────────────────────
+  // Gamedata Signatures & Offsets
+  //
+  // Platform-specific byte patterns used by the signature scanner to
+  // locate engine functions and data structures at runtime. These are
+  // fragile and must be updated after every CS2 engine update.
+  //
+  // Pattern syntax:
+  //   - Hex bytes are space-separated (e.g. "48 83 EC")
+  //   - "?" matches any single byte (wildcard)
+  //   - "offset" is the byte distance from the matched address to
+  //     the target pointer (used with RIP-relative resolution)
+  // ───────────────────────────────────────────────────────────────────
+
+  "offsets": {
+    // Offset from IGameResourceService vtable to the CGameEntitySystem pointer.
+    // Retrieved via: GameResourceService + offset → CGameEntitySystem*
+    "GameEntitySystem": {
+      "windows": 88,
+      "linux": 80
+    },
+    // Virtual function indices for player controller/pawn operations.
+    // Must be verified against the current CS2 build.
+    "CommitSuicide": {
+      "windows": 400,
+      "linux": 400
+    },
+    "ChangeTeam": {
+      "windows": 101,
+      "linux": 101
+    },
+    "Respawn": {
+      "windows": 42,
+      "linux": 42
+    }
+  },
+
+  "signatures": {
+    // CSource2Server::g_GameEventManager — global pointer to IGameEventManager2.
+    // Used to fire legacy game events (e.g. player_hurt, player_death).
+    // The "offset" field is the RIP-relative displacement to resolve the
+    // actual pointer from the matched instruction.
+    "GameEventManager": {
+      "library": "server",
+      "windows": {
+        "pattern": "48 83 EC ? 48 83 3D ? ? ? ? ? 74 ? 33 C9 E8 ? ? ? ? FF 15 ? ? ? ?",
+        "offset": 98
+      },
+      "linux": {
+        "pattern": "55 48 89 E5 41 55 41 54 53 48 83 EC 08 48 8D 05 ? ? ? ? 48 83 38 00",
+        "offset": 106
+      }
+    },
+
+    // GetLegacyGameEventListener — function pointer used to obtain an
+    // IGameEventListener2 instance for subscribing to legacy game events.
+    // No RIP offset needed; the matched address IS the function pointer.
+    "LegacyGameEventListener": {
+      "library": "server",
+      "windows": {
+        "pattern": "48 8B 15 ? ? ? ? 48 85 D2 74 ? 83 F9 ? 77"
+      },
+      "linux": {
+        "pattern": "48 8B 05 ? ? ? ? 48 85 C0 74 ? 83 FF ? 77 ? 48 63 FF 48 C1 E7 ? 48 8D 44 38"
+      }
+    }
+  }
+}

@@ -29,58 +29,49 @@ In your `AMBuildScript`, add CS2-Kit source files to your build:
 # Add CS2-Kit sources
 import os
 
-cs2kit_root = os.path.join(builder.sourcePath, "vendor", "cs2-kit", "src")
-for root, dirs, files in os.walk(cs2kit_root):
+CS2KIT_DIR = os.path.join(builder.sourcePath, "vendor", "cs2-kit")
+CS2KIT_INCLUDE_DIR = os.path.join(CS2KIT_DIR, "include")
+CS2KIT_SRC_DIR = os.path.join(CS2KIT_DIR, "src")
+
+# Add public headers to include path
+binary.compiler.cxxincludes += [CS2KIT_INCLUDE_DIR]
+
+# Auto-discover and compile cs2-kit sources
+for root, dirs, files in os.walk(CS2KIT_SRC_DIR):
     for f in files:
         if f.endswith(".cpp"):
-            binary.sources.append(os.path.relpath(os.path.join(root, f), builder.sourcePath))
-
-# Add include path
-binary.compiler.cxxincludes += [
-    os.path.join(builder.sourcePath, "vendor", "cs2-kit", "src"),
-]
+            binary.sources += [os.path.join(root, f)]
 ```
 
 ## Initialization
 
-CS2-Kit singletons must be initialized during your plugin's `Load()` method. At minimum, you need to:
-
-1. Populate `GameInterfaces` with SDK interface pointers
-2. Register a logger implementation
-3. Register a path resolver
+CS2Kit handles SDK interface resolution, gamedata loading, and subsystem initialization internally. Just pass the Metamod `ISmmAPI` pointer:
 
 ```cpp
-#include <Sdk/GameInterfaces.hpp>
-#include <Core/ILogger.hpp>
-#include <Core/IPathResolver.hpp>
-
-using namespace CS2Kit::Core;
-using namespace CS2Kit::Sdk;
+#include <CS2Kit/CS2Kit.hpp>
 
 bool MyPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen, bool late)
 {
-    // 1. Populate SDK interfaces
-    auto& gi = GameInterfaces::Instance();
-    GET_V_IFACE_ANY(GetServerFactory, gi.ServerGameDLL, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
-    GET_V_IFACE_ANY(GetEngineFactory, gi.Engine, IVEngineServer2, INTERFACEVERSION_VENGINESERVER);
-    GET_V_IFACE_ANY(GetEngineFactory, gi.CVar, ICvar, CVAR_INTERFACE_VERSION);
-    GET_V_IFACE_ANY(GetEngineFactory, gi.SchemaSystem, ISchemaSystem, SCHEMASYSTEM_INTERFACE_VERSION);
-    GET_V_IFACE_ANY(GetEngineFactory, gi.NetworkMessages, INetworkMessages, NETWORKMESSAGES_INTERFACE_VERSION);
-    GET_V_IFACE_ANY(GetFileSystemFactory, gi.GameResourceService, IGameResourceService, GAMERESOURCESERVICESERVER_INTERFACE_VERSION);
-    // ... other interfaces as needed
+    PLUGIN_SAVEVARS();
 
-    // 2. Register logger (implement CS2Kit::Core::ILogger)
-    SetGlobalLogger(&myLogger);
+    CS2Kit::InitParams params;
+    params.LogPrefix = "MyPlugin";
 
-    // 3. Register path resolver (implement CS2Kit::Core::IPathResolver)
-    SetGlobalPathResolver(&myPathResolver);
+    if (!CS2Kit::Initialize(ismm, error, maxlen, params))
+        return false;
 
-    // 4. Load gamedata (optional, for signature scanning)
-    GameData::Instance().Load("gamedata/signatures.jsonc");
-
+    // Your plugin initialization here...
     return true;
 }
 ```
+
+`CS2Kit::Initialize()` performs the following internally:
+
+1. Sets up logging (built-in `ConsoleLogger` by default, or your custom `ILogger`)
+2. Resolves all required SDK interfaces via `ISmmAPI::VInterfaceMatch()`
+3. Sets the HL2SDK `g_pCVar` global
+4. Loads engine signatures and offsets from built-in gamedata
+5. Initializes all subsystems (schema, entities, events, menus, ConVars)
 
 ## Game Frame Hook
 
@@ -89,8 +80,28 @@ The scheduler and menu system require a per-tick callback. Hook `IServerGameDLL:
 ```cpp
 void MyPlugin::GameFrame(bool simulating, bool firstTick, bool lastTick)
 {
-    CS2Kit::Core::Scheduler::Instance().OnGameFrame();
-    CS2Kit::Menu::MenuManager::Instance().OnGameFrame();
+    CS2Kit::OnGameFrame();
+}
+```
+
+## Player Disconnect Hook
+
+Clean up menu state when players disconnect:
+
+```cpp
+void MyPlugin::ClientDisconnect(CPlayerSlot slot, ...)
+{
+    CS2Kit::OnPlayerDisconnect(slot.Get());
+}
+```
+
+## Shutdown
+
+```cpp
+bool MyPlugin::Unload(char* error, size_t maxlen)
+{
+    CS2Kit::Shutdown();
+    return true;
 }
 ```
 

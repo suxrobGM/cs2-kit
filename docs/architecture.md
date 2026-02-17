@@ -22,7 +22,7 @@ CS2Kit
 - **Single-threaded** — All code runs on the game thread. No mutexes needed. Metamod hooks are always called from the main thread.
 - **Singleton pattern** — Manager classes use the CRTP `Singleton<T>` base with pass-key idiom for safe, lazy initialization.
 - **Builder pattern** — Complex objects (commands, menus) are constructed via fluent builders.
-- **Interface-driven** — Host plugins implement `ILogger`, `IPathResolver`, and `IMenuIO` to bridge CS2-Kit with their environment.
+- **Minimal boilerplate** — `CS2Kit::Initialize(ismm, error, maxlen)` handles all SDK interface resolution, gamedata loading, and subsystem init. Only `ICommandCaller` must be implemented by the consumer; `ILogger` has a built-in default.
 
 ## CRTP Singleton
 
@@ -81,11 +81,7 @@ CS2-Kit uses `std::function` callbacks throughout:
 
 ## Interface Contracts
 
-Host plugins must implement these interfaces:
-
-| Interface | Purpose | Registration |
-|-----------|---------|--------------|
-| `ILogger` | Logging backend (Info/Warn/Error) | `SetGlobalLogger()` |
-| `IPathResolver` | Resolve relative paths to absolute | `SetGlobalPathResolver()` |
-| `IMenuIO` | Button state reading, HTML display | `MenuManager::SetIO()` |
-| `ICommandCaller` | Command sender abstraction | Per-command invocation |
+| Interface | Purpose | Required? |
+|-----------|---------|-----------|
+| `ILogger` | Logging backend (Info/Warn/Error) | No — built-in `ConsoleLogger` used by default |
+| `ICommandCaller` | Command sender abstraction | Yes — implement per-plugin (wraps your Player type) |

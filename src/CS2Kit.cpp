@@ -13,13 +13,21 @@
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Log.hpp>
+#include <ISmmAPI.h>
+#include <eiface.h>
+#include <engine/igameeventsystem.h>
+#include <icvar.h>
+#include <interfaces/interfaces.h>
+#include <networksystem/inetworkmessages.h>
+#include <schemasystem/schemasystem.h>
 
 namespace CS2Kit
 {
 
+static constexpr const char* DefaultGameDataPath = "addons/cs2-kit/gamedata/signatures.jsonc";
 static Core::ConsoleLogger g_consoleLogger;
 
-bool Initialize(const InitParams& params)
+bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, const InitParams& params)
 {
     // 1. Set up logging
     if (params.Logger)
@@ -33,30 +41,86 @@ bool Initialize(const InitParams& params)
     }
 
     // 2. Set base directory for path resolution
-    if (params.BaseDir)
-        Core::SetBaseDir(params.BaseDir);
+    Core::SetBaseDir(ismm->GetBaseDir());
 
     Utils::Log::Info("Initializing CS2Kit...");
 
-    // 3. Populate GameInterfaces singleton
-    auto& gi = Sdk::GameInterfaces::Instance();
-    gi.ServerGameDLL = params.ServerGameDLL;
-    gi.ServerGameClients = params.ServerGameClients;
-    gi.Engine = params.Engine;
-    gi.GameEventSystem = params.GameEventSystem;
-    gi.NetworkMessages = params.NetworkMessages;
-    gi.SchemaSystem = params.SchemaSystem;
-    gi.CVar = params.CVar;
-    gi.GameResourceService = params.GameResourceService;
+    // 3. Resolve SDK interfaces via Metamod
+    auto resolveEngine = [&](const char* version) -> void* {
+        return ismm->VInterfaceMatch(ismm->GetEngineFactory(), version, 0);
+    };
+    auto resolveServer = [&](const char* version) -> void* {
+        return ismm->VInterfaceMatch(ismm->GetServerFactory(), version, 0);
+    };
 
-    // 4. Load game data (signatures and offsets)
-    if (params.GameDataPath)
+    auto& gi = Sdk::GameInterfaces::Instance();
+
+    gi.ServerGameDLL = static_cast<IServerGameDLL*>(resolveServer(INTERFACEVERSION_SERVERGAMEDLL));
+    if (!gi.ServerGameDLL)
     {
-        Utils::Log::Info("Loading game data...");
-        Sdk::GameData::Instance().Load(params.GameDataPath);
+        ismm->Format(error, maxlen, "Could not find interface: %s", INTERFACEVERSION_SERVERGAMEDLL);
+        return false;
     }
 
-    // 5. Initialize SDK subsystems
+    gi.ServerGameClients = static_cast<IServerGameClients*>(resolveServer(INTERFACEVERSION_SERVERGAMECLIENTS));
+    if (!gi.ServerGameClients)
+    {
+        ismm->Format(error, maxlen, "Could not find interface: %s", INTERFACEVERSION_SERVERGAMECLIENTS);
+        return false;
+    }
+
+    gi.Engine = static_cast<IVEngineServer2*>(resolveEngine(INTERFACEVERSION_VENGINESERVER));
+    if (!gi.Engine)
+    {
+        ismm->Format(error, maxlen, "Could not find interface: %s", INTERFACEVERSION_VENGINESERVER);
+        return false;
+    }
+
+    gi.GameEventSystem = static_cast<IGameEventSystem*>(resolveEngine(GAMEEVENTSYSTEM_INTERFACE_VERSION));
+    if (!gi.GameEventSystem)
+    {
+        ismm->Format(error, maxlen, "Could not find interface: %s", GAMEEVENTSYSTEM_INTERFACE_VERSION);
+        return false;
+    }
+
+    gi.NetworkMessages = static_cast<INetworkMessages*>(resolveEngine(NETWORKMESSAGES_INTERFACE_VERSION));
+    if (!gi.NetworkMessages)
+    {
+        ismm->Format(error, maxlen, "Could not find interface: %s", NETWORKMESSAGES_INTERFACE_VERSION);
+        return false;
+    }
+
+    gi.SchemaSystem = static_cast<ISchemaSystem*>(resolveEngine(SCHEMASYSTEM_INTERFACE_VERSION));
+    if (!gi.SchemaSystem)
+    {
+        ismm->Format(error, maxlen, "Could not find interface: %s", SCHEMASYSTEM_INTERFACE_VERSION);
+        return false;
+    }
+
+    gi.CVar = static_cast<ICvar*>(resolveEngine(CVAR_INTERFACE_VERSION));
+    if (!gi.CVar)
+    {
+        ismm->Format(error, maxlen, "Could not find interface: %s", CVAR_INTERFACE_VERSION);
+        return false;
+    }
+
+    gi.GameResourceService =
+        static_cast<IGameResourceService*>(resolveEngine(GAMERESOURCESERVICESERVER_INTERFACE_VERSION));
+    if (!gi.GameResourceService)
+    {
+        ismm->Format(error, maxlen, "Could not find interface: %s", GAMERESOURCESERVICESERVER_INTERFACE_VERSION);
+        return false;
+    }
+
+    // 4. Set g_pCVar (required by HL2SDK's tier1/convar.cpp)
+    g_pCVar = gi.CVar;
+
+    // 5. Load game data (signatures and offsets)
+    const char* gameDataPath = params.GameDataPath ? params.GameDataPath : DefaultGameDataPath;
+    Utils::Log::Info("Loading game data from {}...", gameDataPath);
+    Sdk::GameData::Instance().Load(gameDataPath);
+
+    // 6. Initialize SDK subsystems
     Utils::Log::Info("Initializing SDK message system...");
     if (!Sdk::MessageSystem::Instance().Initialize())
     {

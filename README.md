@@ -66,34 +66,18 @@ All includes use the `<CS2Kit/...>` prefix:
 
 ### Initialize in Plugin::Load()
 
+CS2Kit resolves all SDK interfaces internally via Metamod's `ISmmAPI`. Just pass the `ismm` pointer:
+
 ```cpp
 bool MyPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen, bool late)
 {
     PLUGIN_SAVEVARS();
 
     CS2Kit::InitParams params;
-    params.BaseDir = ismm->GetBaseDir();
     params.LogPrefix = "MyPlugin";
-    params.GameDataPath = "addons/my-plugin/gamedata/signatures.jsonc";
 
-    // Resolve SDK interfaces via Metamod macros
-    GET_V_IFACE_ANY(GetServerFactory, params.ServerGameDLL, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
-    GET_V_IFACE_ANY(GetServerFactory, params.ServerGameClients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
-    GET_V_IFACE_ANY(GetEngineFactory, params.GameEventSystem, IGameEventSystem, GAMEEVENTSYSTEM_INTERFACE_VERSION);
-    GET_V_IFACE_ANY(GetEngineFactory, params.NetworkMessages, INetworkMessages, NETWORKMESSAGES_INTERFACE_VERSION);
-    GET_V_IFACE_ANY(GetEngineFactory, params.SchemaSystem, ISchemaSystem, SCHEMASYSTEM_INTERFACE_VERSION);
-    GET_V_IFACE_CURRENT(GetEngineFactory, params.GameResourceService, IGameResourceService, GAMERESOURCESERVICESERVER_INTERFACE_VERSION);
-    GET_V_IFACE_ANY(GetEngineFactory, params.CVar, ICvar, CVAR_INTERFACE_VERSION);
-    GET_V_IFACE_ANY(GetEngineFactory, params.Engine, IVEngineServer2, INTERFACEVERSION_VENGINESERVER);
-
-    // Required by HL2SDK's convar.cpp
-    g_pCVar = params.CVar;
-
-    if (!CS2Kit::Initialize(params))
-    {
-        snprintf(error, maxlen, "Failed to initialize CS2Kit");
+    if (!CS2Kit::Initialize(ismm, error, maxlen, params))
         return false;
-    }
 
     // Your plugin initialization here...
     return true;
@@ -188,7 +172,7 @@ public:
 
 // Pass during initialization
 CS2Kit::InitParams params;
-params.Logger = new FileLogger();  // CS2Kit does NOT take ownership
+params.Logger = &myFileLogger;  // CS2Kit does NOT take ownership
 ```
 
 ## Project Structure
@@ -207,7 +191,9 @@ src/                       Implementation (.cpp) + internal headers (not accessi
     ├── Core/              ConsoleLogger, Scheduler
     ├── Menu/              MenuRenderer
     └── Sdk/               Schema, SigScanner, VirtualCall
-vendor/                    SDK submodules (hl2sdk-cs2, hl2sdk-manifests, mmsource-2.0)
+gamedata/                  Engine signatures and offsets (auto-loaded by CS2Kit::Initialize)
+    └── signatures.jsonc   Platform-specific byte patterns, vtable offsets
+vendor/                    SDK submodules (hl2sdk-cs2, hl2sdk-manifests, mmsource-2.0, nlohmann)
 ```
 
 ## Documentation

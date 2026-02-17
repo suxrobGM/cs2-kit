@@ -8,7 +8,7 @@
 
 | Module | Namespace | Description |
 |--------|-----------|-------------|
-| **Core** | `CS2Kit::Core` | Singleton base, scheduler, logging and path resolution interfaces |
+| **Core** | `CS2Kit::Core` | Singleton base, scheduler, logging (built-in ConsoleLogger), path resolution |
 | **Commands** | `CS2Kit::Commands` | Chat command system with fluent builder, permissions, and dispatch |
 | **Menu** | `CS2Kit::Menu` | WASD-navigated center-HTML menu framework with builder pattern |
 | **Sdk** | `CS2Kit::Sdk` | Engine SDK wrappers: entities, schema, signatures, convars, events, messages |

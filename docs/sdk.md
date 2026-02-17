@@ -10,13 +10,14 @@ The Sdk module (`CS2Kit::Sdk`) provides typed wrappers around HL2SDK interfaces,
 
 ## GameInterfaces
 
-Centralized holder for all SDK interface pointers. Populate during `Plugin::Load()`:
+Centralized holder for all SDK interface pointers. Automatically populated by `CS2Kit::Initialize()` — no manual setup needed.
 
 ```cpp
+// After CS2Kit::Initialize(), all interfaces are available:
 auto& gi = CS2Kit::Sdk::GameInterfaces::Instance();
-gi.Engine = ...;       // IVEngineServer2*
-gi.CVar = ...;         // ICvar*
-gi.SchemaSystem = ...; // ISchemaSystem*
+auto* engine = gi.Engine;       // IVEngineServer2*
+auto* cvar = gi.CVar;           // ICvar*
+auto* schema = gi.SchemaSystem; // ISchemaSystem*
 // ... etc.
 ```
 
@@ -24,11 +25,12 @@ All other Sdk classes read from this singleton internally.
 
 ## GameData (Signature Management)
 
-Loads a JSON file mapping signature names to platform-specific byte patterns and offsets:
+CS2-Kit ships built-in gamedata (`gamedata/signatures.jsonc`) that is automatically loaded during `CS2Kit::Initialize()`. The gamedata contains engine signatures and offsets used internally by Entity, PlayerController, and UserMessage subsystems.
+
+Consumer plugins can also use GameData for their own signatures:
 
 ```cpp
 auto& gd = CS2Kit::Sdk::GameData::Instance();
-gd.Load("gamedata/signatures.jsonc");
 
 // Find a raw signature address
 void* addr = gd.FindSignature("CCSPlayerController_Kick");

@@ -1,51 +1,40 @@
 #pragma once
 
 #include <CS2Kit/Core/ILogger.hpp>
-#include <eiface.h>
-#include <icvar.h>
 
-// Forward declarations for HL2SDK types
-class IGameEventSystem;
-class INetworkMessages;
-class ISchemaSystem;
-class IGameResourceService;
+// Forward declaration for Metamod API
+namespace SourceMM { class ISmmAPI; }
+using SourceMM::ISmmAPI;
 
 namespace CS2Kit
 {
 
 /**
  * @brief Initialization parameters for CS2Kit.
- * Consumers populate SDK interfaces (via Metamod's GET_V_IFACE macros)
- * and pass them here. CS2Kit stores them in GameInterfaces and initializes
- * all internal subsystems.
+ * All fields are optional — CS2Kit provides sensible defaults.
  */
 struct InitParams
 {
-    // Server base directory (from ISmmAPI::GetBaseDir())
-    const char* BaseDir = nullptr;
-
-    // SDK interfaces (all required)
-    IServerGameDLL* ServerGameDLL = nullptr;
-    IServerGameClients* ServerGameClients = nullptr;
-    IVEngineServer2* Engine = nullptr;
-    IGameEventSystem* GameEventSystem = nullptr;
-    INetworkMessages* NetworkMessages = nullptr;
-    ISchemaSystem* SchemaSystem = nullptr;
-    ICvar* CVar = nullptr;
-    IGameResourceService* GameResourceService = nullptr;
-
-    // Configuration
-    const char* LogPrefix = "CS2Kit";    ///< Prefix for console log messages (e.g., "[AdminSystem]")
-    const char* GameDataPath = nullptr;  ///< Path to signatures.jsonc (relative to server base dir)
+    const char* LogPrefix = "CS2Kit";    ///< Prefix for console log messages (e.g., "[MyPlugin]")
+    const char* GameDataPath = nullptr;  ///< Override path to signatures.jsonc. If null, uses built-in gamedata.
     Core::ILogger* Logger = nullptr;     ///< Optional custom logger. If null, uses built-in ConsoleLogger.
 };
 
 /**
  * @brief Initialize all CS2Kit subsystems.
- * Call from Plugin::Load() after populating InitParams with SDK interfaces.
- * @return true on success, false if critical subsystems failed to initialize.
+ *
+ * Resolves all required SDK interfaces via Metamod's ISmmAPI, loads gamedata,
+ * and initializes internal subsystems (schema, entities, events, menus, etc.).
+ *
+ * Call from Plugin::Load().
+ *
+ * @param ismm    Metamod API pointer (from Plugin::Load)
+ * @param error   Error buffer for failure messages
+ * @param maxlen  Size of the error buffer
+ * @param params  Optional configuration (log prefix, custom logger, gamedata path override)
+ * @return true on success, false if a critical subsystem failed to initialize.
  */
-bool Initialize(const InitParams& params);
+bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, const InitParams& params = {});
 
 /**
  * @brief Shut down all CS2Kit subsystems.
