@@ -25,8 +25,9 @@ public:
     Singleton& operator=(const Singleton&) = delete;
 
 protected:
-    struct Token
-    {};
+    // clang-format off
+    struct Token{};
+    // clang-format on
     Singleton() = default;
     ~Singleton() = default;
 };
