@@ -4,12 +4,9 @@
     {
       "label": "Build (Static Library)",
       "type": "shell",
-      "command": "powershell",
+      "command": "bash",
       "args": [
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        "${workspaceFolder}/scripts/build.ps1"
+        "${workspaceFolder}/scripts/build.sh"
       ],
       "group": {
         "kind": "build",
