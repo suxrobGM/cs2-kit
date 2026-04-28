@@ -92,17 +92,14 @@ CS2Kit::Commands::CommandBuilder("kick")
 // Menus
 CS2Kit::Menu::MenuBuilder("Title")
     .AddItem("Option", onSelect)
+    .AddDynamicItem(getTitleFn, onSelect)   // label recomputed every render — for live toggles
     .AddSubmenu("Sub", factory)
     .Build();
 ```
 
-### Interface Contracts
-
-| Interface | Purpose | Required? |
-| --- | --- | --- |
-| `ILogger` | Logging backend | No — built-in `ConsoleLogger` used by default |
-
-Command handlers receive `CS2Kit::Players::Player*` directly — no caller adapter is required.
+`MenuItem::OnGetTitle` is the underlying primitive: when set, the renderer calls it
+each frame instead of using `Title`. Use for entries that need to reflect live state
+(e.g. `"Beacon: ON"` / `"Beacon: OFF"` toggles) without rebuilding the menu.
 
 ## Build Commands
 
@@ -113,9 +110,3 @@ doxygen Doxyfile
 ```
 
 Source inclusion: compiled as part of the consuming project. Static library: `python configure.py --sdks cs2 && cd build && ambuild`.
-
-## Documentation
-
-- **API docs:** [suxrobgm.github.io/cs2-kit](https://suxrobgm.github.io/cs2-kit/)
-- **Docs source:** `docs/` folder (Markdown pages processed by Doxygen)
-- **Auto-deployed** via GitHub Actions on push to `main`

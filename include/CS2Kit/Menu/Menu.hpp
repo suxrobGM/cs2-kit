@@ -26,6 +26,12 @@ struct MenuLayout
 struct MenuItem
 {
     std::string Title;
+    /**
+     * Optional dynamic-title hook. When set, it is called every render and overrides
+     * `Title`. Use for items whose label depends on live state (e.g. "Beacon: ON/OFF"
+     * toggles) so the row refreshes without rebuilding the whole menu.
+     */
+    std::function<std::string()> OnGetTitle;
     /** Invoked with the player slot when the item is activated (E pressed). */
     std::function<void(int)> OnSelect;
     /** Disabled items are rendered greyed out and skipped during navigation. */

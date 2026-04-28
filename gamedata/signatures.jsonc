@@ -22,17 +22,30 @@
     },
     // Virtual function indices for player controller/pawn operations.
     // Must be verified against the current CS2 build.
+    // CBasePlayerPawn::CommitSuicide vtable index. Cross-checked against SwiftlyS2
+    // (windows 390 / linux 390) and cs2-menus (390). The earlier 400/400 was hitting
+    // an unrelated vfunc and causing crashes when Slay was invoked.
     "CommitSuicide": {
-      "windows": 400,
-      "linux": 400
+      "windows": 390,
+      "linux": 390
     },
+    // CCSPlayerController::ChangeTeam vtable index. Cross-checked against SwiftlyS2's
+    // gamedata (windows 103, linux 102). Earlier 101/101 was hitting CBaseEntity::ChangeTeam
+    // on the pawn which doesn't switch team server-side.
     "ChangeTeam": {
-      "windows": 101,
-      "linux": 101
+      "windows": 103,
+      "linux": 102
     },
     "Respawn": {
       "windows": 42,
       "linux": 42
+    },
+    // CBaseEntity::Teleport(const Vector* origin, const QAngle* angles, const Vector* velocity).
+    // Vtable offsets cross-checked against SwiftlyS2 (windows: 163, linux: 162) and cs2-menus
+    // (windows: 162). Bump or split if a CS2 update shifts the layout.
+    "Teleport": {
+      "windows": 163,
+      "linux": 162
     }
   },
 

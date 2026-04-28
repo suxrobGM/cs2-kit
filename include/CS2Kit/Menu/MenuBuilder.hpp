@@ -29,6 +29,22 @@ public:
         return *this;
     }
 
+    /**
+     * Append an item whose label is recomputed every render via @p onGetTitle.
+     * Use for toggles where the row should reflect live state — e.g. "Beacon: ON/OFF".
+     */
+    MenuBuilder& AddDynamicItem(std::function<std::string()> onGetTitle, std::function<void(int)> onSelect,
+                                bool enabled = true)
+    {
+        _menu->Items.push_back({
+            .Title = "",
+            .OnGetTitle = std::move(onGetTitle),
+            .OnSelect = std::move(onSelect),
+            .Enabled = enabled,
+        });
+        return *this;
+    }
+
     /** Append an item that lazily builds a submenu via @p factory when activated. */
     MenuBuilder& AddSubmenu(const std::string& title, std::function<std::shared_ptr<Menu>(int)> factory,
                             bool enabled = true)

@@ -31,6 +31,16 @@ constexpr uint64_t IN_ZOOM = 0x400000000ULL;
 constexpr uint64_t IN_LOOK_AT_WEAPON = 0x800000000ULL;
 /** @} */
 
+/** @defgroup EntityFlags CBaseEntity::m_fFlags bit values (Flags_t in the CS2 schema) */
+/** @{ */
+constexpr uint32_t FL_ONGROUND = 1;
+constexpr uint32_t FL_DUCKING = 2;
+constexpr uint32_t FL_FROZEN = 32;
+constexpr uint32_t FL_FAKECLIENT = 256;
+constexpr uint32_t FL_GODMODE = 16384;
+constexpr uint32_t FL_NOTARGET = 32768;
+/** @} */
+
 constexpr int MaxPlayers = 64;
 
 /**

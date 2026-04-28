@@ -75,19 +75,20 @@ static std::string RenderItems(const Menu* menu, int selectedIndex, int pageStar
     for (int i = pageStart; i < pageEnd; ++i)
     {
         const auto& item = menu->Items[i];
+        std::string title = item.OnGetTitle ? item.OnGetTitle() : item.Title;
 
         if (!item.Enabled)
         {
-            html << "<font color='" << Theme::Disabled << "'>- " << item.Title << "</font><br>";
+            html << "<font color='" << Theme::Disabled << "'>- " << title << "</font><br>";
         }
         else if (i == selectedIndex)
         {
-            html << "<font color='" << Theme::Amber << "'><b>&gt; " << item.Title << "</b></font> "
+            html << "<font color='" << Theme::Amber << "'><b>&gt; " << title << "</b></font> "
                  << "<font color='" << Theme::Gold << "'>[E]</font><br>";
         }
         else
         {
-            html << "<font color='" << Theme::WarmWhite << "'>  " << item.Title << "</font><br>";
+            html << "<font color='" << Theme::WarmWhite << "'>  " << title << "</font><br>";
         }
     }
 

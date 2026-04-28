@@ -56,38 +56,38 @@ void Scheduler::OnGameFrame()
 
     int64_t now = GetCurrentTimeMs();
 
-    std::vector<size_t> expired;
-    for (size_t i = 0; i < _timers.size(); ++i)
+    // Snapshot the IDs to fire instead of indices: callbacks may Cancel() other timers
+    // (or themselves) which erases from _timers and invalidates indices/references.
+    std::vector<uint64_t> toFire;
+    for (const auto& t : _timers)
     {
-        if (now >= _timers[i].NextFireTime)
-            expired.push_back(i);
+        if (now >= t.NextFireTime)
+            toFire.push_back(t.Id);
     }
 
-    std::vector<uint64_t> toRemove;
-    for (auto it = expired.rbegin(); it != expired.rend(); ++it)
+    for (uint64_t id : toFire)
     {
-        size_t idx = *it;
-        if (idx >= _timers.size())
+        // Re-find by ID — the timer may have been cancelled by an earlier callback in this batch.
+        auto it = std::find_if(_timers.begin(), _timers.end(), [id](const Timer& t) { return t.Id == id; });
+        if (it == _timers.end())
             continue;
 
-        auto& timer = _timers[idx];
-        if (timer.Callback)
-            timer.Callback();
+        // Copy out before invoking — the callback can mutate _timers (including reallocating it).
+        int64_t interval = it->Interval;
+        auto callback = it->Callback;
 
-        if (timer.Interval > 0)
-        {
-            timer.NextFireTime = now + timer.Interval;
-        }
+        if (callback)
+            callback();
+
+        // Re-find again: the callback may have cancelled this timer.
+        it = std::find_if(_timers.begin(), _timers.end(), [id](const Timer& t) { return t.Id == id; });
+        if (it == _timers.end())
+            continue;
+
+        if (interval > 0)
+            it->NextFireTime = now + interval;
         else
-        {
-            toRemove.push_back(timer.Id);
-        }
-    }
-
-    for (uint64_t id : toRemove)
-    {
-        _timers.erase(std::remove_if(_timers.begin(), _timers.end(), [id](const Timer& t) { return t.Id == id; }),
-                      _timers.end());
+            _timers.erase(it);
     }
 }
 
