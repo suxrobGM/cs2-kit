@@ -2,10 +2,12 @@
 #include "Sdk/VirtualCall.hpp"
 
 #include <CS2Kit/Sdk/Entity.hpp>
+#include <CS2Kit/Sdk/EntityRender.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Log.hpp>
+#include <cstring>
 #include <eiface.h>
 #include <entity2/entityinstance.h>
 #include <mathlib/vector.h>
@@ -217,6 +219,68 @@ void PlayerController::Teleport(const Vector* origin, const QAngle* angles, cons
     }
 
     CallVirtual<void>(vtableIndex, pawn, origin, angles, velocity);
+}
+
+namespace
+{
+// Player name is stored as a 128-byte fixed buffer on CBasePlayerController.
+constexpr size_t PlayerNameBufferSize = 128;
+}  // namespace
+
+int PlayerController::GetObserverMode() const
+{
+    return GetPawnField<uint8_t>("CPlayer_ObserverServices", "m_iObserverMode");
+}
+
+void PlayerController::SetObserverMode(uint8_t mode) const
+{
+    SetPawnField<uint8_t>("CPlayer_ObserverServices", "m_iObserverMode", mode);
+}
+
+std::string PlayerController::GetPlayerName() const
+{
+    if (!_controller)
+        return {};
+
+    int offset = SchemaService::Instance().GetOffset("CBasePlayerController", "m_iszPlayerName");
+    if (offset < 0)
+        return {};
+
+    auto* p = reinterpret_cast<const char*>(reinterpret_cast<uint8_t*>(_controller) + offset);
+    size_t len = 0;
+    while (len < PlayerNameBufferSize && p[len] != '\0')
+        ++len;
+    return std::string(p, len);
+}
+
+void PlayerController::SetPlayerName(const std::string& name) const
+{
+    if (!_controller)
+        return;
+
+    int offset = SchemaService::Instance().GetOffset("CBasePlayerController", "m_iszPlayerName");
+    if (offset < 0)
+        return;
+
+    auto* dst = reinterpret_cast<char*>(reinterpret_cast<uint8_t*>(_controller) + offset);
+    std::memset(dst, 0, PlayerNameBufferSize);
+    size_t copyLen = name.size();
+    if (copyLen >= PlayerNameBufferSize)
+        copyLen = PlayerNameBufferSize - 1;
+    if (copyLen > 0)
+        std::memcpy(dst, name.data(), copyLen);
+}
+
+void PlayerController::SetVisible(bool visible, uint8_t alpha) const
+{
+    auto* pawn = GetPawn();
+    if (!pawn)
+        return;
+
+    RenderMode_t mode = visible ? RenderMode_t::Normal : RenderMode_t::TransTexture;
+    uint32_t color = visible ? ColorOpaqueWhite : ((static_cast<uint32_t>(alpha) << 24) | 0x00FFFFFFu);
+
+    SetEntityRender(pawn, mode, color);
 }
 
 // Explicit template instantiations for common types

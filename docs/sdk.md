@@ -89,6 +89,51 @@ player.ChangeTeam(3);  // CT
 player.Respawn();
 ```
 
+### Visibility
+
+`SetVisible` toggles transparency on the player pawn body. Weapons, gloves, and grenades stay visible — CS2 routes those through systems a server plugin can't reach (the client-side glow/render pipeline), and there is currently no known server-side path to hide them.
+
+```cpp
+player.SetVisible(false);          // body fully invisible (alpha = 0)
+player.SetVisible(false, 0x80);    // body 50% transparent
+player.SetVisible(true);           // restore opaque
+```
+
+### Observer mode
+
+Read or force a player into a specific spectator mode:
+
+```cpp
+using CS2Kit::Sdk::ObserverMode_t;
+
+if (player.GetObserverMode() != static_cast<int>(ObserverMode_t::Roaming))
+    player.SetObserverMode(static_cast<uint8_t>(ObserverMode_t::Roaming));
+```
+
+### Player name
+
+Read/write `m_iszPlayerName` on the controller. `SetPlayerName` truncates to 127 characters and issues `NetworkStateChanged` so the scoreboard re-syncs:
+
+```cpp
+auto saved = player.GetPlayerName();
+player.SetPlayerName("");        // hide on scoreboard
+// ... later
+player.SetPlayerName(saved);
+```
+
+## EntityRender
+
+Mutate `m_nRenderMode` and `m_clrRender` on any `CBaseModelEntity`. Used internally by `PlayerController::SetVisible`, but exposed so plugins can hide/recolor any entity (props, dropped weapons, world objects).
+
+```cpp
+using namespace CS2Kit::Sdk;
+
+SetEntityRender(prop, RenderMode_t::TransTexture, ColorInvisible);
+SetEntityRender(prop, RenderMode_t::Normal, ColorOpaqueWhite);
+```
+
+`m_clrRender` is RGBA packed as `(A << 24) | (B << 16) | (G << 8) | R` — `ColorInvisible` (`0x00FFFFFF`) is white at zero alpha.
+
 ## SchemaService
 
 Resolves entity field offsets at runtime using CS2's schema system. Results are cached:

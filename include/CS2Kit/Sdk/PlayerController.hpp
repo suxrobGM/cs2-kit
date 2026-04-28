@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 class CEntityInstance;
 class Vector;
@@ -52,6 +53,33 @@ public:
     void Slay() const;
     void ChangeTeam(int team) const;
     void Respawn() const;
+
+    /** Read `m_iObserverMode` from the pawn's CPlayer_ObserverServices. */
+    int GetObserverMode() const;
+
+    /** Write `m_iObserverMode` on the pawn's CPlayer_ObserverServices. */
+    void SetObserverMode(uint8_t mode) const;
+
+    /** Read `m_iszPlayerName` from the controller. Empty string if unavailable. */
+    std::string GetPlayerName() const;
+
+    /**
+     * @brief Write `m_iszPlayerName` on the controller (128-byte fixed buffer).
+     * Truncates to 127 chars + NUL. Replication to clients piggybacks on the
+     * next state-change broadcast; pair with `ChangeTeam` or similar if you
+     * need an immediate scoreboard refresh.
+     */
+    void SetPlayerName(const std::string& name) const;
+
+    /**
+     * @brief Apply transparency to the player pawn body. Weapons and wearables
+     * are not affected (CS2 routes them through systems the server plugin
+     * cannot reach). Pass `visible == true` to restore the default opaque state.
+     *
+     * @param visible  True to restore (mode=Normal, color=opaque white). False to hide.
+     * @param alpha    Alpha byte applied when `visible == false`. Default 0 (fully invisible).
+     */
+    void SetVisible(bool visible, uint8_t alpha = 0) const;
 
     /**
      * @brief Teleport the pawn to an absolute origin/angles, optionally setting velocity.
