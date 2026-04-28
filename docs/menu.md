@@ -13,7 +13,11 @@ The menu system (`CS2Kit::Menu`) provides WASD-navigated center-HTML menus for C
 | **W** | Navigate up |
 | **S** | Navigate down |
 | **E** | Select item |
-| **R** | Close menu / go back |
+| **A** | Previous page (paginated menus only) |
+| **D** | Next page (paginated menus only) |
+| **R** | Close menu (root) / go back to parent (submenu) |
+
+The `[R]` hint in the footer automatically renders as **Close** on a root menu and **Back** on a submenu.
 
 ## Building Menus
 
@@ -72,6 +76,15 @@ auto mainMenu = MenuBuilder("Main Menu")
 | `.WithHeader(fn)` | Custom HTML header (returns string) |
 | `.WithFooter(fn)` | Custom HTML footer (returns string) |
 | `.Build()` | Returns `shared_ptr<Menu>` |
+
+## Pagination
+
+Menus with more than `CS2Kit::Menu::ItemsPerPage` items (5 by default) automatically paginate. The current page indicator (e.g. `(2/3)`) appears next to the title, and the footer shows the `[A/D] Page` hint only when more than one page exists. No builder change is required — pagination is purely a render-time concern.
+
+- **W / S** — move the cursor one row at a time across all items, wrapping at both ends. The visible page follows the cursor.
+- **A / D** — jump a whole page back / forward, wrapping at both ends. The cursor preserves its in-page offset where possible (row 3 of page 1 → row 3 of page 2, or the last row if the new page is shorter).
+
+Disabled items are skipped during both per-row and per-page navigation, so the cursor will never land on a non-selectable row.
 
 ## Custom Layout
 

@@ -6,7 +6,7 @@
 
 ## Overview
 
-The chat module (`CS2Kit::Utils::Chat` and `CS2Kit::Utils::ChatColors`) is a thin layer over the engine's SayText2 user message. It gives plugins:
+The chat module (`CS2Kit::Utils::Chat` and `CS2Kit::Utils::ChatColors`) is a thin layer over the engine's `TextMsg / HUD_PRINTTALK` user message (CS2 silently drops `SayText2` from non-player sources after the 2026 update). It gives plugins:
 
 - **ChatColors** — `inline constexpr` constants for the 15 in-line CS2 chat color escapes, plus `ParseNamed` and `Strip` helpers
 - **Chat::Print / PrintAll / PrintFiltered** — one-liners for sending colored chat lines to a slot, all players, or a filtered subset
@@ -15,27 +15,27 @@ Built on top of `CS2Kit::Sdk::MessageSystem::SendChatMessage`, which `CS2Kit::In
 
 ## Color Constants
 
-CS2 SayText2 reads ASCII bytes `0x01`-`0x10` as in-line color toggles. Embed them anywhere in a message; everything until the next escape (or `Default`) renders in that color.
+CS2's chat (`TextMsg / HUD_PRINTTALK`) reads ASCII bytes `0x01`-`0x10` as in-line color toggles. Embed them anywhere in a message; everything until the next escape (or `Default`) renders in that color. Byte values mirror the [SwiftlyS2 mapping](https://github.com/swiftly-solution/swiftlys2) — what CS2 actually renders today.
 
-| Constant | Byte | Color |
+| Constant(s) | Byte | Color |
 |---|---|---|
-| `ChatColors::Default` | `\x01` | Default white/yellow |
-| `ChatColors::Red` | `\x02` | Red |
-| `ChatColors::LightPurple` | `\x03` | Light purple |
-| `ChatColors::Green` | `\x04` | Green |
-| `ChatColors::Olive` | `\x05` | Olive / dark green |
-| `ChatColors::Lime` | `\x06` | Lime / light green |
-| `ChatColors::LightRed` | `\x07` | Light red / silver |
-| `ChatColors::Gray` | `\x08` | Gray |
-| `ChatColors::LightYellow` | `\x09` | Light yellow |
-| `ChatColors::LightBlue` | `\x0A` | Light blue |
-| `ChatColors::Blue` | `\x0B` | Blue |
-| `ChatColors::Purple` | `\x0C` | Purple |
-| `ChatColors::Pink` | `\x0D` | Pink |
-| `ChatColors::Gold` | `\x0E` | Gold / orange |
-| `ChatColors::Yellow` | `\x10` | Yellow |
+| `Default` / `White` | `\x01` | White (default) |
+| `DarkRed` | `\x02` | Dark red |
+| `LightPurple` | `\x03` | Light purple |
+| `Green` | `\x04` | Green |
+| `Olive` | `\x05` | Olive / dark green |
+| `Lime` | `\x06` | Lime / light green |
+| `Red` | `\x07` | Red |
+| `Gray` / `Grey` | `\x08` | Gray |
+| `Yellow` / `LightYellow` | `\x09` | Yellow |
+| `Silver` / `BlueGrey` | `\x0A` | Silver / blue-grey |
+| `LightBlue` / `Blue` | `\x0B` | Light blue |
+| `DarkBlue` | `\x0C` | Dark blue |
+| `Purple` / `Magenta` | `\x0E` | Purple / magenta |
+| `LightRed` | `\x0F` | Light red |
+| `Gold` / `Orange` | `\x10` | Gold / orange |
 
-All are `std::string_view` so they compose cleanly with `std::format`.
+All are `inline constexpr std::string_view` so they compose cleanly with `std::format`. Names that share a byte (e.g. `Gold` / `Orange`) are aliases — pick whichever reads better at the call site.
 
 ## Sending Messages
 
@@ -84,7 +84,7 @@ auto line = std::format("{}{} {}: {}", color, group.Prefix,
                         ChatColors::Default, message);
 ```
 
-`ParseNamed` is case-insensitive and accepts `"red"`, `"green"`, `"lightblue"`, `"silver"` (alias of `lightred`), `"orange"` (alias of `gold`), etc. Unknown names return `Default`.
+`ParseNamed` is case-insensitive and accepts every name in the table above (e.g. `"red"`, `"green"`, `"lightblue"`, `"silver"`, `"orange"`, `"grey"`). Aliases resolve to the same byte as their primary (`"orange"` → `Gold`, `"grey"` → `Gray`, `"magenta"` → `Purple`). Unknown names return `Default`.
 
 ## Stripping Colors for Logs
 

@@ -19,7 +19,8 @@ void EntitySystem::ResolveSchemaOffsets()
         return;
 
     auto& schema = SchemaService::Instance();
-    _offsetPlayerPawn = schema.GetOffset("CCSPlayerController", "m_hPlayerPawn");
+
+    _offsetPlayerPawn = schema.GetOffset("CBasePlayerController", "m_hPawn");
     _offsetMovementServices = schema.GetOffset("CBasePlayerPawn", "m_pMovementServices");
     _offsetButtons = schema.GetOffset("CPlayer_MovementServices", "m_nButtons");
     _offsetButtonStates = schema.GetOffset("CInButtonState", "m_pButtonStates");

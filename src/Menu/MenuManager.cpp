@@ -4,6 +4,7 @@
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Log.hpp>
+#include <algorithm>
 #include <chrono>
 
 namespace CS2Kit::Menu
@@ -17,6 +18,44 @@ static int64_t GetCurrentTimeMs()
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
         .count();
 }
+
+namespace
+{
+
+// Step the cursor by `step` (typically ±1), wrapping over the full item list and skipping disabled items.
+void StepCursor(const std::vector<MenuItem>& items, int& idx, int step)
+{
+    int n = static_cast<int>(items.size());
+    int attempts = n;
+    do
+    {
+        idx = ((idx + step) % n + n) % n;
+    }
+    while (!items[idx].Enabled && --attempts > 0);
+}
+
+// Jump by `pageDelta` pages, preserving the in-page offset, then skip forward over disabled items within the new page.
+void JumpPage(const std::vector<MenuItem>& items, int& idx, int pageDelta)
+{
+    int n = static_cast<int>(items.size());
+
+    int pageCount = (n + ItemsPerPage - 1) / ItemsPerPage;
+    int currentPage = idx / ItemsPerPage;
+    int offset = idx % ItemsPerPage;
+    int newPage = ((currentPage + pageDelta) % pageCount + pageCount) % pageCount;
+
+    int pageStart = newPage * ItemsPerPage;
+    int pageEnd = std::min(n, pageStart + ItemsPerPage);
+
+    idx = std::min(pageStart + offset, pageEnd - 1);
+    int attempts = pageEnd - pageStart;
+    while (!items[idx].Enabled && --attempts > 0)
+    {
+        idx = (idx + 1 < pageEnd) ? idx + 1 : pageStart;
+    }
+}
+
+}  // namespace
 
 void MenuManager::OpenMenu(int slot, std::shared_ptr<Menu> menu)
 {
@@ -115,48 +154,30 @@ void MenuManager::HandleInput(int slot, uint64_t buttons, uint64_t prevButtons)
     if (itemCount == 0)
         return;
 
-    bool inputHandled = false;
+    bool isPaginated = itemCount > ItemsPerPage;
+    bool inputHandled = true;
 
     if (pressed & IN_FORWARD)
-    {
-        state.SelectedIndex = (state.SelectedIndex - 1 + itemCount) % itemCount;
-
-        int attempts = itemCount;
-        while (!menu->Items[state.SelectedIndex].Enabled && --attempts > 0)
-            state.SelectedIndex = (state.SelectedIndex - 1 + itemCount) % itemCount;
-
-        inputHandled = true;
-    }
+        StepCursor(menu->Items, state.SelectedIndex, -1);
     else if (pressed & IN_BACK)
-    {
-        state.SelectedIndex = (state.SelectedIndex + 1) % itemCount;
-
-        int attempts = itemCount;
-        while (!menu->Items[state.SelectedIndex].Enabled && --attempts > 0)
-            state.SelectedIndex = (state.SelectedIndex + 1) % itemCount;
-
-        inputHandled = true;
-    }
+        StepCursor(menu->Items, state.SelectedIndex, +1);
+    else if (isPaginated && (pressed & IN_MOVELEFT))
+        JumpPage(menu->Items, state.SelectedIndex, -1);
+    else if (isPaginated && (pressed & IN_MOVERIGHT))
+        JumpPage(menu->Items, state.SelectedIndex, +1);
     else if (pressed & IN_USE)
     {
-        if (state.SelectedIndex >= 0 && state.SelectedIndex < itemCount)
-        {
-            const auto& item = menu->Items[state.SelectedIndex];
-            if (item.Enabled && item.OnSelect)
-                item.OnSelect(slot);
-        }
-        inputHandled = true;
+        const auto& item = menu->Items[state.SelectedIndex];
+        if (item.Enabled && item.OnSelect)
+            item.OnSelect(slot);
     }
     else if (pressed & IN_RELOAD)
-    {
         CloseMenu(slot);
-        inputHandled = true;
-    }
+    else
+        inputHandled = false;
 
     if (inputHandled)
-    {
         state.LastInputTime = now;
-    }
 }
 
 void MenuManager::RenderMenu(int slot)

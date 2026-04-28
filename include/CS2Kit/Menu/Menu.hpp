@@ -11,7 +11,7 @@ namespace CS2Kit::Menu
 {
 
 /** Maximum items shown per page before the menu paginates. */
-inline constexpr int ItemsPerPage = 7;
+inline constexpr int ItemsPerPage = 5;
 
 /** Optional custom HTML providers for the header and footer regions of a menu. */
 struct MenuLayout
@@ -63,7 +63,10 @@ struct PlayerMenuState
     void Reset()
     {
         while (!MenuStack.empty())
+        {
             MenuStack.pop();
+        }
+
         SelectedIndex = 0;
         LastInputTime = 0;
         PrevButtons = 0;

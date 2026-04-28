@@ -30,31 +30,38 @@ std::string DefaultHeader(const std::string& title, int currentPage, int totalPa
     }
 
     html << "<br>";
-    html << "<font class='fontSize-s' color='" << Theme::Gold << "'>──────────────────────────</font><br>";
     return html.str();
 }
 
-std::string DefaultFooter(bool isSubmenu)
+std::string DefaultFooter(bool isSubmenu, bool isPaginated)
 {
+    const char* closeColor = isSubmenu ? Theme::NavBack : Theme::NavClose;
+    const char* closeLabel = isSubmenu ? "Back" : "Close";
+
     std::ostringstream html;
-    html << "<font class='fontSize-s' color='" << Theme::Gold << "'>──────────────────────────</font><br>";
     html << "<font class='fontSize-sm'>"
          << "<font color='" << Theme::NavGold << "'>[W/S]</font> "
          << "<font color='" << Theme::WarmGray << "'>Navigate</font>"
          << " · "
          << "<font color='" << Theme::Gold << "'>[E]</font> "
-         << "<font color='" << Theme::WarmGray << "'>Select</font>"
-         << " · ";
+         << "<font color='" << Theme::WarmGray << "'>Select</font>";
 
-    if (isSubmenu)
+    // When paginated there are four hint chunks — splitting onto two short rows is more reliable
+    // than relying on the HUD's word wrap, which sometimes pushes [R] past the visible area.
+    if (isPaginated)
     {
-        html << "<font color='" << Theme::NavBack << "'>[R]</font> "
-             << "<font color='" << Theme::WarmGray << "'>Back</font>";
+        html << "<br>"
+             << "<font color='" << Theme::NavGold << "'>[A/D]</font> "
+             << "<font color='" << Theme::WarmGray << "'>Page</font>"
+             << " · "
+             << "<font color='" << closeColor << "'>[R]</font> "
+             << "<font color='" << Theme::WarmGray << "'>" << closeLabel << "</font>";
     }
     else
     {
-        html << "<font color='" << Theme::NavClose << "'>[R]</font> "
-             << "<font color='" << Theme::WarmGray << "'>Close</font>";
+        html << " · "
+             << "<font color='" << closeColor << "'>[R]</font> "
+             << "<font color='" << Theme::WarmGray << "'>" << closeLabel << "</font>";
     }
 
     html << "</font>";
@@ -119,7 +126,7 @@ std::string RenderMenuHtml(const Menu* menu, int selectedIndex, bool isSubmenu)
     }
     else
     {
-        html << DefaultFooter(isSubmenu);
+        html << DefaultFooter(isSubmenu, totalPages > 1);
     }
 
     return html.str();
