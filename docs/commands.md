@@ -97,4 +97,17 @@ struct CommandResult
 };
 ```
 
-The `Message` field is currently informational; reply delivery is the consumer's responsibility.
+By default the result is discarded after dispatch. Register a `ResultCallback` on `CommandManager` to forward `Message` somewhere — typically as a chat reply via @ref chat_guide :
+
+```cpp
+cmdMgr.SetResultCallback(
+    [](CS2Kit::Players::Player* caller,
+       const CS2Kit::Commands::Command& cmd,
+       const CS2Kit::Commands::CommandResult& result)
+    {
+        if (caller && !result.Message.empty())
+            CS2Kit::Utils::Chat::Print(caller->GetSlot(), result.Message);
+    });
+```
+
+The callback also fires for early dispatch failures (bad arg count, permission denied) with a synthesized `CommandResult` like `{false, "Usage: !ban <target> <minutes>"}` or `{false, "You do not have permission..."}`, so every code path the caller hits produces feedback without each handler having to do it manually.
