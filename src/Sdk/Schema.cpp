@@ -63,7 +63,7 @@ int SchemaService::GetOffset(const char* className, const char* fieldName)
         {
             int offset = field.m_nSingleInheritanceOffset;
             _offsetCache[className][fieldName] = offset;
-            Log::Info("Schema: {}::{} = 0x{:X} ({})", className, fieldName, offset, offset);
+            // Log::Info("Schema: {}::{} = 0x{:X} ({})", className, fieldName, offset, offset);
             return offset;
         }
     }

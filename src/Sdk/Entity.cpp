@@ -26,17 +26,6 @@ void EntitySystem::ResolveSchemaOffsets()
     _offsetButtonStates = schema.GetOffset("CInButtonState", "m_pButtonStates");
 
     _schemaOffsetsResolved = true;
-
-    if (_offsetPlayerPawn >= 0 && _offsetMovementServices >= 0 && _offsetButtons >= 0 && _offsetButtonStates >= 0)
-    {
-        Log::Info("Button access chain resolved via schema:");
-        Log::Info("  Controller + 0x{:X} -> Pawn + 0x{:X} -> MovementServices + 0x{:X} -> Buttons + 0x{:X}",
-                  _offsetPlayerPawn, _offsetMovementServices, _offsetButtons, _offsetButtonStates);
-    }
-    else
-    {
-        Log::Warn("Some schema offsets not resolved. Button detection may not work.");
-    }
 }
 
 bool EntitySystem::Initialize()
