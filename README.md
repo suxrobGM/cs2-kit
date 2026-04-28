@@ -1,4 +1,4 @@
-# CS2-Kit
+# CS2Kit
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://suxrobgm.github.io/cs2-kit/)
@@ -18,11 +18,11 @@ C++23 library for building Counter-Strike 2 server plugins with Metamod:Source 2
 
 ## Integration
 
-CS2-Kit supports two integration methods. Both produce a single `.dll`/`.so` plugin binary.
+CS2Kit supports two integration methods. Both produce a single `.dll`/`.so` plugin binary.
 
 ### Option 1: Source Inclusion (recommended)
 
-Compile CS2-Kit sources directly into your plugin binary. Faster incremental builds.
+Compile CS2Kit sources directly into your plugin binary. Faster incremental builds.
 
 ```sh
 git submodule add https://github.com/suxrobgm/cs2-kit.git vendor/cs2-kit
@@ -47,7 +47,7 @@ for root, dirs, files in os.walk(CS2KIT_SRC_DIR):
 
 ### Option 2: Static Library
 
-Build CS2-Kit as a standalone `.lib`/`.a`, then link against it. CS2-Kit includes its own AMBuild for this:
+Build CS2Kit as a standalone `.lib`/`.a`, then link against it. CS2Kit includes its own AMBuild for this:
 
 ```sh
 cd vendor/cs2-kit
@@ -158,7 +158,7 @@ MenuManager::Instance().OpenMenu(playerSlot, menu);
 
 ### Custom Logger
 
-CS2-Kit ships a built-in `ConsoleLogger` (used by default). To provide your own:
+CS2Kit ships a built-in `ConsoleLogger` (used by default). To provide your own:
 
 ```cpp
 #include <CS2Kit/Core/ILogger.hpp>
@@ -214,7 +214,7 @@ doxygen Doxyfile
 
 ## Contributing
 
-CS2-Kit is a work in progress. Contributions are welcome, but please be aware that the API is actively evolving and your changes may need to be adapted as the library matures.
+CS2Kit is a work in progress. Contributions are welcome, but please be aware that the API is actively evolving and your changes may need to be adapted as the library matures.
 
 ## License
 

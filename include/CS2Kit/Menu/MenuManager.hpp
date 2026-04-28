@@ -17,17 +17,29 @@ class MenuManager : public Core::Singleton<MenuManager>
 public:
     explicit MenuManager(Token) {}
 
+    /** Push @p menu onto the player's stack and start rendering it. */
     void OpenMenu(int slot, std::shared_ptr<Menu> menu);
+
+    /** Pop the top menu (firing its OnClose); falls back to the parent if one exists. */
     void CloseMenu(int slot);
+
+    /** Clear the entire stack and hide the HUD for the player. */
     void CloseAllMenus(int slot);
+
+    /** True if the player has any menu currently open. */
     bool HasActiveMenu(int slot) const;
+
+    /** Per-tick driver: reads buttons, advances selection, and re-renders. */
     void OnGameFrame();
+
+    /** Resets state for the disconnected slot so it cannot leak into a new player. */
     void OnPlayerDisconnect(int slot);
 
 private:
     void HandleInput(int slot, uint64_t buttons, uint64_t prevButtons);
     void RenderMenu(int slot);
 
+    /** Per-player menu state. Max 64 players. */
     std::array<PlayerMenuState, 64> _states;
     static constexpr int64_t InputDebounceMs = 200;
 };

@@ -1,5 +1,6 @@
 #include "Menu/MenuRenderer.hpp"
 
+#include <algorithm>
 #include <sstream>
 
 namespace CS2Kit::Menu
@@ -14,17 +15,26 @@ constexpr const char* WarmGray = "#887755";
 constexpr const char* Disabled = "#665544";
 constexpr const char* NavGold = "#AA8833";
 constexpr const char* NavClose = "#AA4422";
+constexpr const char* NavBack = "#AA8833";
 }  // namespace Theme
 
-std::string DefaultHeader(const std::string& title)
+std::string DefaultHeader(const std::string& title, int currentPage, int totalPages)
 {
     std::ostringstream html;
-    html << "<font color='" << Theme::Gold << "'><b>" << title << "</b></font><br>";
+    html << "<font color='" << Theme::Gold << "'><b>" << title << "</b></font>";
+
+    if (totalPages > 1)
+    {
+        html << " <font class='fontSize-s' color='" << Theme::WarmGray << "'>(" << (currentPage + 1) << "/"
+             << totalPages << ")</font>";
+    }
+
+    html << "<br>";
     html << "<font class='fontSize-s' color='" << Theme::Gold << "'>──────────────────────────</font><br>";
     return html.str();
 }
 
-std::string DefaultFooter()
+std::string DefaultFooter(bool isSubmenu)
 {
     std::ostringstream html;
     html << "<font class='fontSize-s' color='" << Theme::Gold << "'>──────────────────────────</font><br>";
@@ -34,18 +44,28 @@ std::string DefaultFooter()
          << " · "
          << "<font color='" << Theme::Gold << "'>[E]</font> "
          << "<font color='" << Theme::WarmGray << "'>Select</font>"
-         << " · "
-         << "<font color='" << Theme::NavClose << "'>[R]</font> "
-         << "<font color='" << Theme::WarmGray << "'>Close</font>"
-         << "</font>";
+         << " · ";
+
+    if (isSubmenu)
+    {
+        html << "<font color='" << Theme::NavBack << "'>[R]</font> "
+             << "<font color='" << Theme::WarmGray << "'>Back</font>";
+    }
+    else
+    {
+        html << "<font color='" << Theme::NavClose << "'>[R]</font> "
+             << "<font color='" << Theme::WarmGray << "'>Close</font>";
+    }
+
+    html << "</font>";
     return html.str();
 }
 
-static std::string RenderItems(const Menu* menu, int selectedIndex)
+static std::string RenderItems(const Menu* menu, int selectedIndex, int pageStart, int pageEnd)
 {
     std::ostringstream html;
 
-    for (int i = 0; i < static_cast<int>(menu->Items.size()); ++i)
+    for (int i = pageStart; i < pageEnd; ++i)
     {
         const auto& item = menu->Items[i];
 
@@ -67,10 +87,18 @@ static std::string RenderItems(const Menu* menu, int selectedIndex)
     return html.str();
 }
 
-std::string RenderMenuHtml(const Menu* menu, int selectedIndex)
+std::string RenderMenuHtml(const Menu* menu, int selectedIndex, bool isSubmenu)
 {
     if (!menu)
+    {
         return "";
+    }
+
+    int itemCount = static_cast<int>(menu->Items.size());
+    int totalPages = itemCount == 0 ? 1 : (itemCount + ItemsPerPage - 1) / ItemsPerPage;
+    int currentPage = itemCount == 0 ? 0 : selectedIndex / ItemsPerPage;
+    int pageStart = currentPage * ItemsPerPage;
+    int pageEnd = std::min(itemCount, pageStart + ItemsPerPage);
 
     std::ostringstream html;
 
@@ -80,10 +108,10 @@ std::string RenderMenuHtml(const Menu* menu, int selectedIndex)
     }
     else
     {
-        html << DefaultHeader(menu->Title);
+        html << DefaultHeader(menu->Title, currentPage, totalPages);
     }
 
-    html << RenderItems(menu, selectedIndex);
+    html << RenderItems(menu, selectedIndex, pageStart, pageEnd);
 
     if (menu->Layout.Footer)
     {
@@ -91,7 +119,7 @@ std::string RenderMenuHtml(const Menu* menu, int selectedIndex)
     }
     else
     {
-        html << DefaultFooter();
+        html << DefaultFooter(isSubmenu);
     }
 
     return html.str();

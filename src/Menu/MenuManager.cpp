@@ -166,7 +166,8 @@ void MenuManager::RenderMenu(int slot)
     if (!menu)
         return;
 
-    auto html = RenderMenuHtml(menu, state.SelectedIndex);
+    bool isSubmenu = state.MenuStack.size() > 1;
+    auto html = RenderMenuHtml(menu, state.SelectedIndex, isSubmenu);
     MessageSystem::Instance().SendCenterHtml(slot, html);
 }
 
