@@ -109,4 +109,5 @@ bool MyPlugin::Unload(char* error, size_t maxlen)
 
 - @ref commands_guide — Register chat commands
 - @ref menus_guide — Build interactive menus
+- @ref players_guide — Track connected players
 - @ref sdk_guide — Access entities, schema fields, and engine services

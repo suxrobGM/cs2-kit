@@ -12,6 +12,7 @@ C++23 library for building Counter-Strike 2 server plugins with Metamod:Source 2
 - **Core** - CRTP singleton base, tick-based scheduler, ILogger interface with built-in ConsoleLogger
 - **Commands** - Chat command framework with fluent builder, aliases, argument validation, and permission checks
 - **Menu** - WASD-navigated center-HTML menus with builder pattern, submenu stacks, and custom layouts
+- **Players** - Connected-player tracking with O(1) slot and SteamID lookup
 - **Sdk** - Typed wrappers for HL2SDK interfaces: entities, schema fields, signature scanning, ConVars, game events, user messages
 - **Utils** - SteamID conversions, string manipulation, duration parsing, JSON-based translations
 
@@ -125,7 +126,7 @@ cmdMgr.Register(
         .WithAliases({"k"})
         .RequirePermission("c")
         .WithArgs(1, 2)
-        .OnExecute([](ICommandCaller* caller,
+        .OnExecute([](CS2Kit::Players::Player* caller,
                       const std::vector<std::string>& args) -> CommandResult
         {
             return {.Success = true, .Message = "Player kicked."};
@@ -181,15 +182,17 @@ params.Logger = &myFileLogger;  // CS2Kit does NOT take ownership
 include/
 └── CS2Kit/                Public API headers (#include <CS2Kit/...>)
     ├── CS2Kit.hpp         Umbrella header: InitParams, Initialize/Shutdown API
-    ├── Commands/          Command, CommandBuilder, CommandManager, ICommandCaller
+    ├── Commands/          Command, CommandBuilder, CommandManager
     ├── Core/              Singleton, ILogger, Paths
     ├── Menu/              Menu, MenuBuilder, MenuManager
+    ├── Players/           Player, PlayerManager
     ├── Sdk/               GameInterfaces, Entity, GameData, PlayerController, ConVarService,
     │                      GameEventService, UserMessage
     └── Utils/             SteamId, StringUtils, TimeUtils, Translations, Log
 src/                       Implementation (.cpp) + internal headers (not accessible to consumers)
     ├── Core/              ConsoleLogger, Scheduler
     ├── Menu/              MenuRenderer
+    ├── Players/           Player, PlayerManager implementations
     └── Sdk/               Schema, SigScanner, VirtualCall
 gamedata/                  Engine signatures and offsets (auto-loaded by CS2Kit::Initialize)
     └── signatures.jsonc   Platform-specific byte patterns, vtable offsets

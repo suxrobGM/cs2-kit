@@ -14,9 +14,10 @@ Reusable C++23 library for building Counter-Strike 2 server plugins with Metamod
 ```text
 include/CS2Kit/                 # Public API headers (#include <CS2Kit/...>)
 ├── CS2Kit.hpp                  # InitParams, Initialize/Shutdown/OnGameFrame API
-├── Commands/                   # Command, CommandBuilder, CommandManager, ICommandCaller
+├── Commands/                   # Command, CommandBuilder, CommandManager
 ├── Core/                       # Singleton, ILogger, Paths
 ├── Menu/                       # Menu, MenuBuilder, MenuManager
+├── Players/                    # Player (identity + connection), PlayerManager (slot/steamid lookup)
 ├── Sdk/                        # GameInterfaces, Entity, GameData, PlayerController,
 │                               # ConVarService, GameEventService, UserMessage
 └── Utils/                      # SteamId, StringUtils, TimeUtils, Translations, Log
@@ -26,6 +27,7 @@ src/                            # Implementation (.cpp) + internal headers
 ├── Commands/                   # Command dispatch implementation
 ├── Core/                       # ConsoleLogger, Scheduler, Paths
 ├── Menu/                       # MenuManager, MenuRenderer
+├── Players/                    # Player, PlayerManager
 ├── Sdk/                        # Schema, SigScanner, VirtualCall, Entity, GameData, etc.
 └── Utils/                      # SteamId, StringUtils, TimeUtils, Translations
 
@@ -99,7 +101,8 @@ CS2Kit::Menu::MenuBuilder("Title")
 | Interface | Purpose | Required? |
 | --- | --- | --- |
 | `ILogger` | Logging backend | No — built-in `ConsoleLogger` used by default |
-| `ICommandCaller` | Command sender abstraction | Yes — implement per-plugin (wraps your Player type) |
+
+Command handlers receive `CS2Kit::Players::Player*` directly — no caller adapter is required.
 
 ## Build Commands
 

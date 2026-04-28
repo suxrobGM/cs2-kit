@@ -11,6 +11,7 @@
 | **Core** | `CS2Kit::Core` | Singleton base, scheduler, logging (built-in ConsoleLogger), path resolution |
 | **Commands** | `CS2Kit::Commands` | Chat command system with fluent builder, permissions, and dispatch |
 | **Menu** | `CS2Kit::Menu` | WASD-navigated center-HTML menu framework with builder pattern |
+| **Players** | `CS2Kit::Players` | Connected-player tracking with slot and SteamID lookup |
 | **Sdk** | `CS2Kit::Sdk` | Engine SDK wrappers: entities, schema, signatures, convars, events, messages |
 | **Utils** | `CS2Kit::Utils` | SteamID conversions, string utilities, time formatting, translations |
 
@@ -20,6 +21,7 @@
 - @subpage architecture — Design patterns and module overview
 - @subpage commands_guide — Command system usage
 - @subpage menus_guide — Menu system usage
+- @subpage players_guide — Player tracking and lookup
 - @subpage sdk_guide — SDK wrappers guide
 
 <h2>License</h2>

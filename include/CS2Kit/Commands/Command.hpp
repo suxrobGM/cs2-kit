@@ -1,6 +1,6 @@
 #pragma once
 
-#include <CS2Kit/Commands/ICommandCaller.hpp>
+#include <CS2Kit/Players/Player.hpp>
 #include <functional>
 #include <string>
 #include <vector>
@@ -14,7 +14,7 @@ struct CommandResult
     std::string Message;
 };
 
-using CommandHandler = std::function<CommandResult(ICommandCaller*, const std::vector<std::string>&)>;
+using CommandHandler = std::function<CommandResult(Players::Player*, const std::vector<std::string>&)>;
 
 struct Command
 {

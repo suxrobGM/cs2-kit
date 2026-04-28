@@ -11,7 +11,8 @@ The command system (`CS2Kit::Commands`) provides a framework for registering and
 - **Command** — Data struct holding command metadata and handler
 - **CommandBuilder** — Fluent builder for constructing commands
 - **CommandManager** — Singleton that registers commands, parses chat input, and dispatches handlers
-- **ICommandCaller** — Abstract interface for the entity invoking a command (player or console)
+
+Handlers receive a `CS2Kit::Players::Player*` directly — no caller adapter is required.
 
 ## Registering Commands
 
@@ -30,7 +31,7 @@ cmdMgr.Register(
         .WithUsage("!kick <target> [reason]")
         .RequirePermission("c")
         .WithArgs(1, 2)
-        .OnExecute([](CS2Kit::Commands::ICommandCaller* caller,
+        .OnExecute([](CS2Kit::Players::Player* caller,
                       const std::vector<std::string>& args) -> CS2Kit::Commands::CommandResult
         {
             // args[0] = target, args[1] = reason (optional)
@@ -78,23 +79,11 @@ cmdMgr.SetPermissionCallback(
 );
 ```
 
-## ICommandCaller Interface
+## Caller
 
-The `ICommandCaller` interface abstracts the command invoker:
+Command handlers receive a `CS2Kit::Players::Player*` (the same pointer returned by `PlayerManager::GetPlayerBySlot`). Use `caller->GetSteamID()` and `caller->GetName()` directly.
 
-```cpp
-class ICommandCaller
-{
-public:
-    virtual ~ICommandCaller() = default;
-    virtual int GetSlot() const = 0;
-    virtual std::string GetName() const = 0;
-    virtual void Reply(const std::string& message) = 0;
-    virtual bool IsPlayer() const = 0;
-};
-```
-
-Your plugin provides concrete implementations (e.g., `PlayerCaller`, `ConsoleCaller`) when dispatching commands.
+Server-console commands are not currently dispatched through `CommandManager` — only chat messages are. If console support is added later, the signature will be revised then.
 
 ## CommandResult
 
@@ -108,4 +97,4 @@ struct CommandResult
 };
 ```
 
-The `Message` field is sent back to the caller via `ICommandCaller::Reply()` if non-empty.
+The `Message` field is currently informational; reply delivery is the consumer's responsibility.

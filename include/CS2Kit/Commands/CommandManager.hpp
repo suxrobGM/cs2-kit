@@ -29,7 +29,7 @@ public:
 
     void Register(Command cmd);
     void Unregister(const std::string& name);
-    bool HandleChatMessage(ICommandCaller* caller, const std::string& message);
+    bool HandleChatMessage(Players::Player* caller, const std::string& message);
     const Command* GetCommand(const std::string& name) const;
     std::vector<const Command*> GetAllCommands() const;
 

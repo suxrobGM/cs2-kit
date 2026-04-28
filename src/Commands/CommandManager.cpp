@@ -16,7 +16,7 @@ void CommandManager::Unregister(const std::string& name)
     _commands.erase(StringUtils::ToLower(name));
 }
 
-bool CommandManager::HandleChatMessage(ICommandCaller* caller, const std::string& message)
+bool CommandManager::HandleChatMessage(Players::Player* caller, const std::string& message)
 {
     if (!caller || message.empty())
         return false;

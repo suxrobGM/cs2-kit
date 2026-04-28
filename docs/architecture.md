@@ -6,13 +6,14 @@
 
 ## Overview
 
-CS2-Kit is organized into five modules, each in its own namespace under `CS2Kit`:
+CS2-Kit is organized into six modules, each in its own namespace under `CS2Kit`:
 
 ```
 CS2Kit
 ├── Core        Foundational patterns and services
 ├── Commands    Chat command framework
 ├── Menu        WASD center-HTML menu system
+├── Players     Connected-player tracking
 ├── Sdk         HL2SDK abstraction layer
 └── Utils       General-purpose utilities
 ```
@@ -22,7 +23,7 @@ CS2Kit
 - **Single-threaded** — All code runs on the game thread. No mutexes needed. Metamod hooks are always called from the main thread.
 - **Singleton pattern** — Manager classes use the CRTP `Singleton<T>` base with pass-key idiom for safe, lazy initialization.
 - **Builder pattern** — Complex objects (commands, menus) are constructed via fluent builders.
-- **Minimal boilerplate** — `CS2Kit::Initialize(ismm, error, maxlen)` handles all SDK interface resolution, gamedata loading, and subsystem init. Only `ICommandCaller` must be implemented by the consumer; `ILogger` has a built-in default.
+- **Minimal boilerplate** — `CS2Kit::Initialize(ismm, error, maxlen)` handles all SDK interface resolution, gamedata loading, and subsystem init. The consumer only needs to drive the player lifecycle (`PlayerManager::AddPlayer`/`RemovePlayer`) from its connect/disconnect hooks; `ILogger` has a built-in default.
 
 ## CRTP Singleton
 
@@ -57,14 +58,16 @@ Core ──────────────────┐        │
   │                    │        │
   ├── Menu ────────────┤        │
   │                    │        │
+  ├── Players ─────────┤────────┤
+  │                    │        │
   └── Sdk ─────────────┘────────┘
 ```
 
 - **Utils** has no internal dependencies (only standard library)
 - **Core** depends on nothing within CS2-Kit
-- **Commands**, **Menu**, and **Sdk** depend on Core
-- **Sdk** additionally depends on Utils (for SteamID, string helpers)
-- **Commands** and **Menu** are independent of each other
+- **Commands**, **Menu**, **Players**, and **Sdk** depend on Core
+- **Players** and **Sdk** additionally depend on Utils (for SteamID, string helpers)
+- **Commands**, **Menu**, and **Players** are independent of each other
 
 ## Callback Conventions
 
@@ -72,7 +75,7 @@ CS2-Kit uses `std::function` callbacks throughout:
 
 | Callback | Signature | Used in |
 |----------|-----------|---------|
-| Command handler | `CommandResult(ICommandCaller*, const vector<string>&)` | CommandBuilder |
+| Command handler | `CommandResult(Players::Player*, const vector<string>&)` | CommandBuilder |
 | Menu item select | `void(int slot)` | MenuBuilder |
 | Menu close | `void(int slot)` | MenuBuilder |
 | Submenu factory | `shared_ptr<Menu>(int slot)` | MenuBuilder |
@@ -84,4 +87,3 @@ CS2-Kit uses `std::function` callbacks throughout:
 | Interface | Purpose | Required? |
 |-----------|---------|-----------|
 | `ILogger` | Logging backend (Info/Warn/Error) | No — built-in `ConsoleLogger` used by default |
-| `ICommandCaller` | Command sender abstraction | Yes — implement per-plugin (wraps your Player type) |
