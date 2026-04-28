@@ -47,13 +47,16 @@ bool CommandManager::HandleChatMessage(Players::Player* caller, const std::strin
     if (!cmd)
         return false;
 
-    if (static_cast<int>(args.size()) < cmd->MinArgs)
-    {
-        return true;
-    }
+    auto reportResult = [&](const CommandResult& result) {
+        if (_resultCallback)
+            _resultCallback(caller, *cmd, result);
+    };
 
-    if (cmd->MaxArgs != 99 && static_cast<int>(args.size()) > cmd->MaxArgs)
+    if (static_cast<int>(args.size()) < cmd->MinArgs ||
+        (cmd->MaxArgs != 99 && static_cast<int>(args.size()) > cmd->MaxArgs))
     {
+        std::string msg = "Usage: " + (cmd->Usage.empty() ? cmd->Name : cmd->Usage);
+        reportResult({false, msg});
         return true;
     }
 
@@ -61,6 +64,7 @@ bool CommandManager::HandleChatMessage(Players::Player* caller, const std::strin
     {
         if (_permissionCallback && !_permissionCallback(caller->GetSteamID(), cmd->Permission))
         {
+            reportResult({false, "You do not have permission to use this command."});
             return true;
         }
     }
@@ -68,6 +72,7 @@ bool CommandManager::HandleChatMessage(Players::Player* caller, const std::strin
     if (cmd->Handler)
     {
         auto result = cmd->Handler(caller, args);
+        reportResult(result);
     }
 
     return true;

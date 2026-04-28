@@ -19,6 +19,15 @@ namespace CS2Kit::Commands
 using PermissionCallback = std::function<bool(int64_t steamId, const std::string& permission)>;
 
 /**
+ * @brief Invoked after a command handler returns.
+ *
+ * Lets the host plugin pipe `CommandResult.Message` (success or error) back to the caller —
+ * e.g., as a colored chat reply. Also invoked for early dispatch failures (bad arg count,
+ * permission denied) with a synthesized `CommandResult` so the caller still gets feedback.
+ */
+using ResultCallback = std::function<void(Players::Player* caller, const Command& cmd, const CommandResult& result)>;
+
+/**
  * @brief Dispatches chat commands (prefixed with ! or .) to registered handlers.
  * Handles prefix matching, argument parsing, and permission enforcement.
  */
@@ -35,6 +44,7 @@ public:
 
     void SetPrefixes(const std::vector<std::string>& prefixes) { _prefixes = prefixes; }
     void SetPermissionCallback(PermissionCallback callback) { _permissionCallback = std::move(callback); }
+    void SetResultCallback(ResultCallback callback) { _resultCallback = std::move(callback); }
 
 private:
     std::vector<std::string> ParseArguments(const std::string& text) const;
@@ -42,6 +52,7 @@ private:
     std::unordered_map<std::string, Command> _commands;
     std::vector<std::string> _prefixes;
     PermissionCallback _permissionCallback;
+    ResultCallback _resultCallback;
 };
 
 }  // namespace CS2Kit::Commands

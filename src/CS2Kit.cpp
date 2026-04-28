@@ -1,8 +1,8 @@
 #include "Core/ConsoleLogger.hpp"
-#include "Core/Scheduler.hpp"
 #include "Sdk/Schema.hpp"
 
 #include <CS2Kit/CS2Kit.hpp>
+#include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Core/ILogger.hpp>
 #include <CS2Kit/Core/Paths.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
