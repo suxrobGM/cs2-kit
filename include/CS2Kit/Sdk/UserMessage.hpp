@@ -10,7 +10,8 @@ class CPlayerSlot;
 namespace CS2Kit::Sdk
 {
 
-constexpr int UmSayText2 = 118;
+// HUD message destinations
+constexpr int HudPrintTalk = 3;
 
 /**
  * @brief Message system for sending chat and center HTML messages to players.
@@ -30,7 +31,7 @@ private:
     using GetLegacyGameEventListenerFn = IGameEventListener2* (*)(CPlayerSlot slot);
 
     GetLegacyGameEventListenerFn _getLegacyListener = nullptr;
-    INetworkMessageInternal* _sayText2Internal = nullptr;
+    INetworkMessageInternal* _textMsgInternal = nullptr;
 };
 
 }  // namespace CS2Kit::Sdk

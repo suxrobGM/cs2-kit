@@ -19,6 +19,7 @@ fi
 
 ProtoPathCommon="$HL2SDKCS2/common"
 ProtoPathGameShared="$HL2SDKCS2/game/shared"
+ProtoPathGcSdk="$HL2SDKCS2/gcsdk"
 ProtoPathGoogle="$HL2SDKCS2/thirdparty/protobuf-3.21.8/src"
 OutputDir="$HL2SDKCS2/public"
 
@@ -43,6 +44,7 @@ for ProtoFile in "$ProtoPathCommon"/*.proto; do
 done
 
 # Generate game/shared/*.proto -> game/shared/
+# game/shared/base_gcmessages.proto pulls in gcsdk/steammessages.proto, so include gcsdk on the path.
 echo "Generating game/shared/*.proto..."
 for ProtoFile in "$ProtoPathGameShared"/*.proto; do
     [[ -f "$ProtoFile" ]] || continue
@@ -50,6 +52,7 @@ for ProtoFile in "$ProtoPathGameShared"/*.proto; do
     "$Protoc" \
         --proto_path="$ProtoPathCommon" \
         --proto_path="$ProtoPathGameShared" \
+        --proto_path="$ProtoPathGcSdk" \
         --proto_path="$ProtoPathGoogle" \
         --cpp_out="$ProtoPathGameShared" \
         "$ProtoFile"

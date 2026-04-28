@@ -1,10 +1,22 @@
 #include <CS2Kit/Utils/ChatColors.hpp>
-
 #include <cctype>
 #include <unordered_map>
 
 namespace CS2Kit::Utils::ChatColors
 {
+
+namespace
+{
+// Map of color names to their corresponding control codes. Keys are lowercase for case-insensitive lookup.
+const std::unordered_map<std::string, std::string_view> kNameTable = {
+    {"default", Default},   {"white", White},       {"darkred", DarkRed},     {"lightpurple", LightPurple},
+    {"green", Green},       {"olive", Olive},       {"lime", Lime},           {"red", Red},
+    {"gray", Gray},         {"grey", Grey},         {"yellow", Yellow},       {"lightyellow", LightYellow},
+    {"silver", Silver},     {"bluegrey", BlueGrey}, {"lightblue", LightBlue}, {"blue", Blue},
+    {"darkblue", DarkBlue}, {"purple", Purple},     {"magenta", Magenta},     {"lightred", LightRed},
+    {"gold", Gold},         {"orange", Orange},
+};
+}  // namespace
 
 std::string_view ParseNamed(std::string_view name)
 {
@@ -14,20 +26,12 @@ std::string_view ParseNamed(std::string_view name)
     std::string lower;
     lower.reserve(name.size());
     for (char c : name)
+    {
         lower.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
+    }
 
-    static const std::unordered_map<std::string, std::string_view> kTable = {
-        {"default", Default},  {"white", Default},        {"red", Red},
-        {"lightpurple", LightPurple},                     {"green", Green},
-        {"olive", Olive},      {"lime", Lime},            {"lightred", LightRed},
-        {"silver", LightRed},  {"gray", Gray},            {"grey", Gray},
-        {"lightyellow", LightYellow},                     {"lightblue", LightBlue},
-        {"blue", Blue},        {"purple", Purple},        {"pink", Pink},
-        {"gold", Gold},        {"orange", Gold},          {"yellow", Yellow},
-    };
-
-    auto it = kTable.find(lower);
-    return it != kTable.end() ? it->second : Default;
+    auto it = kNameTable.find(lower);
+    return it != kNameTable.end() ? it->second : Default;
 }
 
 std::string Strip(std::string_view text)

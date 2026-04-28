@@ -111,36 +111,38 @@ void MessageSystem::SendChatMessage(int slot, const std::string& message)
     if (!interfaces.GameEventSystem || !interfaces.NetworkMessages || slot < 0 || slot >= 64)
         return;
 
-    if (!_sayText2Internal)
+    // CS2 routes server-originated chat through TextMsg with dest=HUD_PRINTTALK rather than
+    // SayText2. SayText2 requires a real source player and silently drops messages whose
+    // entityindex doesn't resolve to a connected client.
+    if (!_textMsgInternal)
     {
-        _sayText2Internal = interfaces.NetworkMessages->FindNetworkMessageById(UmSayText2);
-        if (!_sayText2Internal)
-            _sayText2Internal = interfaces.NetworkMessages->FindNetworkMessage("CUserMessageSayText2");
+        _textMsgInternal = interfaces.NetworkMessages->FindNetworkMessage("CUserMessageTextMsg");
+        if (!_textMsgInternal)
+            _textMsgInternal = interfaces.NetworkMessages->FindNetworkMessagePartial("TextMsg");
     }
 
-    if (!_sayText2Internal)
+    if (!_textMsgInternal)
         return;
 
-    CNetMessage* pMsg = _sayText2Internal->AllocateMessage();
+    CNetMessage* pMsg = _textMsgInternal->AllocateMessage();
     if (!pMsg)
         return;
 
-    auto* pSayText = pMsg->ToPB<CUserMessageSayText2>();
-    if (!pSayText)
+    auto* pTextMsg = pMsg->ToPB<CUserMessageTextMsg>();
+    if (!pTextMsg)
     {
-        interfaces.NetworkMessages->DeallocateNetMessageAbstract(_sayText2Internal, pMsg);
+        interfaces.NetworkMessages->DeallocateNetMessageAbstract(_textMsgInternal, pMsg);
         return;
     }
-    pSayText->set_entityindex(-1);
-    pSayText->set_chat(false);
-    pSayText->set_messagename(message.c_str());
+    pTextMsg->set_dest(HudPrintTalk);
+    pTextMsg->add_param(message.c_str());
 
     uint64_t clients = (1ULL << slot);
 
-    interfaces.GameEventSystem->PostEventAbstract(0, false, 1, &clients, _sayText2Internal, pMsg, 0,
+    interfaces.GameEventSystem->PostEventAbstract(-1, false, 1, &clients, _textMsgInternal, pMsg, 0,
                                                   NetChannelBufType_t::BUF_RELIABLE);
 
-    interfaces.NetworkMessages->DeallocateNetMessageAbstract(_sayText2Internal, pMsg);
+    interfaces.NetworkMessages->DeallocateNetMessageAbstract(_textMsgInternal, pMsg);
 }
 
 void MessageSystem::ClearCenterHtml(int slot)

@@ -6,25 +6,30 @@
 namespace CS2Kit::Utils::ChatColors
 {
 
-/**
- * CS2 SayText2 in-line color escape codes. Embed inside chat messages to colorize
- * the text that follows. A new escape (or `Default`) ends the previous run.
- */
-inline constexpr std::string_view Default = "\x01";      /**< Default white/yellow chat color. */
-inline constexpr std::string_view Red = "\x02";          /**< Red. */
-inline constexpr std::string_view LightPurple = "\x03";  /**< Light purple. */
-inline constexpr std::string_view Green = "\x04";        /**< Green. */
-inline constexpr std::string_view Olive = "\x05";        /**< Olive / dark green. */
-inline constexpr std::string_view Lime = "\x06";         /**< Lime / light green. */
-inline constexpr std::string_view LightRed = "\x07";     /**< Light red / silver. */
-inline constexpr std::string_view Gray = "\x08";         /**< Gray. */
-inline constexpr std::string_view LightYellow = "\x09";  /**< Light yellow. */
-inline constexpr std::string_view LightBlue = "\x0A";    /**< Light blue. */
-inline constexpr std::string_view Blue = "\x0B";         /**< Blue. */
-inline constexpr std::string_view Purple = "\x0C";       /**< Purple. */
-inline constexpr std::string_view Pink = "\x0D";         /**< Pink. */
-inline constexpr std::string_view Gold = "\x0E";         /**< Gold / orange. */
-inline constexpr std::string_view Yellow = "\x10";       /**< Yellow. */
+// CS2 in-line chat color escape bytes. Byte values mirror the SwiftlyS2 mapping
+// (references/swiftlys2/src/api/shared/string.cpp). Aliases share a byte.
+inline constexpr std::string_view Default = "\x01";
+inline constexpr std::string_view White = "\x01";
+inline constexpr std::string_view DarkRed = "\x02";
+inline constexpr std::string_view LightPurple = "\x03";
+inline constexpr std::string_view Green = "\x04";
+inline constexpr std::string_view Olive = "\x05";
+inline constexpr std::string_view Lime = "\x06";
+inline constexpr std::string_view Red = "\x07";
+inline constexpr std::string_view Gray = "\x08";
+inline constexpr std::string_view Grey = "\x08";
+inline constexpr std::string_view Yellow = "\x09";
+inline constexpr std::string_view LightYellow = "\x09";
+inline constexpr std::string_view Silver = "\x0A";
+inline constexpr std::string_view BlueGrey = "\x0A";
+inline constexpr std::string_view LightBlue = "\x0B";
+inline constexpr std::string_view Blue = "\x0B";
+inline constexpr std::string_view DarkBlue = "\x0C";
+inline constexpr std::string_view Purple = "\x0E";
+inline constexpr std::string_view Magenta = "\x0E";
+inline constexpr std::string_view LightRed = "\x0F";
+inline constexpr std::string_view Gold = "\x10";
+inline constexpr std::string_view Orange = "\x10";
 
 /**
  * Map a human color name (case-insensitive) to its escape sequence.
