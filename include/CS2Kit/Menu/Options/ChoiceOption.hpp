@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Menu/MenuOption.hpp>
-
 #include <algorithm>
 #include <format>
 #include <functional>
@@ -44,20 +43,30 @@ public:
     {
         if (_choices.empty())
             return _title;
-        return std::format("{}: < {} >", _title, _choices[ClampIndex(slot)].Label);
+        return std::format("{}: &lt; {} &gt;", _title, _choices[ClampIndex(slot)].Label);
     }
 
     void OnActivate(int slot) override
     {
-        if (!_enabled || _choices.empty() || !_onCommit)
+        if (!_enabled || _choices.empty())
             return;
-        _onCommit(slot, _choices[ClampIndex(slot)].Value);
+
+        if (_onCommit)
+        {
+            _onCommit(slot, _choices[ClampIndex(slot)].Value);
+            return;
+        }
+
+        // No explicit commit callback — E advances like D so the row stays interactive
+        // for plain "pick a value" menus where there's no separate apply step.
+        OnHorizontal(slot, +1);
     }
 
     bool OnHorizontal(int slot, int direction) override
     {
         if (!_enabled || _choices.empty() || !_setIndex)
             return false;
+
         int n = static_cast<int>(_choices.size());
         int idx = ClampIndex(slot);
         idx = ((idx + direction) % n + n) % n;

@@ -69,7 +69,9 @@ Every row is a @ref CS2Kit::Menu::MenuOption subclass. The builder methods const
 
 ### Choice — string-labeled cycle
 
-`AddChoice<T>(title, choices, getIndex, setIndex, onCommit = nullptr, enabled = true)` — A/D walks the list (wrapping), E commits the current value. Each choice is `{label, value}`; `T` is whatever you want to pass to `onCommit`. State is *index-based* and external — the caller decides where the index lives (a captured `std::shared_ptr<int>` is fine for ephemeral menu state).
+`AddChoice<T>(title, choices, getIndex, setIndex, onCommit = nullptr, enabled = true)` — A/D walks the list (wrapping), E commits the current value via `onCommit`. Each choice is `{label, value}`; `T` is whatever you want to pass to `onCommit`. State is *index-based* and external — the caller decides where the index lives (a captured `std::shared_ptr<int>` is fine for ephemeral menu state).
+
+When `onCommit` is omitted, **E advances to the next value** (same as D) so the row stays interactive — useful for plain "pick a value, no separate apply" rows where the change is read live by another part of the menu.
 
 ```cpp
 auto idx = std::make_shared<int>(0);
@@ -85,7 +87,7 @@ builder.AddChoice<int>(
 
 ### Selector — formatted cycle for non-string values
 
-`AddSelector<T>(title, values, formatter, getIndex, setIndex, onCommit = nullptr, enabled = true)` — like Choice, but you supply a `std::function<std::string(const T&)>` to derive the label. Use it when the value type doesn't carry its own pretty name (e.g. seconds → `"5m"`, an enum → a translated label).
+`AddSelector<T>(title, values, formatter, getIndex, setIndex, onCommit = nullptr, enabled = true)` — like Choice, but you supply a `std::function<std::string(const T&)>` to derive the label. Use it when the value type doesn't carry its own pretty name (e.g. seconds → `"5m"`, an enum → a translated label). Same E-advances-when-no-onCommit fallback as Choice.
 
 ### Slider — numeric range
 
