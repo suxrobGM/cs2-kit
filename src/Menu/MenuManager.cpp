@@ -1,6 +1,8 @@
 #include "Menu/MenuRenderer.hpp"
 
 #include <CS2Kit/Menu/MenuManager.hpp>
+#include <CS2Kit/Menu/MenuOption.hpp>
+#include <CS2Kit/Sdk/ChatInputCapture.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Log.hpp>
@@ -22,22 +24,34 @@ static int64_t GetCurrentTimeMs()
 namespace
 {
 
-// Step the cursor by `step` (typically ±1), wrapping over the full item list and skipping disabled items.
-void StepCursor(const std::vector<MenuItem>& items, int& idx, int step)
+bool IsCursorTarget(const std::shared_ptr<MenuOption>& opt)
+{
+    return opt && opt->IsEnabled() && opt->IsSelectable();
+}
+
+// Step the cursor by `step` (typically ±1), wrapping over the full item list and skipping
+// disabled or non-selectable rows (Text, ProgressBar).
+void StepCursor(const std::vector<std::shared_ptr<MenuOption>>& items, int& idx, int step)
 {
     int n = static_cast<int>(items.size());
+    if (n == 0)
+        return;
+
     int attempts = n;
     do
     {
         idx = ((idx + step) % n + n) % n;
     }
-    while (!items[idx].Enabled && --attempts > 0);
+    while (!IsCursorTarget(items[idx]) && --attempts > 0);
 }
 
-// Jump by `pageDelta` pages, preserving the in-page offset, then skip forward over disabled items within the new page.
-void JumpPage(const std::vector<MenuItem>& items, int& idx, int pageDelta)
+// Jump by `pageDelta` pages, preserving the in-page offset, then skip forward over disabled
+// or non-selectable rows within the new page.
+void JumpPage(const std::vector<std::shared_ptr<MenuOption>>& items, int& idx, int pageDelta)
 {
     int n = static_cast<int>(items.size());
+    if (n == 0)
+        return;
 
     int pageCount = (n + ItemsPerPage - 1) / ItemsPerPage;
     int currentPage = idx / ItemsPerPage;
@@ -49,7 +63,7 @@ void JumpPage(const std::vector<MenuItem>& items, int& idx, int pageDelta)
 
     idx = std::min(pageStart + offset, pageEnd - 1);
     int attempts = pageEnd - pageStart;
-    while (!items[idx].Enabled && --attempts > 0)
+    while (!IsCursorTarget(items[idx]) && --attempts > 0)
     {
         idx = (idx + 1 < pageEnd) ? idx + 1 : pageStart;
     }
@@ -70,6 +84,11 @@ void MenuManager::OpenMenu(int slot, std::shared_ptr<Menu> menu)
     auto* current = state.GetCurrentMenu();
     if (current)
     {
+        // Move cursor onto the first selectable row so disabled/Text/ProgressBar entries
+        // are not greeted as the initial selection.
+        if (!current->Items.empty() && !IsCursorTarget(current->Items[0]))
+            StepCursor(current->Items, state.SelectedIndex, +1);
+
         Log::Info("Menu opened for slot {} (title: {}, items: {})", slot, current->Title, current->Items.size());
     }
 }
@@ -97,6 +116,11 @@ void MenuManager::CloseMenu(int slot)
     else
     {
         state.SelectedIndex = 0;
+        if (auto* parent = state.GetCurrentMenu(); parent && !parent->Items.empty() &&
+                                                       !IsCursorTarget(parent->Items[0]))
+        {
+            StepCursor(parent->Items, state.SelectedIndex, +1);
+        }
     }
 }
 
@@ -150,6 +174,19 @@ void MenuManager::HandleInput(int slot, uint64_t buttons, uint64_t prevButtons)
     if (now - state.LastInputTime < InputDebounceMs)
         return;
 
+    // While a chat-input capture is active, the only key we honor is R (cancel) — every
+    // other input is ignored so the menu doesn't drift while the player types in chat.
+    auto& capture = ChatInputCapture::Instance();
+    if (capture.IsCapturing(slot))
+    {
+        if (pressed & IN_RELOAD)
+        {
+            capture.CancelCapture(slot);
+            state.LastInputTime = now;
+        }
+        return;
+    }
+
     int itemCount = static_cast<int>(menu->Items.size());
     if (itemCount == 0)
         return;
@@ -157,19 +194,32 @@ void MenuManager::HandleInput(int slot, uint64_t buttons, uint64_t prevButtons)
     bool isPaginated = itemCount > ItemsPerPage;
     bool inputHandled = true;
 
+    auto& currentOption = menu->Items[state.SelectedIndex];
+
     if (pressed & IN_FORWARD)
         StepCursor(menu->Items, state.SelectedIndex, -1);
     else if (pressed & IN_BACK)
         StepCursor(menu->Items, state.SelectedIndex, +1);
-    else if (isPaginated && (pressed & IN_MOVELEFT))
-        JumpPage(menu->Items, state.SelectedIndex, -1);
-    else if (isPaginated && (pressed & IN_MOVERIGHT))
-        JumpPage(menu->Items, state.SelectedIndex, +1);
+    else if (pressed & IN_MOVELEFT)
+    {
+        bool consumed = currentOption && currentOption->IsEnabled() && currentOption->OnHorizontal(slot, -1);
+        if (!consumed && isPaginated)
+            JumpPage(menu->Items, state.SelectedIndex, -1);
+        else if (!consumed)
+            inputHandled = false;
+    }
+    else if (pressed & IN_MOVERIGHT)
+    {
+        bool consumed = currentOption && currentOption->IsEnabled() && currentOption->OnHorizontal(slot, +1);
+        if (!consumed && isPaginated)
+            JumpPage(menu->Items, state.SelectedIndex, +1);
+        else if (!consumed)
+            inputHandled = false;
+    }
     else if (pressed & IN_USE)
     {
-        const auto& item = menu->Items[state.SelectedIndex];
-        if (item.Enabled && item.OnSelect)
-            item.OnSelect(slot);
+        if (currentOption && currentOption->IsEnabled() && currentOption->IsSelectable())
+            currentOption->OnActivate(slot);
     }
     else if (pressed & IN_RELOAD)
         CloseMenu(slot);
@@ -187,8 +237,16 @@ void MenuManager::RenderMenu(int slot)
     if (!menu)
         return;
 
+    // While a capture is pending, render a prompt overlay instead of the item list.
+    if (auto* prompt = ChatInputCapture::Instance().GetPrompt(slot); prompt != nullptr)
+    {
+        auto html = RenderCaptureOverlay(menu->Title, *prompt);
+        MessageSystem::Instance().SendCenterHtml(slot, html);
+        return;
+    }
+
     bool isSubmenu = state.MenuStack.size() > 1;
-    auto html = RenderMenuHtml(menu, state.SelectedIndex, isSubmenu);
+    auto html = RenderMenuHtml(menu, slot, state.SelectedIndex, isSubmenu);
     MessageSystem::Instance().SendCenterHtml(slot, html);
 }
 

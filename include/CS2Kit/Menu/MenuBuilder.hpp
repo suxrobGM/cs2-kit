@@ -1,65 +1,134 @@
 #pragma once
 
 #include <CS2Kit/Menu/Menu.hpp>
+#include <CS2Kit/Menu/Options.hpp>
+
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace CS2Kit::Menu
 {
 
 /**
  * @brief Fluent builder for constructing Menu instances.
- * Usage: MenuBuilder("Title").AddItem("Foo", handler).AddItem("Bar", handler, false).Build()
+ *
+ * Each `Add*` method appends a typed @ref MenuOption to the menu. Plain action rows
+ * use @ref AddButton; toggles, choice pickers, sliders, progress bars, free-text inputs,
+ * and submenu links each have a dedicated builder method that constructs the matching
+ * option subclass.
+ *
+ * Usage:
+ * @code
+ * MenuBuilder("Settings")
+ *     .AddToggle("Beacon", "ON", "OFF", getFn, toggleFn)
+ *     .AddChoice<int>("Speed", {{"Slow", 1}, {"Fast", 5}}, getIdx, setIdx, applyFn)
+ *     .AddInput("Reason", "Type your reason in chat", getFn, setFn)
+ *     .AddSubmenu("Advanced", &BuildAdvancedMenu)
+ *     .Build();
+ * @endcode
  */
 class MenuBuilder
 {
 public:
-    /** Start a new builder with the given menu title. */
     explicit MenuBuilder(const std::string& title) : _menu(std::make_shared<Menu>()) { _menu->Title = title; }
 
-    /** Append a selectable item; @p onSelect receives the player slot when activated. */
-    MenuBuilder& AddItem(const std::string& title, std::function<void(int)> onSelect)
+    /** Append a non-selectable label row (heading or divider). */
+    MenuBuilder& AddText(const std::string& label)
     {
-        _menu->Items.push_back({.Title = title, .OnSelect = std::move(onSelect)});
+        _menu->Items.push_back(std::make_shared<TextOption>(label));
         return *this;
     }
 
-    /** Append an item with an explicit enabled flag (disabled items are greyed out and skipped). */
-    MenuBuilder& AddItem(const std::string& title, std::function<void(int)> onSelect, bool enabled)
+    /** Append a plain action row. E fires the callback. */
+    MenuBuilder& AddButton(const std::string& label, std::function<void(int)> onActivate, bool enabled = true)
     {
-        _menu->Items.push_back({.Title = title, .OnSelect = std::move(onSelect), .Enabled = enabled});
+        _menu->Items.push_back(std::make_shared<ButtonOption>(label, std::move(onActivate), enabled));
+        return *this;
+    }
+
+    /** Append an action row with a label that is recomputed every render. */
+    MenuBuilder& AddDynamicButton(std::function<std::string()> getLabel, std::function<void(int)> onActivate,
+                                  bool enabled = true)
+    {
+        _menu->Items.push_back(std::make_shared<ButtonOption>(std::move(getLabel), std::move(onActivate), enabled));
+        return *this;
+    }
+
+    /** Append a toggle row. E and A/D both flip. State is read via @p getState every frame. */
+    MenuBuilder& AddToggle(const std::string& title, const std::string& onLabel, const std::string& offLabel,
+                           std::function<bool(int)> getState, std::function<void(int)> onToggle, bool enabled = true)
+    {
+        _menu->Items.push_back(std::make_shared<ToggleOption>(title, onLabel, offLabel, std::move(getState),
+                                                              std::move(onToggle), enabled));
+        return *this;
+    }
+
+    /** Append a string-labeled choice cycle. A/D walks the list; E commits the current value. */
+    template <typename T>
+    MenuBuilder& AddChoice(const std::string& title, std::vector<typename ChoiceOption<T>::Choice> choices,
+                           std::function<int(int)> getIndex, std::function<void(int, int)> setIndex,
+                           std::function<void(int, const T&)> onCommit = nullptr, bool enabled = true)
+    {
+        _menu->Items.push_back(std::make_shared<ChoiceOption<T>>(title, std::move(choices), std::move(getIndex),
+                                                                 std::move(setIndex), std::move(onCommit), enabled));
+        return *this;
+    }
+
+    /** Like @ref AddChoice but uses a formatter to derive labels from arbitrary values. */
+    template <typename T>
+    MenuBuilder& AddSelector(const std::string& title, std::vector<T> values,
+                             std::function<std::string(const T&)> formatter, std::function<int(int)> getIndex,
+                             std::function<void(int, int)> setIndex,
+                             std::function<void(int, const T&)> onCommit = nullptr, bool enabled = true)
+    {
+        _menu->Items.push_back(std::make_shared<SelectorOption<T>>(title, std::move(values), std::move(formatter),
+                                                                   std::move(getIndex), std::move(setIndex),
+                                                                   std::move(onCommit), enabled));
+        return *this;
+    }
+
+    /** Append a numeric slider. A/D adjusts in `step` units, clamped to `[min, max]`. */
+    MenuBuilder& AddSlider(const std::string& title, int min, int max, int step, std::function<int(int)> getValue,
+                           std::function<void(int, int)> setValue, bool enabled = true)
+    {
+        _menu->Items.push_back(
+            std::make_shared<SliderOption>(title, min, max, step, std::move(getValue), std::move(setValue), enabled));
+        return *this;
+    }
+
+    /** Append a read-only progress bar. */
+    MenuBuilder& AddProgressBar(const std::string& title, std::function<int(int)> getValue, int max)
+    {
+        _menu->Items.push_back(std::make_shared<ProgressBarOption>(title, std::move(getValue), max));
         return *this;
     }
 
     /**
-     * Append an item whose label is recomputed every render via @p onGetTitle.
-     * Use for toggles where the row should reflect live state — e.g. "Beacon: ON/OFF".
+     * Append a free-text input row. E starts a chat capture; the player's next chat
+     * line is routed to @p set. Return false from @p set to re-prompt for invalid input.
      */
-    MenuBuilder& AddDynamicItem(std::function<std::string()> onGetTitle, std::function<void(int)> onSelect,
-                                bool enabled = true)
+    MenuBuilder& AddInput(const std::string& title, const std::string& prompt, std::function<std::string(int)> get,
+                          std::function<bool(int, std::string_view)> set, int maxLength = 64, bool enabled = true)
     {
-        _menu->Items.push_back({
-            .Title = "",
-            .OnGetTitle = std::move(onGetTitle),
-            .OnSelect = std::move(onSelect),
-            .Enabled = enabled,
-        });
+        _menu->Items.push_back(
+            std::make_shared<InputOption>(title, prompt, std::move(get), std::move(set), maxLength, enabled));
         return *this;
     }
 
-    /** Append an item that lazily builds a submenu via @p factory when activated. */
-    MenuBuilder& AddSubmenu(const std::string& title, std::function<std::shared_ptr<Menu>(int)> factory,
+    /** Append a submenu link. E builds and pushes the submenu via @p factory. */
+    MenuBuilder& AddSubmenu(const std::string& label, std::function<std::shared_ptr<Menu>(int)> factory,
                             bool enabled = true)
     {
-        auto fn = std::move(factory);
-        _menu->Items.push_back({
-            .Title = title,
-            .OnSelect =
-                [fn](int slot) {
-                    auto submenu = fn(slot);
-                    if (submenu)
-                    {}
-                },
-            .Enabled = enabled,
-        });
+        _menu->Items.push_back(std::make_shared<SubmenuOption>(label, std::move(factory), enabled));
+        return *this;
+    }
+
+    /** Escape hatch: append a user-defined option subclass. */
+    MenuBuilder& AddOption(std::shared_ptr<MenuOption> option)
+    {
+        _menu->Items.push_back(std::move(option));
         return *this;
     }
 

@@ -1,5 +1,7 @@
 #include "Menu/MenuRenderer.hpp"
 
+#include <CS2Kit/Menu/MenuOption.hpp>
+
 #include <algorithm>
 #include <sstream>
 
@@ -39,7 +41,7 @@ std::string DefaultFooter(bool isSubmenu, bool isPaginated)
     const char* closeLabel = isSubmenu ? "Back" : "Close";
 
     std::ostringstream html;
-    html << "<font class='fontSize-sm'>"
+    html << "<font class='fontSize-s'>"
          << "<font color='" << Theme::NavGold << "'>[W/S]</font> "
          << "<font color='" << Theme::WarmGray << "'>Navigate</font>"
          << " · "
@@ -68,18 +70,28 @@ std::string DefaultFooter(bool isSubmenu, bool isPaginated)
     return html.str();
 }
 
-static std::string RenderItems(const Menu* menu, int selectedIndex, int pageStart, int pageEnd)
+static std::string RenderItems(const Menu* menu, int slot, int selectedIndex, int pageStart, int pageEnd)
 {
     std::ostringstream html;
 
     for (int i = pageStart; i < pageEnd; ++i)
     {
-        const auto& item = menu->Items[i];
-        std::string title = item.OnGetTitle ? item.OnGetTitle() : item.Title;
+        const auto& opt = menu->Items[i];
+        if (!opt)
+            continue;
 
-        if (!item.Enabled)
+        std::string title = opt->GetLabel(slot);
+        bool selectable = opt->IsSelectable();
+        bool enabled = opt->IsEnabled();
+
+        if (!enabled)
         {
             html << "<font color='" << Theme::Disabled << "'>- " << title << "</font><br>";
+        }
+        else if (!selectable)
+        {
+            // Rendered without a cursor glyph — the row is informational, not a target.
+            html << "<font color='" << Theme::WarmGray << "'>" << title << "</font><br>";
         }
         else if (i == selectedIndex)
         {
@@ -95,7 +107,7 @@ static std::string RenderItems(const Menu* menu, int selectedIndex, int pageStar
     return html.str();
 }
 
-std::string RenderMenuHtml(const Menu* menu, int selectedIndex, bool isSubmenu)
+std::string RenderMenuHtml(const Menu* menu, int slot, int selectedIndex, bool isSubmenu)
 {
     if (!menu)
     {
@@ -119,7 +131,7 @@ std::string RenderMenuHtml(const Menu* menu, int selectedIndex, bool isSubmenu)
         html << DefaultHeader(menu->Title, currentPage, totalPages);
     }
 
-    html << RenderItems(menu, selectedIndex, pageStart, pageEnd);
+    html << RenderItems(menu, slot, selectedIndex, pageStart, pageEnd);
 
     if (menu->Layout.Footer)
     {
@@ -130,6 +142,19 @@ std::string RenderMenuHtml(const Menu* menu, int selectedIndex, bool isSubmenu)
         html << DefaultFooter(isSubmenu, totalPages > 1);
     }
 
+    return html.str();
+}
+
+std::string RenderCaptureOverlay(const std::string& menuTitle, std::string_view prompt)
+{
+    std::ostringstream html;
+    html << "<font color='" << Theme::Gold << "'><b>" << menuTitle << "</b></font><br>"
+         << "<font color='" << Theme::WarmWhite << "'>" << prompt << "</font><br>"
+         << "<font class='fontSize-s' color='" << Theme::WarmGray << "'>Type your answer in chat</font><br>"
+         << "<font class='fontSize-s'>"
+         << "<font color='" << Theme::NavClose << "'>[R]</font> "
+         << "<font color='" << Theme::WarmGray << "'>Cancel</font>"
+         << "</font>";
     return html.str();
 }
 

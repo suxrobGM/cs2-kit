@@ -76,9 +76,14 @@ CS2-Kit uses `std::function` callbacks throughout:
 | Callback | Signature | Used in |
 |----------|-----------|---------|
 | Command handler | `CommandResult(Players::Player*, const vector<string>&)` | CommandBuilder |
-| Menu item select | `void(int slot)` | MenuBuilder |
+| Menu button activate | `void(int slot)` | MenuBuilder (`AddButton`, `AddDynamicButton`) |
+| Menu toggle get / flip | `bool(int) / void(int)` | MenuBuilder (`AddToggle`) |
+| Menu choice get / set / commit | `int(int) / void(int, int) / void(int, const T&)` | MenuBuilder (`AddChoice`, `AddSelector`) |
+| Menu slider get / set | `int(int) / void(int, int)` | MenuBuilder (`AddSlider`) |
+| Menu input get / validate | `string(int) / bool(int, string_view)` | MenuBuilder (`AddInput`) |
 | Menu close | `void(int slot)` | MenuBuilder |
-| Submenu factory | `shared_ptr<Menu>(int slot)` | MenuBuilder |
+| Submenu factory | `shared_ptr<Menu>(int slot)` | MenuBuilder (`AddSubmenu`) |
+| Chat input capture | `bool(int slot, string_view text)` | ChatInputCapture (`BeginCapture`) |
 | Scheduler task | `void()` | Scheduler |
 | Permission check | `bool(int slot, const string& flags)` | CommandManager |
 

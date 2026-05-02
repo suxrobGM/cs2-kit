@@ -6,6 +6,7 @@
 #include <CS2Kit/Core/ILogger.hpp>
 #include <CS2Kit/Core/Paths.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
+#include <CS2Kit/Sdk/ChatInputCapture.hpp>
 #include <CS2Kit/Sdk/ConVarService.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>
@@ -166,6 +167,7 @@ void OnGameFrame()
 void OnPlayerDisconnect(int slot)
 {
     Menu::MenuManager::Instance().OnPlayerDisconnect(slot);
+    Sdk::ChatInputCapture::Instance().OnPlayerDisconnect(slot);
 }
 
 }  // namespace CS2Kit

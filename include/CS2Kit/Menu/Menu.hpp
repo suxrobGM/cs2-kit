@@ -10,6 +10,8 @@
 namespace CS2Kit::Menu
 {
 
+class MenuOption;
+
 /** Maximum items shown per page before the menu paginates. */
 inline constexpr int ItemsPerPage = 5;
 
@@ -22,27 +24,11 @@ struct MenuLayout
     std::function<std::string()> Footer;
 };
 
-/** A single selectable row in a menu. */
-struct MenuItem
-{
-    std::string Title;
-    /**
-     * Optional dynamic-title hook. When set, it is called every render and overrides
-     * `Title`. Use for items whose label depends on live state (e.g. "Beacon: ON/OFF"
-     * toggles) so the row refreshes without rebuilding the whole menu.
-     */
-    std::function<std::string()> OnGetTitle;
-    /** Invoked with the player slot when the item is activated (E pressed). */
-    std::function<void(int)> OnSelect;
-    /** Disabled items are rendered greyed out and skipped during navigation. */
-    bool Enabled = true;
-};
-
 /** A WASD-navigable menu rendered as center-HTML. Build with MenuBuilder. */
 struct Menu
 {
     std::string Title;
-    std::vector<MenuItem> Items;
+    std::vector<std::shared_ptr<MenuOption>> Items;
     /** Invoked with the player slot when the menu is dismissed (R pressed or popped). */
     std::function<void(int)> OnClose;
     MenuLayout Layout;

@@ -1,0 +1,72 @@
+#pragma once
+
+#include <CS2Kit/Core/Singleton.hpp>
+
+#include <array>
+#include <cstdint>
+#include <functional>
+#include <optional>
+#include <string>
+#include <string_view>
+
+namespace CS2Kit::Sdk
+{
+
+/**
+ * @brief Per-player pending-prompt registry for menu free-text input.
+ *
+ * The plugin's chat hook is expected to call @ref TryConsume on every incoming
+ * `say`/`say_team` message before its own command parsing — when a capture is
+ * active for that slot, the message is routed to the registered callback and the
+ * caller should suppress the chat broadcast (return true).
+ *
+ * The service intentionally does *not* install its own chat hook: CS2Kit cannot
+ * suppress chat from a `player_say` listener (the broadcast has already
+ * happened). Plumbing the consume call through the plugin's existing
+ * `Hook_DispatchConCommand` is the only reliable suppression path.
+ */
+class ChatInputCapture : public Core::Singleton<ChatInputCapture>
+{
+public:
+    explicit ChatInputCapture(Token) {}
+
+    /** Validator return: true = accept and clear; false = re-prompt and keep waiting. */
+    using Callback = std::function<bool(int slot, std::string_view text)>;
+
+    /**
+     * Begin capturing the next chat line from @p slot. If a previous capture is
+     * still active, it is replaced (silently cancelled). The capture auto-cancels
+     * after @p timeoutMs without input.
+     */
+    void BeginCapture(int slot, std::string prompt, Callback callback, int timeoutMs = 30000);
+
+    /** True if @p slot currently has a pending prompt. */
+    bool IsCapturing(int slot) const;
+
+    /**
+     * Route a chat line to the active capture, if any. Returns true when the
+     * message was consumed (caller should suppress the chat broadcast).
+     */
+    bool TryConsume(int slot, std::string_view text);
+
+    /** Cancel without firing the callback. */
+    void CancelCapture(int slot);
+
+    /** The active prompt for @p slot, or nullptr if no capture is pending. */
+    const std::string* GetPrompt(int slot) const;
+
+    /** Lifecycle hook. Clears any pending capture for the disconnecting slot. */
+    void OnPlayerDisconnect(int slot);
+
+private:
+    struct Pending
+    {
+        std::string Prompt;
+        Callback Cb;
+        uint64_t TimeoutHandle = 0;
+    };
+
+    std::array<std::optional<Pending>, 64> _pending{};
+};
+
+}  // namespace CS2Kit::Sdk
