@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <string>
 #include <string_view>
 
@@ -30,6 +31,37 @@ inline constexpr std::string_view Magenta = "\x0E";
 inline constexpr std::string_view LightRed = "\x0F";
 inline constexpr std::string_view Gold = "\x10";
 inline constexpr std::string_view Orange = "\x10";
+
+/** A single entry in @ref Palette: the canonical (lowercase) name and its escape code. */
+struct NamedColor
+{
+    std::string_view Name;
+    std::string_view Code;
+};
+
+/**
+ * Canonical, deduplicated list of every named color recognized by @ref ParseNamed,
+ * one entry per distinct escape byte. Aliases (e.g. `grey`/`gray`, `magenta`/`purple`)
+ * collapse to a single canonical name. Useful for building color-picker UIs that
+ * stay in sync with the kit as new colors are added.
+ */
+inline constexpr std::array<NamedColor, 15> Palette = {{
+    {"default", Default},
+    {"darkred", DarkRed},
+    {"lightpurple", LightPurple},
+    {"green", Green},
+    {"olive", Olive},
+    {"lime", Lime},
+    {"red", Red},
+    {"gray", Gray},
+    {"yellow", Yellow},
+    {"silver", Silver},
+    {"lightblue", LightBlue},
+    {"darkblue", DarkBlue},
+    {"purple", Purple},
+    {"lightred", LightRed},
+    {"gold", Gold},
+}};
 
 /**
  * Map a human color name (case-insensitive) to its escape sequence.
