@@ -7,7 +7,7 @@
 
 PROJECT_NAME           = "CS2-Kit"
 PROJECT_NUMBER         =
-PROJECT_BRIEF          = "C++23 library for CS2 Metamod:Source plugin development"
+PROJECT_BRIEF          = "C++23 library for CS2 Metamod:Source plugin"
 PROJECT_LOGO           =
 OUTPUT_DIRECTORY       = build/docs
 CREATE_SUBDIRS         = NO
