@@ -2,8 +2,6 @@
 
 [TOC]
 
-> **Work in Progress** — The player API may change.
-
 ## Overview
 
 The player module (`CS2Kit::Players`) tracks connected players by slot and SteamID. It is intentionally minimal — only identity and connection metadata. Plugin-specific state (admin flags, punishment cache, stats) belongs in your own managers, keyed off SteamID, not on the `Player` type.
@@ -15,34 +13,20 @@ Single-threaded by design. All access happens from game-thread Metamod hooks, so
 
 ## Wiring Up
 
-`PlayerManager` does not hook engine callbacks itself — your plugin drives it from its own connect/disconnect hooks.
+If your plugin derives from @ref CS2Kit::Core::MetamodPluginBase, this is automatic: the base calls `AddPlayer` on connect and `RemovePlayer` on disconnect, then hands your `OnPlayerConnect(Player*)` / `OnPlayerDisconnect(Player*)` overrides the live `Player*`. Just override those.
+
+Without the base, drive `PlayerManager` from your own connect/disconnect hooks:
 
 ```cpp
-#include <CS2Kit/Players/PlayerManager.hpp>
+// OnClientConnected hook:
+PlayerManager::Instance().AddPlayer(slot.Get(), static_cast<int64_t>(xuid),
+                                    name ? name : "", address ? address : "");
 
-using namespace CS2Kit::Players;
+// ClientDisconnect hook:
+CS2Kit::OnPlayerDisconnect(slot.Get());
+PlayerManager::Instance().RemovePlayer(slot.Get());
 
-// In your IServerGameClients::OnClientConnected hook:
-void MyPlugin::Hook_OnClientConnected(CPlayerSlot slot, const char* name,
-                                      uint64 xuid, const char* netId,
-                                      const char* address, bool fakeClient)
-{
-    if (fakeClient)
-        return;
-
-    PlayerManager::Instance().AddPlayer(
-        slot.Get(), static_cast<int64_t>(xuid),
-        name ? name : "", address ? address : "");
-}
-
-// In your IServerGameClients::ClientDisconnect hook:
-void MyPlugin::Hook_ClientDisconnect(CPlayerSlot slot, ...)
-{
-    CS2Kit::OnPlayerDisconnect(slot.Get());
-    PlayerManager::Instance().RemovePlayer(slot.Get());
-}
-
-// In Plugin::Unload():
+// Plugin::Unload():
 PlayerManager::Instance().Clear();
 ```
 

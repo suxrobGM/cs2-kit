@@ -1,0 +1,123 @@
+#pragma once
+
+#include <ISmmPlugin.h>
+
+#include <cstddef>
+#include <eiface.h>
+#include <functional>
+#include <icvar.h>
+#include <string_view>
+#include <vector>
+
+namespace CS2Kit::Players
+{
+class Player;
+}
+
+namespace CS2Kit::Core
+{
+
+/** @brief Your plugin's name, author, version, and log tag. Return it from MetamodPluginBase::Info(). */
+struct PluginInfo
+{
+    const char* Name = "CS2Kit Plugin";
+    const char* Author = "";
+    const char* Description = "";
+    const char* Url = "";
+    const char* License = "MIT";
+    const char* Version = "1.0.0";
+    const char* Date = __DATE__;
+    const char* LogTag = "CS2Kit";
+};
+
+/**
+ * @brief Base class for a Metamod:Source plugin — handles the boilerplate so you don't have to.
+ *
+ * Subclassing this gets you a working plugin: it wires up the engine, registers the common
+ * hooks (game frame, player connect/disconnect, chat), and tracks connected players for you.
+ * You provide the metadata via Info(), your setup in OnLoad(), and override only the callbacks
+ * you care about. Your plugin's .cpp still needs PLUGIN_EXPOSE, and its header PLUGIN_GLOBALVARS.
+ *
+ * @code
+ * class MyPlugin : public CS2Kit::Core::MetamodPluginBase {
+ *     PluginInfo Info() const override { return { .Name = "My Plugin", .LogTag = "MINE" }; }
+ *     bool OnLoad(bool late) override { Defer([]{ MySystem::Shutdown(); }); return MySystem::Init(); }
+ * };
+ * MyPlugin g_MyPlugin;
+ * PLUGIN_EXPOSE(MyPlugin, g_MyPlugin);
+ * @endcode
+ */
+class MetamodPluginBase : public ISmmPlugin, public IMetamodListener
+{
+public:
+    bool Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen, bool late) override;
+    bool Unload(char* error, size_t maxlen) override;
+
+    const char* GetAuthor() override;
+    const char* GetName() override;
+    const char* GetDescription() override;
+    const char* GetURL() override;
+    const char* GetLicense() override;
+    const char* GetVersion() override;
+    const char* GetDate() override;
+    const char* GetLogTag() override;
+
+    void* OnMetamodQuery(const char* iface, int* ret) override;
+
+protected:
+    /** @brief Return your plugin's metadata. Called by the base to answer the Metamod info getters. */
+    virtual PluginInfo Info() const = 0;
+
+    /**
+     * @brief Set up your plugin here — load config, connect services, register commands.
+     * Return false to abort the load; the base then runs your Defer() cleanups and shuts down.
+     * @param late true if the plugin was loaded after the server had already started.
+     */
+    virtual bool OnLoad(bool late) = 0;
+
+    /** @brief Optional extra teardown on unload. Prefer Defer() — it runs automatically. */
+    virtual void OnUnload() {}
+
+    /** @brief A player joined and is now tracked. @p player is valid (read its SteamID, name, etc.). */
+    virtual void OnPlayerConnect(Players::Player* player) {}
+
+    /** @brief A player is leaving, still tracked for this call. @p player may be null — check it. */
+    virtual void OnPlayerDisconnect(Players::Player* player) {}
+
+    /**
+     * @brief A player sent a chat message (say / say_team).
+     * @return true to swallow it (the message won't appear in chat), false to let it through.
+     */
+    virtual bool OnPlayerChat(Players::Player* player, std::string_view message, bool teamChat) { return false; }
+
+    /** @brief Install your own SourceHook hooks here; the base already installs the common ones.
+     *  Pair each with a Defer() that removes it. */
+    virtual void OnRegisterHooks() {}
+
+    /**
+     * @brief Queue a cleanup callback to run when the plugin unloads (or if loading fails).
+     * Deferred callbacks run in reverse order, so register each cleanup right next to its setup.
+     */
+    void Defer(std::function<void()> cleanup);
+
+    /** @brief True if the plugin was loaded after the server started, rather than at boot. */
+    bool IsLateLoad() const { return _lateLoad; }
+
+    // The base's own callbacks for the standard hooks. They forward to the virtuals above —
+    // you don't call these directly.
+    void Hook_GameFrame(bool simulating, bool firstTick, bool lastTick);
+    void Hook_OnClientConnected(CPlayerSlot slot, const char* name, uint64 xuid, const char* networkId,
+                                const char* address, bool fakePlayer);
+    void Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconnectionReason reason, const char* name, uint64 xuid,
+                               const char* networkId);
+    void Hook_DispatchConCommand(ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args);
+
+private:
+    void RegisterStandardHooks();
+    void RunDeferred();
+
+    bool _lateLoad = false;
+    std::vector<std::function<void()>> _deferred;
+};
+
+}  // namespace CS2Kit::Core

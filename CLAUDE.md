@@ -15,21 +15,21 @@ Reusable C++23 library for building Counter-Strike 2 server plugins with Metamod
 include/CS2Kit/                 # Public API headers (#include <CS2Kit/...>)
 ├── CS2Kit.hpp                  # InitParams, Initialize/Shutdown/OnGameFrame API
 ├── Commands/                   # Command, CommandBuilder, CommandManager
-├── Core/                       # Singleton, ILogger, Paths
+├── Core/                       # MetamodPluginBase, PluginInfo, Singleton, ILogger, Paths
 ├── Menu/                       # Menu, MenuBuilder, MenuManager
 ├── Players/                    # Player (identity + connection), PlayerManager (slot/steamid lookup)
 ├── Sdk/                        # GameInterfaces, Entity, GameData, PlayerController,
 │                               # ConVarService, GameEventService, UserMessage
-└── Utils/                      # SteamId, StringUtils, TimeUtils, Translations, Log
+└── Utils/                      # Json (Serialize/Deserialize), SteamId, StringUtils, TimeUtils, Translations, Log
 
 src/                            # Implementation (.cpp) + internal headers
 ├── CS2Kit.cpp                  # Initialize impl (resolves SDK interfaces via ISmmAPI)
 ├── Commands/                   # Command dispatch implementation
-├── Core/                       # ConsoleLogger, Scheduler, Paths
+├── Core/                       # MetamodPluginBase, ConsoleLogger, Scheduler, Paths
 ├── Menu/                       # MenuManager, MenuRenderer
 ├── Players/                    # Player, PlayerManager
 ├── Sdk/                        # Schema, SigScanner, VirtualCall, Entity, GameData, etc.
-└── Utils/                      # SteamId, StringUtils, TimeUtils, Translations
+└── Utils/                      # SteamId, StringUtils, TimeUtils, Translations (Json is header-only)
 
 gamedata/                       # Engine signatures and offsets (auto-loaded)
 └── signatures.jsonc            # Platform-specific byte patterns, vtable offsets
@@ -47,7 +47,7 @@ Doxyfile                        # Doxygen configuration
 | Element | Convention | Example |
 | --- | --- | --- |
 | Namespaces | `PascalCase`, nested | `CS2Kit::Commands` |
-| Classes/Structs | `PascalCase` | `CommandManager`, `MenuItem` |
+| Classes/Structs | `PascalCase` | `CommandManager`, `MenuOption` |
 | Methods | `PascalCase` | `OpenMenu()`, `FindSignature()` |
 | Member variables | `_camelCase` | `_timers`, `_nextId` |
 | Constants | `PascalCase` | `MaxPlayers`, `InputDebounceMs` |
@@ -64,6 +64,28 @@ Doxyfile                        # Doxygen configuration
 - **Builder pattern** for Menu and Command construction
 
 ## Key Design Patterns
+
+### Plugin Base (MetamodPluginBase)
+
+`CS2Kit::Core::MetamodPluginBase` is the recommended plugin entry point. Subclass it, return a
+`PluginInfo` from `Info()`, and implement `OnLoad()`; override `OnPlayerConnect`/`OnPlayerDisconnect`/
+`OnPlayerChat`/`OnRegisterHooks` as needed. The base owns the ISmmPlugin getters, the Load/Unload
+flow, the four standard SourceHook hooks, and the `PlayerManager` add/remove lifecycle.
+
+```cpp
+class MyPlugin : public CS2Kit::Core::MetamodPluginBase {
+    CS2Kit::Core::PluginInfo Info() const override { return { .Name = "My Plugin", .LogTag = "MINE" }; }
+    bool OnLoad(bool late) override { Defer([]{ MySystem::Shutdown(); }); return MySystem::Init(); }
+};
+MyPlugin g_MyPlugin;
+PLUGIN_EXPOSE(MyPlugin, g_MyPlugin);  // consumer .cpp; PLUGIN_GLOBALVARS() in header
+```
+
+- `Defer(fn)` registers cleanups run LIFO on unload or failed load (guarantees `CS2Kit::Shutdown()`).
+- Custom hooks: register in `OnRegisterHooks()`, pair with `Defer()` for removal. `SH_DECL_HOOK` for
+  custom hooks stays in the consumer TU; the base owns the standard hooks.
+- `MetamodPluginBase.cpp` carries `PLUGIN_GLOBALVARS()` so it can reference the SourceHook globals
+  the consumer's `PLUGIN_EXPOSE` defines (works under source inclusion and static-lib linking).
 
 ### Singleton (CRTP)
 
@@ -91,15 +113,13 @@ CS2Kit::Commands::CommandBuilder("kick")
 
 // Menus
 CS2Kit::Menu::MenuBuilder("Title")
-    .AddItem("Option", onSelect)
-    .AddDynamicItem(getTitleFn, onSelect)   // label recomputed every render — for live toggles
+    .AddButton("Option", onSelect)
+    .AddToggle("Beacon", "ON", "OFF", getState, onToggle)  // live-state row
     .AddSubmenu("Sub", factory)
     .Build();
 ```
 
-`MenuItem::OnGetTitle` is the underlying primitive: when set, the renderer calls it
-each frame instead of using `Title`. Use for entries that need to reflect live state
-(e.g. `"Beacon: ON"` / `"Beacon: OFF"` toggles) without rebuilding the menu.
+Every row is a typed `MenuOption` (Button, Toggle, Choice, Selector, Slider, ProgressBar, Input, Submenu). For a button whose label reflects live state, use `AddDynamicButton(getLabel, onActivate)`. See the menu guide for the full set.
 
 ## Build Commands
 

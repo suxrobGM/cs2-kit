@@ -29,6 +29,10 @@ public:
     using EventCallback = std::function<void(IGameEvent*)>;
     uint64_t Listen(const char* eventName, EventCallback callback);
     void RemoveListener(uint64_t id);
+
+    /** @brief Remove all listeners and deregister from the engine. Called by CS2Kit::Shutdown() (avoids double-registration on reload). */
+    void RemoveAllListeners();
+
     void FireGameEvent(IGameEvent* event) override;
 
 private:

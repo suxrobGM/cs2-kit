@@ -2,8 +2,6 @@
 
 [TOC]
 
-> **Work in Progress** — The command API may change.
-
 ## Overview
 
 The command system (`CS2Kit::Commands`) provides a framework for registering and dispatching chat commands. It includes:

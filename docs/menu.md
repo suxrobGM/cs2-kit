@@ -2,8 +2,6 @@
 
 [TOC]
 
-> **Work in Progress** — The menu API may change.
-
 ## Overview
 
 The menu system (`CS2Kit::Menu`) provides WASD-navigated center-HTML menus for CS2. Each row is a typed @ref CS2Kit::Menu::MenuOption — buttons, toggles, choice cycles, sliders, progress bars, free-text inputs, and submenu links — built fluently with @ref CS2Kit::Menu::MenuBuilder.
@@ -167,7 +165,7 @@ auto menu = MenuBuilder("Custom Menu")
 4. Input is debounced (200ms) to prevent accidental double-presses.
 5. While a chat-input capture is active for the slot, only **R** is honored — every other key is ignored so the cursor doesn't drift while the player types.
 
-The plugin must call `CS2Kit::OnGameFrame()` every tick (which drives `MenuManager::OnGameFrame()` internally) and `CS2Kit::OnPlayerDisconnect(slot)` on disconnect.
+`CS2Kit::OnGameFrame()` (every tick) and `CS2Kit::OnPlayerDisconnect(slot)` drive this — both are called for you when the plugin derives from @ref CS2Kit::Core::MetamodPluginBase, or wire them yourself otherwise.
 
 ## Header Layout
 

@@ -2,8 +2,6 @@
 
 [TOC]
 
-> **Work in Progress** — The SDK wrapper API may change.
-
 ## Overview
 
 The Sdk module (`CS2Kit::Sdk`) provides typed wrappers around HL2SDK interfaces, abstracting away raw pointer manipulation and engine-specific details.
@@ -174,14 +172,15 @@ Read and write ConVars with type safety:
 ```cpp
 auto& cvars = CS2Kit::Sdk::ConVarService::Instance();
 
-// Read a convar value
-auto value = cvars.GetValue<float>("sv_gravity");
+// Typed getters return std::optional
+if (auto gravity = cvars.GetFloat("sv_gravity"))
+    use(*gravity);
 
-// Set a convar value
-cvars.SetValue("sv_gravity", 400.0f);
+// Typed setters
+cvars.SetFloat("sv_gravity", 400.0f);
 
-// Listen for changes
-cvars.OnChange("sv_cheats", [](const std::string& name) {
+// Listen for any convar change; returns an id for RemoveChangeListener
+uint64_t id = cvars.OnChange([](const char* name, const char* oldValue, const char* newValue) {
     // Handle convar change
 });
 ```
@@ -193,8 +192,8 @@ Create, fire, and listen for game events:
 ```cpp
 auto& events = CS2Kit::Sdk::GameEventService::Instance();
 
-// Listen for player death
-events.AddListener("player_death", [](IGameEvent* event) {
+// Listen for player death; returns an id you can pass to RemoveListener.
+uint64_t id = events.Listen("player_death", [](IGameEvent* event) {
     int attacker = event->GetInt("attacker");
     int victim = event->GetInt("userid");
     // Handle event
@@ -208,13 +207,11 @@ Send chat and center-HTML messages to players:
 ```cpp
 auto& msg = CS2Kit::Sdk::MessageSystem::Instance();
 
-// Send chat message to a specific player
-msg.SendChat(slot, "Hello, player!");
+// Send a chat line to a specific player (prefer CS2Kit::Utils::Chat for colored output)
+msg.SendChatMessage(slot, "Hello, player!");
 
-// Send center HTML to a player
+// Send / clear center HTML
 msg.SendCenterHtml(slot, "<b>Important Notice</b>");
-
-// Clear center HTML
 msg.ClearCenterHtml(slot);
 ```
 
@@ -238,15 +235,18 @@ The validator returns `true` to accept the input (capture clears) or `false` to 
 
 ### Plumbing the chat hook
 
-CS2Kit cannot install its own chat hook because suppressing a chat broadcast must happen inside the plugin's `Hook_DispatchConCommand` (or equivalent SourceHook hook on `say` / `say_team`). The plugin is expected to call @ref CS2Kit::Sdk::ChatInputCapture::TryConsume before its own command parsing and supersede the broadcast when it returns `true`:
+Suppressing a chat broadcast has to happen in the `say` / `say_team` hook. With @ref CS2Kit::Core::MetamodPluginBase that hook is the base's, routed to your `OnPlayerChat` override — call @ref CS2Kit::Sdk::ChatInputCapture::TryConsume there and return `true` to supersede:
 
 ```cpp
-// Inside your plugin's chat hook, after extracting the message:
-if (CS2Kit::Sdk::ChatInputCapture::Instance().TryConsume(slot, message))
-    RETURN_META(MRES_SUPERCEDE);   // capture handled it; don't broadcast
+bool MyPlugin::OnPlayerChat(Player* p, std::string_view message, bool team) override
+{
+    if (CS2Kit::Sdk::ChatInputCapture::Instance().TryConsume(p->GetSlot(), message))
+        return true;   // capture handled it; don't broadcast
+    return false;      // fall through to normal chat handling
+}
 ```
 
-If no capture is pending for `slot`, `TryConsume` returns `false` and the message falls through to your normal chat handling.
+If no capture is pending for the slot, `TryConsume` returns `false`.
 
 ### API
 

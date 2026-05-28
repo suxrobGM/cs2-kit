@@ -66,6 +66,15 @@ void GameEventService::RemoveListener(uint64_t id)
     _listeners.erase(id);
 }
 
+void GameEventService::RemoveAllListeners()
+{
+    if (auto* mgr = GameInterfaces::Instance().GameEventManager)
+        mgr->RemoveListener(this);  // detaches this listener from every event in one call
+
+    _registeredEvents.clear();
+    _listeners.clear();
+}
+
 void GameEventService::FireGameEvent(IGameEvent* event)
 {
     if (!event)

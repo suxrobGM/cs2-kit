@@ -2,8 +2,6 @@
 
 [TOC]
 
-> **Work in Progress** — This architecture may change as the library evolves.
-
 ## Overview
 
 CS2-Kit is organized into six modules, each in its own namespace under `CS2Kit`:
@@ -23,7 +21,22 @@ CS2Kit
 - **Single-threaded** — All code runs on the game thread. No mutexes needed. Metamod hooks are always called from the main thread.
 - **Singleton pattern** — Manager classes use the CRTP `Singleton<T>` base with pass-key idiom for safe, lazy initialization.
 - **Builder pattern** — Complex objects (commands, menus) are constructed via fluent builders.
-- **Minimal boilerplate** — `CS2Kit::Initialize(ismm, error, maxlen)` handles all SDK interface resolution, gamedata loading, and subsystem init. The consumer only needs to drive the player lifecycle (`PlayerManager::AddPlayer`/`RemovePlayer`) from its connect/disconnect hooks; `ILogger` has a built-in default.
+- **Minimal boilerplate** — `CS2Kit::Initialize(ismm, error, maxlen)` handles all SDK interface resolution, gamedata loading, and subsystem init. Deriving from `MetamodPluginBase` removes the rest: the ISmmPlugin getters, the Load/Unload skeleton, the standard hooks, and the player lifecycle. `ILogger` has a built-in default.
+
+## Plugin lifecycle (MetamodPluginBase)
+
+`CS2Kit::Core::MetamodPluginBase` is the recommended entry point. It implements `ISmmPlugin`,
+owns the four standard SourceHook hooks (GameFrame, client connect/disconnect, chat dispatch),
+drives `PlayerManager::AddPlayer`/`RemovePlayer`, and exposes virtual callbacks (`OnLoad`,
+`OnPlayerConnect`, `OnPlayerDisconnect`, `OnPlayerChat`, `OnRegisterHooks`) for plugin logic.
+
+- **Teardown stack** — `Defer(fn)` pushes a cleanup callback; the stack runs in reverse (LIFO)
+  on unload **and** on a failed load. This keeps setup and teardown adjacent in the source and
+  guarantees `CS2Kit::Shutdown()` runs even when `OnLoad()` rejects the load.
+- **Hook ownership** — the base owns the standard hooks (their `SH_DECL_HOOK` lives inside the
+  library). Custom hooks are registered by the consumer in `OnRegisterHooks()` and paired with
+  `Defer()` for removal. The consumer still provides `PLUGIN_EXPOSE` / `PLUGIN_GLOBALVARS`, which
+  define the per-plugin SourceHook globals the base links against.
 
 ## CRTP Singleton
 

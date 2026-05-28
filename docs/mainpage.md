@@ -8,17 +8,18 @@
 
 | Module | Namespace | Description |
 |--------|-----------|-------------|
-| **Core** | `CS2Kit::Core` | Singleton base, scheduler, logging (built-in ConsoleLogger), path resolution |
+| **Core** | `CS2Kit::Core` | Plugin base (`MetamodPluginBase`), singleton base, scheduler, logging (built-in ConsoleLogger), path resolution |
 | **Commands** | `CS2Kit::Commands` | Chat command system with fluent builder, permissions, and dispatch |
 | **Menu** | `CS2Kit::Menu` | WASD-navigated center-HTML menu framework with builder pattern |
 | **Players** | `CS2Kit::Players` | Connected-player tracking with slot and SteamID lookup |
 | **Sdk** | `CS2Kit::Sdk` | Engine SDK wrappers: entities, schema, signatures, convars, events, messages |
-| **Utils** | `CS2Kit::Utils` | SteamID conversions, string utilities, time formatting, translations, colored chat output |
+| **Utils** | `CS2Kit::Utils` | JSON serializer (`Json::Serialize`/`Deserialize`), SteamID conversions, string utilities, time formatting, translations, colored chat output |
 
 <h2>Guides</h2>
 
 - @subpage getting_started — Prerequisites and integration guide
 - @subpage architecture — Design patterns and module overview
+- @subpage plugin_guide — Building a plugin with MetamodPluginBase
 - @subpage commands_guide — Command system usage
 - @subpage menus_guide — Menu system usage
 - @subpage players_guide — Player tracking and lookup

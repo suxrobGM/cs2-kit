@@ -2,8 +2,6 @@
 
 [TOC]
 
-> **Work in Progress** — The chat API may change.
-
 ## Overview
 
 The chat module (`CS2Kit::Utils::Chat` and `CS2Kit::Utils::ChatColors`) is a thin layer over the engine's `TextMsg / HUD_PRINTTALK` user message (CS2 silently drops `SayText2` from non-player sources after the 2026 update). It gives plugins:

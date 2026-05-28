@@ -2,8 +2,6 @@
 
 [TOC]
 
-> **Work in Progress** — CS2-Kit is under active development. Expect breaking changes.
-
 ## Prerequisites
 
 - **C++23** compiler (MSVC 19.38+, GCC 13+, Clang 17+)
@@ -45,68 +43,47 @@ for root, dirs, files in os.walk(CS2KIT_SRC_DIR):
 
 ## Initialization
 
-CS2Kit handles SDK interface resolution, gamedata loading, and subsystem initialization internally. Just pass the Metamod `ISmmAPI` pointer:
+The simplest way to start is to derive from @ref CS2Kit::Core::MetamodPluginBase. It runs
+`CS2Kit::Initialize()`/`Shutdown()`, owns the four standard SourceHook hooks (GameFrame,
+client connect/disconnect, chat dispatch), drives the `PlayerManager` lifecycle, and runs a
+LIFO teardown stack on unload. You implement metadata plus your own logic:
 
 ```cpp
-#include <CS2Kit/CS2Kit.hpp>
+#include <CS2Kit/Core/MetamodPluginBase.hpp>
 
-bool MyPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen, bool late)
+class MyPlugin : public CS2Kit::Core::MetamodPluginBase
 {
-    PLUGIN_SAVEVARS();
+protected:
+    CS2Kit::Core::PluginInfo Info() const override
+    {
+        return { .Name = "My Plugin", .Author = "me", .Version = "1.0.0", .LogTag = "MINE" };
+    }
 
-    CS2Kit::InitParams params;
-    params.LogPrefix = "MyPlugin";
+    bool OnLoad(bool late) override
+    {
+        Defer([] { MySystem::Shutdown(); });  // cleanup runs automatically on unload / failed load
+        return MySystem::Init();              // return false to reject the load
+    }
+};
 
-    if (!CS2Kit::Initialize(ismm, error, maxlen, params))
-        return false;
-
-    // Your plugin initialization here...
-    return true;
-}
+MyPlugin g_MyPlugin;
+PLUGIN_EXPOSE(MyPlugin, g_MyPlugin);  // in your .cpp
+// PLUGIN_GLOBALVARS();               // in your plugin header
 ```
 
-`CS2Kit::Initialize()` performs the following internally:
+The base calls `CS2Kit::Initialize()` for you — it sets up logging, resolves the SDK interfaces, loads built-in gamedata, and initializes every subsystem (schema, entities, events, menus, ConVars). See the @ref plugin_guide for the full set of callbacks (player connect/disconnect, chat, custom hooks).
 
-1. Sets up logging (built-in `ConsoleLogger` by default, or your custom `ILogger`)
-2. Resolves all required SDK interfaces via `ISmmAPI::VInterfaceMatch()`
-3. Sets the HL2SDK `g_pCVar` global
-4. Loads engine signatures and offsets from built-in gamedata
-5. Initializes all subsystems (schema, entities, events, menus, ConVars)
+## Manual initialization (advanced)
 
-## Game Frame Hook
-
-The scheduler and menu system require a per-tick callback. Hook `IServerGameDLL::GameFrame`:
-
-```cpp
-void MyPlugin::GameFrame(bool simulating, bool firstTick, bool lastTick)
-{
-    CS2Kit::OnGameFrame();
-}
-```
-
-## Player Disconnect Hook
-
-Clean up menu state when players disconnect:
-
-```cpp
-void MyPlugin::ClientDisconnect(CPlayerSlot slot, ...)
-{
-    CS2Kit::OnPlayerDisconnect(slot.Get());
-}
-```
-
-## Shutdown
-
-```cpp
-bool MyPlugin::Unload(char* error, size_t maxlen)
-{
-    CS2Kit::Shutdown();
-    return true;
-}
-```
+If you cannot derive from `MetamodPluginBase`, call the lifecycle entry points yourself from your
+own `ISmmPlugin`: `CS2Kit::Initialize()` in `Load()` (after `PLUGIN_SAVEVARS()`),
+`CS2Kit::OnGameFrame()` from your `GameFrame` hook, `CS2Kit::OnPlayerDisconnect(slot.Get())` from
+`ClientDisconnect`, and `CS2Kit::Shutdown()` in `Unload()`. You are then responsible for registering
+hooks and calling `PlayerManager::AddPlayer`/`RemovePlayer`.
 
 ## Next Steps
 
+- @ref plugin_guide — Build a plugin with MetamodPluginBase
 - @ref commands_guide — Register chat commands
 - @ref menus_guide — Build interactive menus
 - @ref players_guide — Track connected players

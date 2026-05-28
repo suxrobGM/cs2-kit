@@ -155,6 +155,7 @@ bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, const InitParams& par
 
 void Shutdown()
 {
+    Sdk::GameEventService::Instance().RemoveAllListeners();
     Core::Scheduler::Instance().CancelAll();
 }
 

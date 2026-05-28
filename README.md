@@ -3,218 +3,68 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://suxrobgm.github.io/cs2-kit/)
 
-C++23 library for building Counter-Strike 2 server plugins with Metamod:Source 2.0.
+A C++23 toolkit for building Counter-Strike 2 server plugins on Metamod:Source 2.0.
 
-> **Work in Progress** - This library is under active development. The API is unstable and subject to breaking changes. Features may be added, removed, or redesigned without notice.
+CS2Kit handles the boilerplate of a CS2 plugin — engine setup, hooks, player tracking, menus, chat, and config — so you can focus on your plugin's actual features.
 
-## Features
+> **Work in progress.** The API is still evolving and may change between versions.
 
-- **Core** - CRTP singleton base, tick-based scheduler, ILogger interface with built-in ConsoleLogger
-- **Commands** - Chat command framework with fluent builder, aliases, argument validation, and permission checks
-- **Menu** - WASD-navigated center-HTML menus with builder pattern, submenu stacks, and custom layouts
-- **Players** - Connected-player tracking with O(1) slot and SteamID lookup
-- **Sdk** - Typed wrappers for HL2SDK interfaces: entities, schema fields, signature scanning, ConVars, game events, user messages
-- **Utils** - SteamID conversions, string manipulation, duration parsing, JSON-based translations
+## What you get
 
-## Integration
+- **Plugin base** — subclass one class and your plugin lifecycle, hooks, and player tracking are wired up for you.
+- **Chat commands** — register `!commands` with aliases, argument checks, and permission gating.
+- **Menus** — WASD-navigated in-game menus with buttons, toggles, sliders, choices, and submenus.
+- **Players** — fast lookup of connected players by slot or SteamID.
+- **Engine SDK** — friendly wrappers over entities, ConVars, game events, and messages.
+- **Utilities** — JSON config, SteamID conversions, colored chat, translations, and timers.
 
-CS2Kit supports two integration methods. Both produce a single `.dll`/`.so` plugin binary.
+## Quick start
 
-### Option 1: Source Inclusion (recommended)
-
-Compile CS2Kit sources directly into your plugin binary. Faster incremental builds.
+Add CS2Kit to your plugin as a submodule:
 
 ```sh
 git submodule add https://github.com/suxrobgm/cs2-kit.git vendor/cs2-kit
 ```
 
-In your AMBuild, add the include path and compile the `.cpp` files:
-
-```python
-CS2KIT_DIR = os.path.join(builder.sourcePath, "vendor", "cs2-kit")
-CS2KIT_INCLUDE_DIR = os.path.join(CS2KIT_DIR, "include")
-CS2KIT_SRC_DIR = os.path.join(CS2KIT_DIR, "src")
-
-# Add public headers to include path
-binary.compiler.cxxincludes += [CS2KIT_INCLUDE_DIR]
-
-# Auto-discover and compile cs2-kit sources
-for root, dirs, files in os.walk(CS2KIT_SRC_DIR):
-    for f in files:
-        if f.endswith(".cpp"):
-            binary.sources += [os.path.join(root, f)]
-```
-
-### Option 2: Static Library
-
-Build CS2Kit as a standalone `.lib`/`.a`, then link against it. CS2Kit includes its own AMBuild for this:
-
-```sh
-cd vendor/cs2-kit
-python configure.py --sdks cs2
-cd build && ambuild
-```
-
-This produces `cs2-kit.lib` (Windows) or `cs2-kit.a` (Linux). Link it into your plugin binary and add `vendor/cs2-kit/include/` to your include path.
-
-## Quick Start
-
-All includes use the `<CS2Kit/...>` prefix:
+Then derive your plugin from `MetamodPluginBase` and implement what you need:
 
 ```cpp
-#include <CS2Kit/CS2Kit.hpp>
-```
+#include <CS2Kit/Core/MetamodPluginBase.hpp>
 
-### Initialize in Plugin::Load()
-
-CS2Kit resolves all SDK interfaces internally via Metamod's `ISmmAPI`. Just pass the `ismm` pointer:
-
-```cpp
-bool MyPlugin::Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen, bool late)
+class MyPlugin : public CS2Kit::Core::MetamodPluginBase
 {
-    PLUGIN_SAVEVARS();
+protected:
+    CS2Kit::Core::PluginInfo Info() const override
+    {
+        return { .Name = "My Plugin", .Author = "me", .Version = "1.0.0", .LogTag = "MINE" };
+    }
 
-    CS2Kit::InitParams params;
-    params.LogPrefix = "MyPlugin";
+    bool OnLoad(bool late) override
+    {
+        Defer([] { MySystem::Shutdown(); });  // cleanup runs automatically on unload
+        return MySystem::Init();              // return false to abort the load
+    }
 
-    if (!CS2Kit::Initialize(ismm, error, maxlen, params))
-        return false;
-
-    // Your plugin initialization here...
-    return true;
-}
-```
-
-### Hook Callbacks
-
-```cpp
-void MyPlugin::Hook_GameFrame(bool simulating, bool bFirstTick, bool bLastTick)
-{
-    CS2Kit::OnGameFrame();  // Drives Scheduler + MenuManager
-}
-
-void MyPlugin::Hook_ClientDisconnect(CPlayerSlot slot, ...)
-{
-    CS2Kit::OnPlayerDisconnect(slot.Get());  // Cleans up menu state
-}
-```
-
-### Shutdown
-
-```cpp
-bool MyPlugin::Unload(char* error, size_t maxlen)
-{
-    CS2Kit::Shutdown();
-    return true;
-}
-```
-
-## Usage Examples
-
-### Register a Command
-
-```cpp
-#include <CS2Kit/Commands/Command.hpp>
-#include <CS2Kit/Commands/CommandManager.hpp>
-
-using namespace CS2Kit::Commands;
-
-auto& cmdMgr = CommandManager::Instance();
-
-cmdMgr.Register(
-    CommandBuilder("kick")
-        .WithAliases({"k"})
-        .RequirePermission("c")
-        .WithArgs(1, 2)
-        .OnExecute([](CS2Kit::Players::Player* caller,
-                      const std::vector<std::string>& args) -> CommandResult
-        {
-            return {.Success = true, .Message = "Player kicked."};
-        })
-        .Build()
-);
-```
-
-### Build a Menu
-
-```cpp
-#include <CS2Kit/Menu/MenuBuilder.hpp>
-#include <CS2Kit/Menu/MenuManager.hpp>
-
-using namespace CS2Kit::Menu;
-
-auto menu = MenuBuilder("Admin Panel")
-    .AddItem("Kick Player", [](int slot) { /* ... */ })
-    .AddItem("Ban Player", [](int slot) { /* ... */ })
-    .AddSubmenu("Settings", [](int slot) {
-        return MenuBuilder("Settings")
-            .AddItem("Option A", [](int slot) { /* ... */ })
-            .Build();
-    })
-    .Build();
-
-MenuManager::Instance().OpenMenu(playerSlot, menu);
-```
-
-### Custom Logger
-
-CS2Kit ships a built-in `ConsoleLogger` (used by default). To provide your own:
-
-```cpp
-#include <CS2Kit/Core/ILogger.hpp>
-
-class FileLogger : public CS2Kit::Core::ILogger
-{
-public:
-    void Info(const std::string& message) override { /* ... */ }
-    void Warn(const std::string& message) override { /* ... */ }
-    void Error(const std::string& message) override { /* ... */ }
+    void OnPlayerConnect(CS2Kit::Players::Player* player) override { /* ... */ }
 };
 
-// Pass during initialization
-CS2Kit::InitParams params;
-params.Logger = &myFileLogger;  // CS2Kit does NOT take ownership
+MyPlugin g_MyPlugin;
+PLUGIN_EXPOSE(MyPlugin, g_MyPlugin);
 ```
 
-## Project Structure
-
-```text
-include/
-└── CS2Kit/                Public API headers (#include <CS2Kit/...>)
-    ├── CS2Kit.hpp         Umbrella header: InitParams, Initialize/Shutdown API
-    ├── Commands/          Command, CommandBuilder, CommandManager
-    ├── Core/              Singleton, ILogger, Paths
-    ├── Menu/              Menu, MenuBuilder, MenuManager
-    ├── Players/           Player, PlayerManager
-    ├── Sdk/               GameInterfaces, Entity, GameData, PlayerController, ConVarService,
-    │                      GameEventService, UserMessage
-    └── Utils/             SteamId, StringUtils, TimeUtils, Translations, Log
-src/                       Implementation (.cpp) + internal headers (not accessible to consumers)
-    ├── Core/              ConsoleLogger, Scheduler
-    ├── Menu/              MenuRenderer
-    ├── Players/           Player, PlayerManager implementations
-    └── Sdk/               Schema, SigScanner, VirtualCall
-gamedata/                  Engine signatures and offsets (auto-loaded by CS2Kit::Initialize)
-    └── signatures.jsonc   Platform-specific byte patterns, vtable offsets
-vendor/                    SDK submodules (hl2sdk-cs2, hl2sdk-manifests, mmsource-2.0, nlohmann)
-```
+That's a working plugin — the base sets up the engine, registers the standard hooks, and tracks players. The [Getting Started guide](https://suxrobgm.github.io/cs2-kit/) walks through the build setup and the rest of the callbacks.
 
 ## Documentation
 
-Full API documentation is available at **[suxrobgm.github.io/cs2-kit](https://suxrobgm.github.io/cs2-kit/)**.
+Full guides and API reference: **[suxrobgm.github.io/cs2-kit](https://suxrobgm.github.io/cs2-kit/)**
 
-Documentation is auto-generated from source using [Doxygen](https://www.doxygen.nl/) with the [doxygen-awesome-css](https://github.com/jothepro/doxygen-awesome-css) theme.
-
-To build docs locally:
-
-```sh
-doxygen Doxyfile
-# Open build/docs/html/index.html
-```
+- **Getting Started** — install, build setup, and your first plugin
+- **Plugin Base** — lifecycle, callbacks, and custom hooks
+- **Commands, Menus, Players, SDK, Chat** — per-feature guides
 
 ## Contributing
 
-CS2Kit is a work in progress. Contributions are welcome, but please be aware that the API is actively evolving and your changes may need to be adapted as the library matures.
+Contributions are welcome. Since the API is still evolving, it's worth opening an issue to discuss larger changes first.
 
 ## License
 
