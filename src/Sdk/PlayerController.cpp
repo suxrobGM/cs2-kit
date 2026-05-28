@@ -227,6 +227,18 @@ namespace
 constexpr size_t PlayerNameBufferSize = 128;
 }  // namespace
 
+MoveType PlayerController::GetMoveType() const
+{
+    return static_cast<MoveType>(GetPawnField<uint8_t>("CBaseEntity", "m_MoveType"));
+}
+
+void PlayerController::SetMoveType(MoveType type) const
+{
+    auto value = static_cast<uint8_t>(type);
+    SetPawnField<uint8_t>("CBaseEntity", "m_MoveType", value);
+    SetPawnField<uint8_t>("CBaseEntity", "m_nActualMoveType", value);
+}
+
 int PlayerController::GetObserverMode() const
 {
     return GetPawnField<uint8_t>("CPlayer_ObserverServices", "m_iObserverMode");

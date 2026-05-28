@@ -26,9 +26,6 @@ static int64_t GetCurrentTimeMs()
 namespace
 {
 
-// MoveType_t from the CS2 schema: 0 = MOVETYPE_NONE (frozen in place), 2 = MOVETYPE_WALK.
-constexpr uint8_t MoveTypeNone = 0;
-
 bool IsCursorTarget(const std::shared_ptr<MenuOption>& opt)
 {
     return opt && opt->IsEnabled() && opt->IsSelectable();
@@ -161,13 +158,10 @@ void MenuManager::SetPlayerFrozen(int slot, bool frozen)
     if (!pc.IsValid())
         return;
 
-    // Both fields must be written or the engine restores the old value on the next tick.
-    uint8_t target = frozen ? MoveTypeNone : state.PrevMoveType;
     if (frozen)
-        state.PrevMoveType = pc.GetPawnField<uint8_t>("CBaseEntity", "m_MoveType");
+        state.PrevMoveType = pc.GetMoveType();
 
-    pc.SetPawnField<uint8_t>("CBaseEntity", "m_MoveType", target);
-    pc.SetPawnField<uint8_t>("CBaseEntity", "m_nActualMoveType", target);
+    pc.SetMoveType(frozen ? MoveType::None : state.PrevMoveType);
     state.MovementFrozen = frozen;
 }
 

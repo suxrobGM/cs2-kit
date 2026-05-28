@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CS2Kit/Sdk/MoveType.hpp>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -49,7 +50,7 @@ struct PlayerMenuState
     /** True while MenuManager is holding the player's movement frozen for this menu session. */
     bool MovementFrozen = false;
     /** MoveType captured before freezing, restored when the menu closes. */
-    uint8_t PrevMoveType = 0;
+    Sdk::MoveType PrevMoveType = Sdk::MoveType::Walk;
 
     /** True if the player has any menu currently open. */
     bool HasMenu() const { return !MenuStack.empty(); }
@@ -68,7 +69,7 @@ struct PlayerMenuState
         LastInputTime = 0;
         PrevButtons = 0;
         MovementFrozen = false;
-        PrevMoveType = 0;
+        PrevMoveType = Sdk::MoveType::Walk;
     }
 };
 

@@ -4,6 +4,7 @@
 #include <CS2Kit/Utils/Log.hpp>
 
 #include <fstream>
+#include <iterator>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
@@ -29,11 +30,11 @@ namespace CS2Kit::Utils
 class Json
 {
 public:
-    /** @brief Parse JSON text into T. Throws on malformed JSON or a type mismatch. */
+    /** @brief Parse JSON text into T. Tolerates JSONC comments. Throws on malformed JSON or a type mismatch. */
     template <typename T>
     static T Deserialize(std::string_view text)
     {
-        return nlohmann::json::parse(text).template get<T>();
+        return nlohmann::json::parse(text, nullptr, true, /*ignore_comments=*/true).template get<T>();
     }
 
     /** @brief Serialize a value to a JSON string. @p pretty enables 2-space indentation. */
@@ -58,8 +59,8 @@ public:
                 return std::nullopt;
             }
 
-            nlohmann::json j;
-            file >> j;
+            std::string text((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+            auto j = nlohmann::json::parse(text, nullptr, true, /*ignore_comments=*/true);
             return j.template get<T>();
         }
         catch (const std::exception& e)

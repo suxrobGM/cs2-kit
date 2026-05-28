@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CS2Kit/Sdk/MoveType.hpp>
 #include <cstdint>
 #include <string>
 
@@ -53,6 +54,12 @@ public:
     void Slay() const;
     void ChangeTeam(int team) const;
     void Respawn() const;
+
+    /** Read the pawn's current `m_MoveType`. */
+    MoveType GetMoveType() const;
+
+    /** Write both `m_MoveType` and `m_nActualMoveType` (both must be set or the engine reverts it next tick). */
+    void SetMoveType(MoveType type) const;
 
     /** Read `m_iObserverMode` from the pawn's CPlayer_ObserverServices. */
     int GetObserverMode() const;
