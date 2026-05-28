@@ -6,6 +6,7 @@
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Log.hpp>
+#include <CS2Kit/Utils/Translations.hpp>
 #include <algorithm>
 #include <chrono>
 
@@ -154,6 +155,8 @@ void MenuManager::OnGameFrame()
         auto prev = state.PrevButtons;
         state.PrevButtons = buttons;
 
+        // Render and handle input (incl. submenu builds) in this slot's panel language.
+        Translations::SlotScope langScope(slot);
         HandleInput(slot, buttons, prev);
         RenderMenu(slot);
     }
@@ -256,6 +259,7 @@ void MenuManager::OnPlayerDisconnect(int slot)
         return;
 
     _states[slot].Reset();
+    Translations::Instance().ClearPlayerLanguage(slot);
 }
 
 }  // namespace CS2Kit::Menu

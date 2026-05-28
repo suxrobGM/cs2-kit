@@ -1,6 +1,7 @@
 #include "Menu/MenuRenderer.hpp"
 
 #include <CS2Kit/Menu/MenuOption.hpp>
+#include <CS2Kit/Utils/Translations.hpp>
 
 #include <algorithm>
 #include <sstream>
@@ -20,6 +21,14 @@ constexpr const char* NavClose = "#AA4422";
 constexpr const char* NavBack = "#AA8833";
 }  // namespace Theme
 
+// Localized footer label; Get() returns the key unchanged when missing, so fall back to the
+// English literal — lets consumers that don't ship nav.* keys still render cleanly.
+static std::string FooterLabel(const char* key, const char* fallback)
+{
+    auto value = Utils::Translations::Instance().Get(key);
+    return value == key ? std::string(fallback) : value;
+}
+
 std::string DefaultHeader(const std::string& title, int currentPage, int totalPages)
 {
     std::ostringstream html;
@@ -35,36 +44,44 @@ std::string DefaultHeader(const std::string& title, int currentPage, int totalPa
     return html.str();
 }
 
-std::string DefaultFooter(bool isSubmenu, bool isPaginated)
+static std::string FooterChunk(const char* keyColor, const char* keyText, const std::string& label)
+{
+    std::ostringstream html;
+    html << "<font color='" << keyColor << "'>" << keyText << "</font> "
+         << "<font color='" << Theme::WarmGray << "'>" << label << "</font>";
+    return html.str();
+}
+
+std::string DefaultFooter(bool isSubmenu, bool isPaginated, bool usesHorizontal)
 {
     const char* closeColor = isSubmenu ? Theme::NavBack : Theme::NavClose;
-    const char* closeLabel = isSubmenu ? "Back" : "Close";
+    std::string closeLabel = isSubmenu ? FooterLabel("nav.back", "Back") : FooterLabel("nav.close", "Close");
+
+    // First row: W/S, the A/D hint for the current row (value-change or paging), and E.
+    std::ostringstream row1;
+    row1 << FooterChunk(Theme::NavGold, "[W/S]", FooterLabel("nav.navigate", "Navigate"));
+
+    bool hasHorizontalHint = usesHorizontal || isPaginated;
+    if (usesHorizontal)
+        row1 << " · " << FooterChunk(Theme::NavGold, "[A/D]", FooterLabel("nav.change", "Change"));
+    else if (isPaginated)
+        row1 << " · " << FooterChunk(Theme::NavGold, "[A/D]", FooterLabel("nav.page", "Page"));
+
+    const char* selectKey = usesHorizontal ? "nav.confirm" : "nav.select";
+    const char* selectFallback = usesHorizontal ? "Confirm" : "Select";
+    row1 << " · " << FooterChunk(Theme::Gold, "[E]", FooterLabel(selectKey, selectFallback));
+
+    std::string closeChunk = FooterChunk(closeColor, "[R]", closeLabel);
 
     std::ostringstream html;
-    html << "<font class='fontSize-s'>"
-         << "<font color='" << Theme::NavGold << "'>[W/S]</font> "
-         << "<font color='" << Theme::WarmGray << "'>Navigate</font>"
-         << " · "
-         << "<font color='" << Theme::Gold << "'>[E]</font> "
-         << "<font color='" << Theme::WarmGray << "'>Select</font>";
+    html << "<font class='fontSize-s'>" << row1.str();
 
-    // When paginated there are four hint chunks — splitting onto two short rows is more reliable
+    // With an A/D hint there are four chunks — splitting onto two short rows is more reliable
     // than relying on the HUD's word wrap, which sometimes pushes [R] past the visible area.
-    if (isPaginated)
-    {
-        html << "<br>"
-             << "<font color='" << Theme::NavGold << "'>[A/D]</font> "
-             << "<font color='" << Theme::WarmGray << "'>Page</font>"
-             << " · "
-             << "<font color='" << closeColor << "'>[R]</font> "
-             << "<font color='" << Theme::WarmGray << "'>" << closeLabel << "</font>";
-    }
+    if (hasHorizontalHint)
+        html << "<br>" << closeChunk;
     else
-    {
-        html << " · "
-             << "<font color='" << closeColor << "'>[R]</font> "
-             << "<font color='" << Theme::WarmGray << "'>" << closeLabel << "</font>";
-    }
+        html << " · " << closeChunk;
 
     html << "</font>";
     return html.str();
@@ -95,8 +112,9 @@ static std::string RenderItems(const Menu* menu, int slot, int selectedIndex, in
         }
         else if (i == selectedIndex)
         {
-            html << "<font color='" << Theme::Amber << "'><b>&gt; " << title << "</b></font> "
-                 << "<font color='" << Theme::Gold << "'>[E]</font><br>";
+            // No per-row [E]: the cursor signals selection, the footer carries the hint, and a
+            // shorter line avoids wrapping in long locales.
+            html << "<font color='" << Theme::Amber << "'><b>&gt; " << title << "</b></font><br>";
         }
         else
         {
@@ -139,7 +157,9 @@ std::string RenderMenuHtml(const Menu* menu, int slot, int selectedIndex, bool i
     }
     else
     {
-        html << DefaultFooter(isSubmenu, totalPages > 1);
+        bool usesHorizontal = selectedIndex >= 0 && selectedIndex < itemCount && menu->Items[selectedIndex] &&
+                              menu->Items[selectedIndex]->IsEnabled() && menu->Items[selectedIndex]->UsesHorizontal();
+        html << DefaultFooter(isSubmenu, totalPages > 1, usesHorizontal);
     }
 
     return html.str();

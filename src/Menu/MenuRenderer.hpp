@@ -19,8 +19,9 @@ std::string DefaultHeader(const std::string& title, int currentPage, int totalPa
  * Generates the default footer HTML for a menu.
  * @param isSubmenu True if this menu is a submenu (shows "Back" hint), false if it's a root menu (shows "Close" hint).
  * @param isPaginated True if the menu has multiple pages of items (shows page navigation hints)
+ * @param usesHorizontal True if the selected row's A/D edits its value (shows "Change"/"Confirm" hints).
  * @return The generated HTML string for the menu footer.
  */
-std::string DefaultFooter(bool isSubmenu, bool isPaginated);
+std::string DefaultFooter(bool isSubmenu, bool isPaginated, bool usesHorizontal);
 
 }  // namespace CS2Kit::Menu

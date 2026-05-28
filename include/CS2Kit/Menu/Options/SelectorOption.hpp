@@ -72,6 +72,8 @@ public:
         return true;
     }
 
+    bool UsesHorizontal() const override { return true; }
+
 private:
     int ClampIndex(int slot) const
     {

@@ -42,6 +42,8 @@ public:
         return true;
     }
 
+    bool UsesHorizontal() const override { return true; }
+
 private:
     std::string _title;
     int _min;

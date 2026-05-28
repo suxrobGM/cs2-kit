@@ -38,6 +38,9 @@ public:
     /** A/D key. Return true to consume the input; false falls back to page-jump. */
     virtual bool OnHorizontal(int /*slot*/, int /*direction*/) { return false; }
 
+    /** True when A/D edits this row's value (toggle/choice/slider) rather than paging. */
+    virtual bool UsesHorizontal() const { return false; }
+
 protected:
     bool _enabled = true;
 };
