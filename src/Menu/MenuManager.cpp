@@ -4,6 +4,7 @@
 #include <CS2Kit/Menu/MenuOption.hpp>
 #include <CS2Kit/Sdk/ChatInputCapture.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
+#include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
@@ -24,6 +25,9 @@ static int64_t GetCurrentTimeMs()
 
 namespace
 {
+
+// MoveType_t from the CS2 schema: 0 = MOVETYPE_NONE (frozen in place), 2 = MOVETYPE_WALK.
+constexpr uint8_t MoveTypeNone = 0;
 
 bool IsCursorTarget(const std::shared_ptr<MenuOption>& opt)
 {
@@ -78,9 +82,13 @@ void MenuManager::OpenMenu(int slot, std::shared_ptr<Menu> menu)
         return;
 
     auto& state = _states[slot];
+    bool wasEmpty = state.MenuStack.empty();
     state.MenuStack.push(std::move(menu));
     state.SelectedIndex = 0;
     state.LastInputTime = GetCurrentTimeMs();
+
+    if (wasEmpty)
+        SetPlayerFrozen(slot, true);
 
     auto* current = state.GetCurrentMenu();
     if (current)
@@ -111,6 +119,7 @@ void MenuManager::CloseMenu(int slot)
 
     if (state.MenuStack.empty())
     {
+        SetPlayerFrozen(slot, false);
         MessageSystem::Instance().ClearCenterHtml(slot);
         state.Reset();
     }
@@ -131,8 +140,35 @@ void MenuManager::CloseAllMenus(int slot)
         return;
 
     auto& state = _states[slot];
+    SetPlayerFrozen(slot, false);
     state.Reset();
     MessageSystem::Instance().ClearCenterHtml(slot);
+}
+
+void MenuManager::SetPlayerFrozen(int slot, bool frozen)
+{
+    if (!_freezePlayer)
+        return;
+
+    auto& state = _states[slot];
+
+    // Skip redundant transitions so a freeze isn't double-applied (which would capture
+    // MOVETYPE_NONE as the "previous" type) and an unfreeze isn't run on a never-frozen slot.
+    if (frozen == state.MovementFrozen)
+        return;
+
+    PlayerController pc(slot);
+    if (!pc.IsValid())
+        return;
+
+    // Both fields must be written or the engine restores the old value on the next tick.
+    uint8_t target = frozen ? MoveTypeNone : state.PrevMoveType;
+    if (frozen)
+        state.PrevMoveType = pc.GetPawnField<uint8_t>("CBaseEntity", "m_MoveType");
+
+    pc.SetPawnField<uint8_t>("CBaseEntity", "m_MoveType", target);
+    pc.SetPawnField<uint8_t>("CBaseEntity", "m_nActualMoveType", target);
+    state.MovementFrozen = frozen;
 }
 
 bool MenuManager::HasActiveMenu(int slot) const

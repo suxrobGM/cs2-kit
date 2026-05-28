@@ -46,6 +46,11 @@ struct PlayerMenuState
     int64_t LastInputTime = 0;
     uint64_t PrevButtons = 0;
 
+    /** True while MenuManager is holding the player's movement frozen for this menu session. */
+    bool MovementFrozen = false;
+    /** MoveType captured before freezing, restored when the menu closes. */
+    uint8_t PrevMoveType = 0;
+
     /** True if the player has any menu currently open. */
     bool HasMenu() const { return !MenuStack.empty(); }
     /** Top of the stack, or nullptr if no menu is open. */
@@ -62,6 +67,8 @@ struct PlayerMenuState
         SelectedIndex = 0;
         LastInputTime = 0;
         PrevButtons = 0;
+        MovementFrozen = false;
+        PrevMoveType = 0;
     }
 };
 

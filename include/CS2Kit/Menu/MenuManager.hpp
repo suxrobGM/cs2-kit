@@ -29,6 +29,13 @@ public:
     /** True if the player has any menu currently open. */
     bool HasActiveMenu(int slot) const;
 
+    /**
+     * @brief When enabled, the player's movement is frozen for as long as a menu is open,
+     * so WASD navigation does not also walk the player around. The original MoveType is
+     * restored when the last menu closes. Disabled by default.
+     */
+    void SetFreezePlayer(bool enabled) { _freezePlayer = enabled; }
+
     /** Per-tick driver: reads buttons, advances selection, and re-renders. */
     void OnGameFrame();
 
@@ -39,9 +46,13 @@ private:
     void HandleInput(int slot, uint64_t buttons, uint64_t prevButtons);
     void RenderMenu(int slot);
 
+    /** Freeze (true) or restore (false) the player's movement; no-op unless freeze is enabled. */
+    void SetPlayerFrozen(int slot, bool frozen);
+
     /** Per-player menu state. Max 64 players. */
     std::array<PlayerMenuState, 64> _states;
     static constexpr int64_t InputDebounceMs = 200;
+    bool _freezePlayer = false;
 };
 
 }  // namespace CS2Kit::Menu
