@@ -5,6 +5,8 @@
 #include <CS2Kit/Menu/Options/SubmenuOption.hpp>
 #include <CS2Kit/Sdk/ChatInputCapture.hpp>
 
+using CS2Kit::Core::Kit;
+
 namespace CS2Kit::Menu
 {
 
@@ -15,7 +17,7 @@ void SubmenuOption::OnActivate(int slot)
 
     auto submenu = _factory(slot);
     if (submenu)
-        CS2Kit::Core::Kit().Menus.OpenMenu(slot, submenu);
+        Kit().Menus.OpenMenu(slot, submenu);
 }
 
 void InputOption::OnActivate(int slot)
@@ -26,7 +28,7 @@ void InputOption::OnActivate(int slot)
     auto setter = _set;
     int maxLen = _maxLength;
 
-    CS2Kit::Core::Kit().ChatInput.BeginCapture(slot, _prompt,
+    Kit().ChatInput.BeginCapture(slot, _prompt,
                                                    [setter, maxLen](int s, std::string_view text) -> bool {
                                                        if (maxLen > 0 && static_cast<int>(text.size()) > maxLen)
                                                            return false;

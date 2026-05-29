@@ -1,6 +1,5 @@
 #pragma once
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <cstdint>
 #include <functional>
 #include <optional>
@@ -13,7 +12,7 @@ namespace CS2Kit::Sdk
 /**
  * @brief Typed wrapper around ICvar for finding, reading, writing, and listening to ConVars.
  */
-class ConVarService : public Core::Singleton<ConVarService>
+class ConVarService
 {
 public:
     ConVarService() = default;

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <string>
 #include <unordered_map>
 
@@ -12,7 +11,7 @@ namespace CS2Kit::Sdk
  * Loads byte-pattern signatures and named integer offsets from a JSON file,
  * then resolves signatures at runtime via SigScanner.
  */
-class GameData : public Core::Singleton<GameData>
+class GameData
 {
 public:
     GameData() = default;

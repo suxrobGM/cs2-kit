@@ -13,6 +13,8 @@
 // own the standard hooks and call PLUGIN_SAVEVARS in Load().
 PLUGIN_GLOBALVARS();
 
+using CS2Kit::Core::Kit;
+
 namespace CS2Kit::Core
 {
 
@@ -101,7 +103,7 @@ void MetamodPluginBase::RunDeferred()
 
 void MetamodPluginBase::RegisterStandardHooks()
 {
-    auto& gi = CS2Kit::Core::Kit().Interfaces;
+    auto& gi = Kit().Interfaces;
 
     SH_ADD_HOOK(IServerGameDLL, GameFrame, gi.ServerGameDLL, SH_MEMBER(this, &MetamodPluginBase::Hook_GameFrame), true);
     SH_ADD_HOOK(IServerGameClients, OnClientConnected, gi.ServerGameClients,
@@ -112,7 +114,7 @@ void MetamodPluginBase::RegisterStandardHooks()
                 false);
 
     Defer([this] {
-        auto& g = CS2Kit::Core::Kit().Interfaces;
+        auto& g = Kit().Interfaces;
         SH_REMOVE_HOOK(IServerGameDLL, GameFrame, g.ServerGameDLL, SH_MEMBER(this, &MetamodPluginBase::Hook_GameFrame),
                        true);
         SH_REMOVE_HOOK(IServerGameClients, OnClientConnected, g.ServerGameClients,
@@ -136,7 +138,7 @@ void MetamodPluginBase::Hook_OnClientConnected(CPlayerSlot slot, const char* nam
 {
     int slotIdx = slot.Get();
     int64_t steamId = static_cast<int64_t>(xuid);
-    Player* player = CS2Kit::Core::Kit().Players.AddPlayer(slotIdx, steamId, name ? name : "", address ? address : "");
+    Player* player = Kit().Players.AddPlayer(slotIdx, steamId, name ? name : "", address ? address : "");
     OnPlayerConnect(player);
 }
 
@@ -144,9 +146,9 @@ void MetamodPluginBase::Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconne
                                               uint64 xuid, const char* networkId)
 {
     int slotIdx = slot.Get();
-    OnPlayerDisconnect(CS2Kit::Core::Kit().Players.GetPlayerBySlot(slotIdx));
+    OnPlayerDisconnect(Kit().Players.GetPlayerBySlot(slotIdx));
     CS2Kit::OnPlayerDisconnect(*_services, slotIdx);
-    CS2Kit::Core::Kit().Players.RemovePlayer(slotIdx);
+    Kit().Players.RemovePlayer(slotIdx);
 }
 
 void MetamodPluginBase::Hook_DispatchConCommand(ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args)
@@ -173,7 +175,7 @@ void MetamodPluginBase::Hook_DispatchConCommand(ConCommandRef cmd, const CComman
     if (slotIdx < 0 || slotIdx >= 64)
         return;
 
-    Player* player = CS2Kit::Core::Kit().Players.GetPlayerBySlot(slotIdx);
+    Player* player = Kit().Players.GetPlayerBySlot(slotIdx);
     if (!player)
         return;
 

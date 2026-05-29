@@ -1,6 +1,5 @@
 #pragma once
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <string>
 
 class IGameEventListener2;
@@ -16,7 +15,7 @@ constexpr int HudPrintTalk = 3;
 /**
  * @brief Message system for sending chat and center HTML messages to players.
  */
-class MessageSystem : public Core::Singleton<MessageSystem>
+class MessageSystem
 {
 public:
     MessageSystem() = default;

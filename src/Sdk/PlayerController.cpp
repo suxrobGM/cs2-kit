@@ -13,6 +13,8 @@
 #include <entity2/entityinstance.h>
 #include <mathlib/vector.h>
 
+using CS2Kit::Core::Kit;
+
 namespace CS2Kit::Sdk
 {
 
@@ -20,7 +22,7 @@ using namespace CS2Kit::Utils;
 
 PlayerController::PlayerController(int slot) : _slot(slot)
 {
-    _controller = CS2Kit::Core::Kit().Entities.GetPlayerController(slot);
+    _controller = Kit().Entities.GetPlayerController(slot);
 }
 
 bool PlayerController::IsValid() const
@@ -38,12 +40,12 @@ CEntityInstance* PlayerController::GetPawn() const
     if (!_controller)
         return nullptr;
 
-    int offset = CS2Kit::Core::Kit().Schema().GetOffset("CCSPlayerController", "m_hPlayerPawn");
+    int offset = Kit().Schema().GetOffset("CCSPlayerController", "m_hPlayerPawn");
     if (offset < 0)
         return nullptr;
 
     auto hPawn = *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(_controller) + offset);
-    return CS2Kit::Core::Kit().Entities.ResolveEntityHandle(hPawn);
+    return Kit().Entities.ResolveEntityHandle(hPawn);
 }
 
 void PlayerController::Kick(const char* reason) const
@@ -51,7 +53,7 @@ void PlayerController::Kick(const char* reason) const
     if (!IsValid())
         return;
 
-    auto* engine = CS2Kit::Core::Kit().Interfaces.Engine;
+    auto* engine = Kit().Interfaces.Engine;
     if (!engine)
     {
         Log::Warn("PlayerController::Kick: IVEngineServer2 not available.");
@@ -67,7 +69,7 @@ T PlayerController::GetField(const char* className, const char* fieldName) const
     if (!_controller)
         return T{};
 
-    int offset = CS2Kit::Core::Kit().Schema().GetOffset(className, fieldName);
+    int offset = Kit().Schema().GetOffset(className, fieldName);
     if (offset < 0)
         return T{};
 
@@ -81,7 +83,7 @@ T PlayerController::GetPawnField(const char* className, const char* fieldName) c
     if (!pawn)
         return T{};
 
-    int offset = CS2Kit::Core::Kit().Schema().GetOffset(className, fieldName);
+    int offset = Kit().Schema().GetOffset(className, fieldName);
     if (offset < 0)
         return T{};
 
@@ -94,7 +96,7 @@ void PlayerController::SetField(const char* className, const char* fieldName, co
     if (!_controller)
         return;
 
-    int offset = CS2Kit::Core::Kit().Schema().GetOffset(className, fieldName);
+    int offset = Kit().Schema().GetOffset(className, fieldName);
     if (offset < 0)
         return;
 
@@ -108,7 +110,7 @@ void PlayerController::SetPawnField(const char* className, const char* fieldName
     if (!pawn)
         return;
 
-    int offset = CS2Kit::Core::Kit().Schema().GetOffset(className, fieldName);
+    int offset = Kit().Schema().GetOffset(className, fieldName);
     if (offset < 0)
         return;
 
@@ -137,7 +139,7 @@ bool PlayerController::IsAlive() const
 
 uint64_t PlayerController::GetButtons() const
 {
-    return CS2Kit::Core::Kit().Entities.GetPlayerButtons(_slot);
+    return Kit().Entities.GetPlayerButtons(_slot);
 }
 
 int PlayerController::GetArmor() const
@@ -166,7 +168,7 @@ void PlayerController::Slay() const
     if (!pawn)
         return;
 
-    int vtableIndex = CS2Kit::Core::Kit().GameData.GetOffset("CommitSuicide");
+    int vtableIndex = Kit().GameData.GetOffset("CommitSuicide");
     if (vtableIndex < 0)
     {
         Log::Warn("PlayerController::Slay: CommitSuicide vtable offset not found.");
@@ -181,7 +183,7 @@ void PlayerController::ChangeTeam(int team) const
     if (!_controller)
         return;
 
-    int vtableIndex = CS2Kit::Core::Kit().GameData.GetOffset("ChangeTeam");
+    int vtableIndex = Kit().GameData.GetOffset("ChangeTeam");
     if (vtableIndex < 0)
     {
         Log::Warn("PlayerController::ChangeTeam: ChangeTeam vtable offset not found.");
@@ -196,7 +198,7 @@ void PlayerController::Respawn() const
     if (!_controller)
         return;
 
-    int vtableIndex = CS2Kit::Core::Kit().GameData.GetOffset("Respawn");
+    int vtableIndex = Kit().GameData.GetOffset("Respawn");
     if (vtableIndex < 0)
     {
         Log::Warn("PlayerController::Respawn: Respawn vtable offset not found.");
@@ -212,7 +214,7 @@ void PlayerController::Teleport(const Vector* origin, const QAngle* angles, cons
     if (!pawn)
         return;
 
-    int vtableIndex = CS2Kit::Core::Kit().GameData.GetOffset("Teleport");
+    int vtableIndex = Kit().GameData.GetOffset("Teleport");
     if (vtableIndex < 0)
     {
         Log::Warn("PlayerController::Teleport: Teleport vtable offset not found.");
@@ -255,7 +257,7 @@ std::string PlayerController::GetPlayerName() const
     if (!_controller)
         return {};
 
-    int offset = CS2Kit::Core::Kit().Schema().GetOffset("CBasePlayerController", "m_iszPlayerName");
+    int offset = Kit().Schema().GetOffset("CBasePlayerController", "m_iszPlayerName");
     if (offset < 0)
         return {};
 
@@ -271,7 +273,7 @@ void PlayerController::SetPlayerName(const std::string& name) const
     if (!_controller)
         return;
 
-    int offset = CS2Kit::Core::Kit().Schema().GetOffset("CBasePlayerController", "m_iszPlayerName");
+    int offset = Kit().Schema().GetOffset("CBasePlayerController", "m_iszPlayerName");
     if (offset < 0)
         return;
 

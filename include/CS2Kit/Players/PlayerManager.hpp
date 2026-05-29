@@ -1,6 +1,5 @@
 #pragma once
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <CS2Kit/Players/Player.hpp>
 
 #include <memory>
@@ -17,7 +16,7 @@ namespace CS2Kit::Players
  * Main-thread-only (no mutex) — all access happens from game-thread callbacks.
  * Plugins call AddPlayer/RemovePlayer from their connect/disconnect hooks.
  */
-class PlayerManager : public Core::Singleton<PlayerManager>
+class PlayerManager
 {
 public:
     PlayerManager() = default;

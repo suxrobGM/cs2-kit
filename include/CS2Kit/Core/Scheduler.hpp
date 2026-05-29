@@ -1,6 +1,5 @@
 #pragma once
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <cstdint>
 #include <functional>
 #include <vector>
@@ -13,7 +12,7 @@ namespace CS2Kit::Core
  * Driven by `OnGameFrame()` (called every server tick from the plugin's GameFrame hook).
  * All callbacks execute on the game thread; no synchronization required.
  */
-class Scheduler : public Singleton<Scheduler>
+class Scheduler
 {
 public:
     Scheduler() = default;

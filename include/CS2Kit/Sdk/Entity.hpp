@@ -1,6 +1,5 @@
 #pragma once
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <cstdint>
 #include <string>
 
@@ -48,7 +47,7 @@ constexpr int MaxPlayers = 64;
  * Resolves CGameEntitySystem from IGameResourceService, provides player
  * controller lookup by slot, entity handle resolution, and button state reading.
  */
-class EntitySystem : public Core::Singleton<EntitySystem>
+class EntitySystem
 {
 public:
     EntitySystem() = default;

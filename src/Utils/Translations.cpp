@@ -6,6 +6,8 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 
+using CS2Kit::Core::Kit;
+
 namespace CS2Kit::Utils
 {
 
@@ -119,14 +121,14 @@ const std::string& Translations::ResolveLanguage() const
     return _activeLang;
 }
 
-Translations::SlotScope::SlotScope(int slot) : _prev(CS2Kit::Core::Kit().Translations._currentSlot)
+Translations::SlotScope::SlotScope(int slot) : _prev(Kit().Translations._currentSlot)
 {
-    CS2Kit::Core::Kit().Translations._currentSlot = slot;
+    Kit().Translations._currentSlot = slot;
 }
 
 Translations::SlotScope::~SlotScope()
 {
-    CS2Kit::Core::Kit().Translations._currentSlot = _prev;
+    Kit().Translations._currentSlot = _prev;
 }
 
 std::string Translations::Get(const std::string& key) const

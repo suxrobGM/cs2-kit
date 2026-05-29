@@ -5,6 +5,8 @@
 #include <CS2Kit/Utils/ChatColors.hpp>
 #include <string>
 
+using CS2Kit::Core::Kit;
+
 namespace CS2Kit::Utils::Chat
 {
 
@@ -28,18 +30,18 @@ std::string EnsureColorPrefix(std::string_view message)
 
 void Print(int slot, std::string_view message)
 {
-    CS2Kit::Core::Kit().Messages.SendChatMessage(slot, EnsureColorPrefix(message));
+    Kit().Messages.SendChatMessage(slot, EnsureColorPrefix(message));
 }
 
 void PrintAll(std::string_view message)
 {
     auto rendered = EnsureColorPrefix(message);
-    auto& mgr = CS2Kit::Core::Kit().Players;
+    auto& mgr = Kit().Players;
     for (auto* p : mgr.GetAllPlayers())
     {
         if (!p)
             continue;
-        CS2Kit::Core::Kit().Messages.SendChatMessage(p->GetSlot(), rendered);
+        Kit().Messages.SendChatMessage(p->GetSlot(), rendered);
     }
 }
 
@@ -49,12 +51,12 @@ void PrintFiltered(std::string_view message, const std::function<bool(const Play
         return;
 
     auto rendered = EnsureColorPrefix(message);
-    auto& mgr = CS2Kit::Core::Kit().Players;
+    auto& mgr = Kit().Players;
     for (auto* p : mgr.GetAllPlayers())
     {
         if (!p || !filter(p))
             continue;
-        CS2Kit::Core::Kit().Messages.SendChatMessage(p->GetSlot(), rendered);
+        Kit().Messages.SendChatMessage(p->GetSlot(), rendered);
     }
 }
 

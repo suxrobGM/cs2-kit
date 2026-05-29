@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <sstream>
 
+using CS2Kit::Core::Kit;
+
 namespace CS2Kit::Menu
 {
 
@@ -26,7 +28,7 @@ constexpr const char* NavBack = "#AA8833";
 // English literal — lets consumers that don't ship nav.* keys still render cleanly.
 static std::string FooterLabel(const char* key, const char* fallback)
 {
-    auto value = CS2Kit::Core::Kit().Translations.Get(key);
+    auto value = Kit().Translations.Get(key);
     return value == key ? std::string(fallback) : value;
 }
 

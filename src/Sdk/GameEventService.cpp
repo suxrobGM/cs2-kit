@@ -3,6 +3,8 @@
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 
+using CS2Kit::Core::Kit;
+
 namespace CS2Kit::Sdk
 {
 
@@ -10,7 +12,7 @@ using namespace CS2Kit::Utils;
 
 bool GameEventService::Initialize()
 {
-    if (!CS2Kit::Core::Kit().Interfaces.GameEventManager)
+    if (!Kit().Interfaces.GameEventManager)
     {
         Log::Warn("GameEventService: IGameEventManager2 not available.");
         return false;
@@ -22,7 +24,7 @@ bool GameEventService::Initialize()
 
 IGameEvent* GameEventService::CreateEvent(const char* name)
 {
-    auto* mgr = CS2Kit::Core::Kit().Interfaces.GameEventManager;
+    auto* mgr = Kit().Interfaces.GameEventManager;
     if (!mgr)
         return nullptr;
 
@@ -31,7 +33,7 @@ IGameEvent* GameEventService::CreateEvent(const char* name)
 
 bool GameEventService::FireEvent(IGameEvent* event, bool dontBroadcast)
 {
-    auto* mgr = CS2Kit::Core::Kit().Interfaces.GameEventManager;
+    auto* mgr = Kit().Interfaces.GameEventManager;
     if (!mgr || !event)
         return false;
 
@@ -40,14 +42,14 @@ bool GameEventService::FireEvent(IGameEvent* event, bool dontBroadcast)
 
 void GameEventService::FreeEvent(IGameEvent* event)
 {
-    auto* mgr = CS2Kit::Core::Kit().Interfaces.GameEventManager;
+    auto* mgr = Kit().Interfaces.GameEventManager;
     if (mgr && event)
         mgr->FreeEvent(event);
 }
 
 uint64_t GameEventService::Listen(const char* eventName, EventCallback callback)
 {
-    auto* mgr = CS2Kit::Core::Kit().Interfaces.GameEventManager;
+    auto* mgr = Kit().Interfaces.GameEventManager;
     if (!mgr)
         return 0;
 
@@ -69,7 +71,7 @@ void GameEventService::RemoveListener(uint64_t id)
 
 void GameEventService::RemoveAllListeners()
 {
-    if (auto* mgr = CS2Kit::Core::Kit().Interfaces.GameEventManager)
+    if (auto* mgr = Kit().Interfaces.GameEventManager)
         mgr->RemoveListener(this);  // detaches this listener from every event in one call
 
     _registeredEvents.clear();

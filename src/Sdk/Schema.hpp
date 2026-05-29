@@ -1,6 +1,5 @@
 #pragma once
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <cstdint>
 #include <map>
 #include <string>
@@ -13,7 +12,7 @@ namespace CS2Kit::Sdk
  * Provides access to entity field offsets at runtime by querying the
  * engine's schema system. Results are cached for O(1) repeated access.
  */
-class SchemaService : public Core::Singleton<SchemaService>
+class SchemaService
 {
 public:
     SchemaService() = default;

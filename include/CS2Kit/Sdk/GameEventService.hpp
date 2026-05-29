@@ -2,7 +2,6 @@
 
 #include <igameevents.h>
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <cstdint>
 #include <functional>
 #include <set>
@@ -15,7 +14,7 @@ namespace CS2Kit::Sdk
 /**
  * @brief Wrapper for IGameEventManager2 providing event creation, firing, and listener registration.
  */
-class GameEventService : public Core::Singleton<GameEventService>, public IGameEventListener2
+class GameEventService : public IGameEventListener2
 {
 public:
     GameEventService() = default;

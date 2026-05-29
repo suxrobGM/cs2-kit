@@ -13,6 +13,8 @@
 #include <networksystem/netmessage.h>
 #include <usermessages.pb.h>
 
+using CS2Kit::Core::Kit;
+
 namespace CS2Kit::Sdk
 {
 
@@ -20,7 +22,7 @@ using namespace CS2Kit::Utils;
 
 bool MessageSystem::Initialize()
 {
-    auto& interfaces = CS2Kit::Core::Kit().Interfaces;
+    auto& interfaces = Kit().Interfaces;
 
     if (!interfaces.GameEventSystem)
     {
@@ -40,8 +42,8 @@ bool MessageSystem::Initialize()
 
 bool MessageSystem::InitGameEventManager()
 {
-    auto& interfaces = CS2Kit::Core::Kit().Interfaces;
-    auto& gameData = CS2Kit::Core::Kit().GameData;
+    auto& interfaces = Kit().Interfaces;
+    auto& gameData = Kit().GameData;
 
     void* eventManagerAddr = gameData.ResolveSignature("GameEventManager");
     if (eventManagerAddr)
@@ -80,7 +82,7 @@ bool MessageSystem::InitGameEventManager()
 
 void MessageSystem::SendCenterHtml(int slot, const std::string& html)
 {
-    auto* gameEventManager = CS2Kit::Core::Kit().Interfaces.GameEventManager;
+    auto* gameEventManager = Kit().Interfaces.GameEventManager;
     if (!gameEventManager || slot < 0 || slot >= 64)
         return;
 
@@ -108,7 +110,7 @@ void MessageSystem::SendCenterHtml(int slot, const std::string& html)
 
 void MessageSystem::SendChatMessage(int slot, const std::string& message)
 {
-    auto& interfaces = CS2Kit::Core::Kit().Interfaces;
+    auto& interfaces = Kit().Interfaces;
     if (!interfaces.GameEventSystem || !interfaces.NetworkMessages || slot < 0 || slot >= 64)
         return;
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Commands/Command.hpp>
-#include <CS2Kit/Core/Singleton.hpp>
 #include <functional>
 #include <unordered_map>
 #include <vector>
@@ -31,7 +30,7 @@ using ResultCallback = std::function<void(Players::Player* caller, const Command
  * @brief Dispatches chat commands (prefixed with ! or .) to registered handlers.
  * Handles prefix matching, argument parsing, and permission enforcement.
  */
-class CommandManager : public Core::Singleton<CommandManager>
+class CommandManager
 {
 public:
     CommandManager() = default;

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <CS2Kit/Core/Singleton.hpp>
 
 #include <array>
 #include <cstdint>
@@ -25,7 +24,7 @@ namespace CS2Kit::Sdk
  * happened). Plumbing the consume call through the plugin's existing
  * `Hook_DispatchConCommand` is the only reliable suppression path.
  */
-class ChatInputCapture : public Core::Singleton<ChatInputCapture>
+class ChatInputCapture
 {
 public:
     ChatInputCapture() = default;

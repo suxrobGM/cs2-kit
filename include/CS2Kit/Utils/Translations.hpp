@@ -1,6 +1,5 @@
 #pragma once
 
-#include <CS2Kit/Core/Singleton.hpp>
 #include <array>
 #include <string>
 #include <unordered_map>
@@ -14,7 +13,7 @@ namespace CS2Kit::Utils
  * dotted keys (`category.punish`). A @ref SlotScope routes @ref Get through a slot's language
  * (falling back to the active language, then English) without affecting code outside the scope.
  */
-class Translations : public Core::Singleton<Translations>
+class Translations
 {
 public:
     static constexpr int MaxSlots = 64;
