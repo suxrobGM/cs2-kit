@@ -12,34 +12,31 @@ struct ScheduledEffect::State
     uint64_t stopTimer = 0;
     std::function<void()> onStop;
     bool stopped = false;
+
+    void Stop()
+    {
+        if (stopped)
+            return;
+        stopped = true;
+
+        if (auto* kit = KitOrNull())
+        {
+            if (tickTimer)
+                kit->Scheduler.Cancel(tickTimer);
+            if (stopTimer)
+                kit->Scheduler.Cancel(stopTimer);
+        }
+        tickTimer = 0;
+        stopTimer = 0;
+
+        if (onStop)
+        {
+            auto cb = std::move(onStop);
+            onStop = nullptr;
+            cb();
+        }
+    }
 };
-
-namespace
-{
-void StopState(ScheduledEffect::State& s)
-{
-    if (s.stopped)
-        return;
-    s.stopped = true;
-
-    if (auto* kit = KitOrNull())
-    {
-        if (s.tickTimer)
-            kit->Scheduler.Cancel(s.tickTimer);
-        if (s.stopTimer)
-            kit->Scheduler.Cancel(s.stopTimer);
-    }
-    s.tickTimer = 0;
-    s.stopTimer = 0;
-
-    if (s.onStop)
-    {
-        auto cb = std::move(s.onStop);
-        s.onStop = nullptr;
-        cb();
-    }
-}
-}  // namespace
 
 ScheduledEffect::ScheduledEffect(int64_t tickIntervalMs, int64_t durationMs, std::function<void()> onTick,
                                  std::function<void()> onStop)
@@ -56,7 +53,7 @@ ScheduledEffect::ScheduledEffect(int64_t tickIntervalMs, int64_t durationMs, std
         std::weak_ptr<State> weak = _state;
         _state->stopTimer = sched.Delay(durationMs, [weak]() {
             if (auto s = weak.lock())
-                StopState(*s);
+                s->Stop();
         });
     }
 }
@@ -64,7 +61,7 @@ ScheduledEffect::ScheduledEffect(int64_t tickIntervalMs, int64_t durationMs, std
 ScheduledEffect::~ScheduledEffect()
 {
     if (_state)
-        StopState(*_state);
+        _state->Stop();
 }
 
 ScheduledEffect& ScheduledEffect::operator=(ScheduledEffect&& other) noexcept
@@ -72,7 +69,7 @@ ScheduledEffect& ScheduledEffect::operator=(ScheduledEffect&& other) noexcept
     if (this != &other)
     {
         if (_state)
-            StopState(*_state);
+            _state->Stop();
         _state = std::move(other._state);
     }
     return *this;
@@ -81,7 +78,7 @@ ScheduledEffect& ScheduledEffect::operator=(ScheduledEffect&& other) noexcept
 void ScheduledEffect::Stop()
 {
     if (_state)
-        StopState(*_state);
+        _state->Stop();
 }
 
 bool ScheduledEffect::Active() const

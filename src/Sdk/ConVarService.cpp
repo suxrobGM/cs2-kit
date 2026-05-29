@@ -5,6 +5,8 @@
 #include <icvar.h>
 #include <tier1/convar.h>
 
+using CS2Kit::Core::Kit;
+
 namespace
 {
 
@@ -19,8 +21,6 @@ void GlobalConVarChangeCallback(ConVarRefAbstract* ref, CSplitScreenSlot /*slot*
 }
 
 }  // namespace
-
-using CS2Kit::Core::Kit;
 
 namespace CS2Kit::Sdk
 {
