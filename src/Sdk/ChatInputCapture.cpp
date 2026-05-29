@@ -11,7 +11,7 @@ namespace CS2Kit::Sdk
 
 void ChatInputCapture::BeginCapture(int slot, std::string prompt, Callback callback, int timeoutMs)
 {
-    if (slot < 0 || slot >= 64 || !callback)
+    if (!Core::IsValidSlot(slot) || !callback)
         return;
 
     CancelCapture(slot);  // drops any existing prompt + scheduled timeout
@@ -34,14 +34,14 @@ void ChatInputCapture::BeginCapture(int slot, std::string prompt, Callback callb
 
 bool ChatInputCapture::IsCapturing(int slot) const
 {
-    if (slot < 0 || slot >= 64)
+    if (!Core::IsValidSlot(slot))
         return false;
     return _pending[slot].has_value();
 }
 
 bool ChatInputCapture::TryConsume(int slot, std::string_view text)
 {
-    if (slot < 0 || slot >= 64)
+    if (!Core::IsValidSlot(slot))
         return false;
 
     auto& opt = _pending[slot];
@@ -64,7 +64,7 @@ bool ChatInputCapture::TryConsume(int slot, std::string_view text)
 
 void ChatInputCapture::CancelCapture(int slot)
 {
-    if (slot < 0 || slot >= 64)
+    if (!Core::IsValidSlot(slot))
         return;
 
     auto& opt = _pending[slot];
@@ -79,7 +79,7 @@ void ChatInputCapture::CancelCapture(int slot)
 
 const std::string* ChatInputCapture::GetPrompt(int slot) const
 {
-    if (slot < 0 || slot >= 64)
+    if (!Core::IsValidSlot(slot))
         return nullptr;
     const auto& opt = _pending[slot];
     return opt.has_value() ? &opt->Prompt : nullptr;

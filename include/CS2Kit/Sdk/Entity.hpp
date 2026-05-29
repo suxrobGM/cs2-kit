@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CS2Kit/Core/Slot.hpp>
 #include <cstdint>
 #include <string>
 
@@ -40,7 +41,7 @@ constexpr uint32_t FL_GODMODE = 16384;
 constexpr uint32_t FL_NOTARGET = 32768;
 /** @} */
 
-constexpr int MaxPlayers = 64;
+inline constexpr int MaxPlayers = Core::MaxPlayers;
 
 /**
  * @brief Entity system access layer for the Source 2 engine.

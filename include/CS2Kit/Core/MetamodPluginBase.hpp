@@ -132,6 +132,7 @@ private:
     bool _lateLoad = false;
     std::vector<std::function<void()>> _deferred;
     std::unique_ptr<Services> _services;
+    PluginInfo _info;  // cached copy of Info() captured at load; backs the ISmmPlugin getters
 };
 
 }  // namespace CS2Kit::Core

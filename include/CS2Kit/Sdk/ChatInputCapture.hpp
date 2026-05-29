@@ -1,6 +1,6 @@
 #pragma once
 
-
+#include <CS2Kit/Core/Slot.hpp>
 #include <array>
 #include <cstdint>
 #include <functional>
@@ -65,7 +65,7 @@ private:
         uint64_t TimeoutHandle = 0;
     };
 
-    std::array<std::optional<Pending>, 64> _pending{};
+    std::array<std::optional<Pending>, Core::MaxPlayers> _pending{};
 };
 
 }  // namespace CS2Kit::Sdk

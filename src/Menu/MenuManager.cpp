@@ -78,7 +78,7 @@ void JumpPage(const std::vector<std::shared_ptr<MenuOption>>& items, int& idx, i
 
 void MenuManager::OpenMenu(int slot, std::shared_ptr<Menu> menu)
 {
-    if (slot < 0 || slot >= 64 || !menu)
+    if (!Core::IsValidSlot(slot) || !menu)
         return;
 
     auto& state = _states[slot];
@@ -104,7 +104,7 @@ void MenuManager::OpenMenu(int slot, std::shared_ptr<Menu> menu)
 
 void MenuManager::CloseMenu(int slot)
 {
-    if (slot < 0 || slot >= 64)
+    if (!Core::IsValidSlot(slot))
         return;
 
     auto& state = _states[slot];
@@ -136,7 +136,7 @@ void MenuManager::CloseMenu(int slot)
 
 void MenuManager::CloseAllMenus(int slot)
 {
-    if (slot < 0 || slot >= 64)
+    if (!Core::IsValidSlot(slot))
         return;
 
     auto& state = _states[slot];
@@ -170,7 +170,7 @@ void MenuManager::SetPlayerFrozen(int slot, bool frozen)
 
 bool MenuManager::HasActiveMenu(int slot) const
 {
-    if (slot < 0 || slot >= 64)
+    if (!Core::IsValidSlot(slot))
         return false;
 
     return _states[slot].HasMenu();
@@ -178,7 +178,7 @@ bool MenuManager::HasActiveMenu(int slot) const
 
 void MenuManager::OnGameFrame()
 {
-    for (int slot = 0; slot < 64; ++slot)
+    for (int slot = 0; slot < Core::MaxPlayers; ++slot)
     {
         auto& state = _states[slot];
         if (!state.HasMenu())
@@ -288,7 +288,7 @@ void MenuManager::RenderMenu(int slot)
 
 void MenuManager::OnPlayerDisconnect(int slot)
 {
-    if (slot < 0 || slot >= 64)
+    if (!Core::IsValidSlot(slot))
         return;
 
     _states[slot].Reset();

@@ -36,6 +36,7 @@ bool MetamodPluginBase::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
 {
     PLUGIN_SAVEVARS();
     _lateLoad = late;
+    _info = Info();  // capture once; the ISmmPlugin getters read this copy
 
     // Fresh service container per load; wire the accessor before Initialize so kit subsystems
     // (and the plugin's OnLoad) can reach each other via Kit(). Destroyed in Unload — this is
@@ -44,7 +45,7 @@ bool MetamodPluginBase::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     SetActiveServices(_services.get());
 
     CS2Kit::InitParams params;
-    params.LogPrefix = Info().LogTag;
+    params.LogPrefix = _info.LogTag;
     if (!CS2Kit::Initialize(ismm, error, maxlen, *_services, params))
     {
         SetActiveServices(nullptr);
@@ -172,7 +173,7 @@ void MetamodPluginBase::Hook_DispatchConCommand(ConCommandRef cmd, const CComman
         return;
 
     int slotIdx = ctx.GetPlayerSlot().Get();
-    if (slotIdx < 0 || slotIdx >= 64)
+    if (!Core::IsValidSlot(slotIdx))
         return;
 
     Player* player = Kit().Players.GetPlayerBySlot(slotIdx);
@@ -185,35 +186,35 @@ void MetamodPluginBase::Hook_DispatchConCommand(ConCommandRef cmd, const CComman
 
 const char* MetamodPluginBase::GetAuthor()
 {
-    return Info().Author;
+    return _info.Author;
 }
 const char* MetamodPluginBase::GetName()
 {
-    return Info().Name;
+    return _info.Name;
 }
 const char* MetamodPluginBase::GetDescription()
 {
-    return Info().Description;
+    return _info.Description;
 }
 const char* MetamodPluginBase::GetURL()
 {
-    return Info().Url;
+    return _info.Url;
 }
 const char* MetamodPluginBase::GetLicense()
 {
-    return Info().License;
+    return _info.License;
 }
 const char* MetamodPluginBase::GetVersion()
 {
-    return Info().Version;
+    return _info.Version;
 }
 const char* MetamodPluginBase::GetDate()
 {
-    return Info().Date;
+    return _info.Date;
 }
 const char* MetamodPluginBase::GetLogTag()
 {
-    return Info().LogTag;
+    return _info.LogTag;
 }
 
 void* MetamodPluginBase::OnMetamodQuery(const char* iface, int* ret)

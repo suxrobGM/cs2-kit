@@ -57,62 +57,27 @@ bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, Core::Services& servi
 
     auto& gi = services.Interfaces;
 
-    gi.ServerGameDLL = static_cast<IServerGameDLL*>(resolveServer(INTERFACEVERSION_SERVERGAMEDLL));
-    if (!gi.ServerGameDLL)
-    {
-        ismm->Format(error, maxlen, "Could not find interface: %s", INTERFACEVERSION_SERVERGAMEDLL);
-        return false;
+    // Resolve each required interface, erroring out on the first one that is missing. The macro
+    // keeps this type-safe (decltype, no void** punning) while collapsing the per-interface
+    // resolve-and-check boilerplate to one line each.
+#define CS2KIT_RESOLVE(field, factory, version)                                                                        \
+    gi.field = static_cast<decltype(gi.field)>(factory(version));                                                      \
+    if (!gi.field)                                                                                                     \
+    {                                                                                                                  \
+        ismm->Format(error, maxlen, "Could not find interface: %s", version);                                          \
+        return false;                                                                                                  \
     }
 
-    gi.ServerGameClients = static_cast<IServerGameClients*>(resolveServer(INTERFACEVERSION_SERVERGAMECLIENTS));
-    if (!gi.ServerGameClients)
-    {
-        ismm->Format(error, maxlen, "Could not find interface: %s", INTERFACEVERSION_SERVERGAMECLIENTS);
-        return false;
-    }
+    CS2KIT_RESOLVE(ServerGameDLL, resolveServer, INTERFACEVERSION_SERVERGAMEDLL)
+    CS2KIT_RESOLVE(ServerGameClients, resolveServer, INTERFACEVERSION_SERVERGAMECLIENTS)
+    CS2KIT_RESOLVE(Engine, resolveEngine, INTERFACEVERSION_VENGINESERVER)
+    CS2KIT_RESOLVE(GameEventSystem, resolveEngine, GAMEEVENTSYSTEM_INTERFACE_VERSION)
+    CS2KIT_RESOLVE(NetworkMessages, resolveEngine, NETWORKMESSAGES_INTERFACE_VERSION)
+    CS2KIT_RESOLVE(SchemaSystem, resolveEngine, SCHEMASYSTEM_INTERFACE_VERSION)
+    CS2KIT_RESOLVE(CVar, resolveEngine, CVAR_INTERFACE_VERSION)
+    CS2KIT_RESOLVE(GameResourceService, resolveEngine, GAMERESOURCESERVICESERVER_INTERFACE_VERSION)
 
-    gi.Engine = static_cast<IVEngineServer2*>(resolveEngine(INTERFACEVERSION_VENGINESERVER));
-    if (!gi.Engine)
-    {
-        ismm->Format(error, maxlen, "Could not find interface: %s", INTERFACEVERSION_VENGINESERVER);
-        return false;
-    }
-
-    gi.GameEventSystem = static_cast<IGameEventSystem*>(resolveEngine(GAMEEVENTSYSTEM_INTERFACE_VERSION));
-    if (!gi.GameEventSystem)
-    {
-        ismm->Format(error, maxlen, "Could not find interface: %s", GAMEEVENTSYSTEM_INTERFACE_VERSION);
-        return false;
-    }
-
-    gi.NetworkMessages = static_cast<INetworkMessages*>(resolveEngine(NETWORKMESSAGES_INTERFACE_VERSION));
-    if (!gi.NetworkMessages)
-    {
-        ismm->Format(error, maxlen, "Could not find interface: %s", NETWORKMESSAGES_INTERFACE_VERSION);
-        return false;
-    }
-
-    gi.SchemaSystem = static_cast<ISchemaSystem*>(resolveEngine(SCHEMASYSTEM_INTERFACE_VERSION));
-    if (!gi.SchemaSystem)
-    {
-        ismm->Format(error, maxlen, "Could not find interface: %s", SCHEMASYSTEM_INTERFACE_VERSION);
-        return false;
-    }
-
-    gi.CVar = static_cast<ICvar*>(resolveEngine(CVAR_INTERFACE_VERSION));
-    if (!gi.CVar)
-    {
-        ismm->Format(error, maxlen, "Could not find interface: %s", CVAR_INTERFACE_VERSION);
-        return false;
-    }
-
-    gi.GameResourceService =
-        static_cast<IGameResourceService*>(resolveEngine(GAMERESOURCESERVICESERVER_INTERFACE_VERSION));
-    if (!gi.GameResourceService)
-    {
-        ismm->Format(error, maxlen, "Could not find interface: %s", GAMERESOURCESERVICESERVER_INTERFACE_VERSION);
-        return false;
-    }
+#undef CS2KIT_RESOLVE
 
     // 4. Set g_pCVar (required by HL2SDK's tier1/convar.cpp)
     g_pCVar = gi.CVar;

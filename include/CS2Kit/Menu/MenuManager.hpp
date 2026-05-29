@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CS2Kit/Core/Slot.hpp>
 #include <CS2Kit/Menu/Menu.hpp>
 #include <array>
 
@@ -48,8 +49,8 @@ private:
     /** Freeze (true) or restore (false) the player's movement; no-op unless freeze is enabled. */
     void SetPlayerFrozen(int slot, bool frozen);
 
-    /** Per-player menu state. Max 64 players. */
-    std::array<PlayerMenuState, 64> _states;
+    /** Per-player menu state, one entry per slot. */
+    std::array<PlayerMenuState, Core::MaxPlayers> _states;
     static constexpr int64_t InputDebounceMs = 200;
     bool _freezePlayer = false;
 };

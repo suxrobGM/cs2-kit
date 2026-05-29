@@ -85,20 +85,17 @@ void* GameData::FindSignature(const std::string& name) const
 
 void* GameData::ResolveSignature(const std::string& name) const
 {
-    auto it = _signatures.find(name);
-    if (it == _signatures.end())
-        return nullptr;
-
-    auto& sig = it->second;
-    void* match = CS2Kit::Sdk::FindPattern(sig.Library.c_str(), sig.Pattern);
+    void* match = FindSignature(name);
     if (!match)
         return nullptr;
 
-    if (sig.Offset == 0)
+    const int sigOffset = _signatures.at(name).Offset;  // entry exists — FindSignature matched
+    if (sigOffset == 0)
         return match;
 
-    auto addr = reinterpret_cast<uintptr_t>(match) + sig.Offset;
-    addr = ResolveRelativeAddress(addr, 0, 4);
+    // A non-zero offset means the signature points at a 4-byte little-endian rel32 displacement
+    // located `sigOffset` bytes into the match; resolve it to the absolute target address.
+    auto addr = ResolveRelativeAddress(reinterpret_cast<uintptr_t>(match) + sigOffset, 0, 4);
     if (addr == 0)
         return nullptr;
     return reinterpret_cast<void*>(addr);

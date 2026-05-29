@@ -48,6 +48,29 @@ public:
         return *this;
     }
 
+    /**
+     * Bind a (primary, secondary) slot context for context-aware rows added afterwards.
+     * Lets call sites drop the repeated `[a, b, fn](int){ fn(a, b); }` capture on every row —
+     * e.g. an admin menu binds (adminSlot, targetSlot) once, then adds action rows with @ref
+     * AddContextButton.
+     */
+    MenuBuilder& WithContext(int primarySlot, int secondarySlot)
+    {
+        _ctxPrimary = primarySlot;
+        _ctxSecondary = secondarySlot;
+        return *this;
+    }
+
+    /** Like @ref AddButton, but the callback receives the bound @ref WithContext slot pair. */
+    MenuBuilder& AddContextButton(const std::string& label, std::function<void(int primary, int secondary)> onActivate,
+                                  bool enabled = true)
+    {
+        int a = _ctxPrimary;
+        int b = _ctxSecondary;
+        return AddButton(
+            label, [a, b, fn = std::move(onActivate)](int) { if (fn) fn(a, b); }, enabled);
+    }
+
     /** Append an action row with a label that is recomputed every render. */
     MenuBuilder& AddDynamicButton(std::function<std::string()> getLabel, std::function<void(int)> onActivate,
                                   bool enabled = true)
@@ -158,6 +181,8 @@ public:
 
 private:
     std::shared_ptr<Menu> _menu;
+    int _ctxPrimary = -1;
+    int _ctxSecondary = -1;
 };
 
 }  // namespace CS2Kit::Menu

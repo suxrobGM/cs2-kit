@@ -28,24 +28,75 @@ public:
 
     void Kick(const char* reason) const;
 
+    // Raw schema-field access (escape hatch). Header-only so any field type works without
+    // editing this file; the offset lookup is delegated to SchemaOffset() to keep the internal
+    // SchemaService out of this public header.
     template <typename T>
-    T GetField(const char* className, const char* fieldName) const;
+    T GetField(const char* className, const char* fieldName) const
+    {
+        if (!_controller)
+            return T{};
+        int offset = SchemaOffset(className, fieldName);
+        if (offset < 0)
+            return T{};
+        return *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(_controller) + offset);
+    }
 
     template <typename T>
-    T GetPawnField(const char* className, const char* fieldName) const;
+    T GetPawnField(const char* className, const char* fieldName) const
+    {
+        auto* pawn = GetPawn();
+        if (!pawn)
+            return T{};
+        int offset = SchemaOffset(className, fieldName);
+        if (offset < 0)
+            return T{};
+        return *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(pawn) + offset);
+    }
 
     template <typename T>
-    void SetField(const char* className, const char* fieldName, const T& value) const;
+    void SetField(const char* className, const char* fieldName, const T& value) const
+    {
+        if (!_controller)
+            return;
+        int offset = SchemaOffset(className, fieldName);
+        if (offset < 0)
+            return;
+        *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(_controller) + offset) = value;
+    }
 
     template <typename T>
-    void SetPawnField(const char* className, const char* fieldName, const T& value) const;
+    void SetPawnField(const char* className, const char* fieldName, const T& value) const
+    {
+        auto* pawn = GetPawn();
+        if (!pawn)
+            return;
+        int offset = SchemaOffset(className, fieldName);
+        if (offset < 0)
+            return;
+        *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(pawn) + offset) = value;
+    }
 
     int GetHealth() const;
+    void SetHealth(int health) const;
     int GetTeam() const;
     int GetLifeState() const;
     bool IsAlive() const;
     uint64_t GetButtons() const;
     int GetArmor() const;
+    void SetArmor(int armor) const;
+
+    /** CBaseEntity::m_fFlags bitmask (FL_* values in Entity.hpp). */
+    uint32_t GetFlags() const;
+    void SetFlags(uint32_t flags) const;
+
+    Vector GetVelocity() const;
+    void SetVelocity(const Vector& velocity) const;
+
+    /** Pawn render mode/color (CBaseModelEntity::m_nRenderMode / m_clrRender). */
+    uint8_t GetRenderMode() const;
+    uint32_t GetRenderColor() const;
+    void SetRender(uint8_t mode, uint32_t color) const;
 
     Vector GetAbsOrigin() const;
     QAngle GetAbsAngles() const;
@@ -96,6 +147,9 @@ public:
     void Teleport(const Vector* origin, const QAngle* angles, const Vector* velocity) const;
 
 private:
+    /** Resolve a schema field offset (delegates to the internal SchemaService). */
+    int SchemaOffset(const char* className, const char* fieldName) const;
+
     int _slot;
     CEntityInstance* _controller = nullptr;
 };
