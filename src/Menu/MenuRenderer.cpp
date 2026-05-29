@@ -1,4 +1,5 @@
 #include "Menu/MenuRenderer.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include <CS2Kit/Menu/MenuOption.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
@@ -25,7 +26,7 @@ constexpr const char* NavBack = "#AA8833";
 // English literal — lets consumers that don't ship nav.* keys still render cleanly.
 static std::string FooterLabel(const char* key, const char* fallback)
 {
-    auto value = Utils::Translations::Instance().Get(key);
+    auto value = CS2Kit::Core::Kit().Translations.Get(key);
     return value == key ? std::string(fallback) : value;
 }
 

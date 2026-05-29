@@ -101,7 +101,7 @@ void MetamodPluginBase::RunDeferred()
 
 void MetamodPluginBase::RegisterStandardHooks()
 {
-    auto& gi = GameInterfaces::Instance();
+    auto& gi = CS2Kit::Core::Kit().Interfaces;
 
     SH_ADD_HOOK(IServerGameDLL, GameFrame, gi.ServerGameDLL, SH_MEMBER(this, &MetamodPluginBase::Hook_GameFrame), true);
     SH_ADD_HOOK(IServerGameClients, OnClientConnected, gi.ServerGameClients,
@@ -112,7 +112,7 @@ void MetamodPluginBase::RegisterStandardHooks()
                 false);
 
     Defer([this] {
-        auto& g = GameInterfaces::Instance();
+        auto& g = CS2Kit::Core::Kit().Interfaces;
         SH_REMOVE_HOOK(IServerGameDLL, GameFrame, g.ServerGameDLL, SH_MEMBER(this, &MetamodPluginBase::Hook_GameFrame),
                        true);
         SH_REMOVE_HOOK(IServerGameClients, OnClientConnected, g.ServerGameClients,
@@ -136,7 +136,7 @@ void MetamodPluginBase::Hook_OnClientConnected(CPlayerSlot slot, const char* nam
 {
     int slotIdx = slot.Get();
     int64_t steamId = static_cast<int64_t>(xuid);
-    Player* player = PlayerManager::Instance().AddPlayer(slotIdx, steamId, name ? name : "", address ? address : "");
+    Player* player = CS2Kit::Core::Kit().Players.AddPlayer(slotIdx, steamId, name ? name : "", address ? address : "");
     OnPlayerConnect(player);
 }
 
@@ -144,9 +144,9 @@ void MetamodPluginBase::Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconne
                                               uint64 xuid, const char* networkId)
 {
     int slotIdx = slot.Get();
-    OnPlayerDisconnect(PlayerManager::Instance().GetPlayerBySlot(slotIdx));
+    OnPlayerDisconnect(CS2Kit::Core::Kit().Players.GetPlayerBySlot(slotIdx));
     CS2Kit::OnPlayerDisconnect(*_services, slotIdx);
-    PlayerManager::Instance().RemovePlayer(slotIdx);
+    CS2Kit::Core::Kit().Players.RemovePlayer(slotIdx);
 }
 
 void MetamodPluginBase::Hook_DispatchConCommand(ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args)
@@ -173,7 +173,7 @@ void MetamodPluginBase::Hook_DispatchConCommand(ConCommandRef cmd, const CComman
     if (slotIdx < 0 || slotIdx >= 64)
         return;
 
-    Player* player = PlayerManager::Instance().GetPlayerBySlot(slotIdx);
+    Player* player = CS2Kit::Core::Kit().Players.GetPlayerBySlot(slotIdx);
     if (!player)
         return;
 

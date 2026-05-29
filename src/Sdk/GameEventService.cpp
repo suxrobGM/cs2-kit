@@ -1,4 +1,5 @@
 #include <CS2Kit/Sdk/GameEventService.hpp>
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 
@@ -9,7 +10,7 @@ using namespace CS2Kit::Utils;
 
 bool GameEventService::Initialize()
 {
-    if (!GameInterfaces::Instance().GameEventManager)
+    if (!CS2Kit::Core::Kit().Interfaces.GameEventManager)
     {
         Log::Warn("GameEventService: IGameEventManager2 not available.");
         return false;
@@ -21,7 +22,7 @@ bool GameEventService::Initialize()
 
 IGameEvent* GameEventService::CreateEvent(const char* name)
 {
-    auto* mgr = GameInterfaces::Instance().GameEventManager;
+    auto* mgr = CS2Kit::Core::Kit().Interfaces.GameEventManager;
     if (!mgr)
         return nullptr;
 
@@ -30,7 +31,7 @@ IGameEvent* GameEventService::CreateEvent(const char* name)
 
 bool GameEventService::FireEvent(IGameEvent* event, bool dontBroadcast)
 {
-    auto* mgr = GameInterfaces::Instance().GameEventManager;
+    auto* mgr = CS2Kit::Core::Kit().Interfaces.GameEventManager;
     if (!mgr || !event)
         return false;
 
@@ -39,14 +40,14 @@ bool GameEventService::FireEvent(IGameEvent* event, bool dontBroadcast)
 
 void GameEventService::FreeEvent(IGameEvent* event)
 {
-    auto* mgr = GameInterfaces::Instance().GameEventManager;
+    auto* mgr = CS2Kit::Core::Kit().Interfaces.GameEventManager;
     if (mgr && event)
         mgr->FreeEvent(event);
 }
 
 uint64_t GameEventService::Listen(const char* eventName, EventCallback callback)
 {
-    auto* mgr = GameInterfaces::Instance().GameEventManager;
+    auto* mgr = CS2Kit::Core::Kit().Interfaces.GameEventManager;
     if (!mgr)
         return 0;
 
@@ -68,7 +69,7 @@ void GameEventService::RemoveListener(uint64_t id)
 
 void GameEventService::RemoveAllListeners()
 {
-    if (auto* mgr = GameInterfaces::Instance().GameEventManager)
+    if (auto* mgr = CS2Kit::Core::Kit().Interfaces.GameEventManager)
         mgr->RemoveListener(this);  // detaches this listener from every event in one call
 
     _registeredEvents.clear();

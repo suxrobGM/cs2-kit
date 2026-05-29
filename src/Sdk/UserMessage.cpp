@@ -1,4 +1,5 @@
 #include "Sdk/SigScanner.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include <igameevents.h>
 
@@ -19,7 +20,7 @@ using namespace CS2Kit::Utils;
 
 bool MessageSystem::Initialize()
 {
-    auto& interfaces = GameInterfaces::Instance();
+    auto& interfaces = CS2Kit::Core::Kit().Interfaces;
 
     if (!interfaces.GameEventSystem)
     {
@@ -39,8 +40,8 @@ bool MessageSystem::Initialize()
 
 bool MessageSystem::InitGameEventManager()
 {
-    auto& interfaces = GameInterfaces::Instance();
-    auto& gameData = GameData::Instance();
+    auto& interfaces = CS2Kit::Core::Kit().Interfaces;
+    auto& gameData = CS2Kit::Core::Kit().GameData;
 
     void* eventManagerAddr = gameData.ResolveSignature("GameEventManager");
     if (eventManagerAddr)
@@ -79,7 +80,7 @@ bool MessageSystem::InitGameEventManager()
 
 void MessageSystem::SendCenterHtml(int slot, const std::string& html)
 {
-    auto* gameEventManager = GameInterfaces::Instance().GameEventManager;
+    auto* gameEventManager = CS2Kit::Core::Kit().Interfaces.GameEventManager;
     if (!gameEventManager || slot < 0 || slot >= 64)
         return;
 
@@ -107,7 +108,7 @@ void MessageSystem::SendCenterHtml(int slot, const std::string& html)
 
 void MessageSystem::SendChatMessage(int slot, const std::string& message)
 {
-    auto& interfaces = GameInterfaces::Instance();
+    auto& interfaces = CS2Kit::Core::Kit().Interfaces;
     if (!interfaces.GameEventSystem || !interfaces.NetworkMessages || slot < 0 || slot >= 64)
         return;
 

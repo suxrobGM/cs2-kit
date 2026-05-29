@@ -1,4 +1,5 @@
 #include "Menu/MenuRenderer.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Menu/MenuOption.hpp>
@@ -117,7 +118,7 @@ void MenuManager::CloseMenu(int slot)
     if (state.MenuStack.empty())
     {
         SetPlayerFrozen(slot, false);
-        MessageSystem::Instance().ClearCenterHtml(slot);
+        CS2Kit::Core::Kit().Messages.ClearCenterHtml(slot);
         state.Reset();
     }
     else
@@ -139,7 +140,7 @@ void MenuManager::CloseAllMenus(int slot)
     auto& state = _states[slot];
     SetPlayerFrozen(slot, false);
     state.Reset();
-    MessageSystem::Instance().ClearCenterHtml(slot);
+    CS2Kit::Core::Kit().Messages.ClearCenterHtml(slot);
 }
 
 void MenuManager::SetPlayerFrozen(int slot, bool frozen)
@@ -181,7 +182,7 @@ void MenuManager::OnGameFrame()
         if (!state.HasMenu())
             continue;
 
-        uint64_t buttons = EntitySystem::Instance().GetPlayerButtons(slot);
+        uint64_t buttons = CS2Kit::Core::Kit().Entities.GetPlayerButtons(slot);
         auto prev = state.PrevButtons;
         state.PrevButtons = buttons;
 
@@ -209,7 +210,7 @@ void MenuManager::HandleInput(int slot, uint64_t buttons, uint64_t prevButtons)
 
     // While a chat-input capture is active, the only key we honor is R (cancel) — every
     // other input is ignored so the menu doesn't drift while the player types in chat.
-    auto& capture = ChatInputCapture::Instance();
+    auto& capture = CS2Kit::Core::Kit().ChatInput;
     if (capture.IsCapturing(slot))
     {
         if (pressed & IN_RELOAD)
@@ -271,16 +272,16 @@ void MenuManager::RenderMenu(int slot)
         return;
 
     // While a capture is pending, render a prompt overlay instead of the item list.
-    if (auto* prompt = ChatInputCapture::Instance().GetPrompt(slot); prompt != nullptr)
+    if (auto* prompt = CS2Kit::Core::Kit().ChatInput.GetPrompt(slot); prompt != nullptr)
     {
         auto html = RenderCaptureOverlay(menu->Title, *prompt);
-        MessageSystem::Instance().SendCenterHtml(slot, html);
+        CS2Kit::Core::Kit().Messages.SendCenterHtml(slot, html);
         return;
     }
 
     bool isSubmenu = state.MenuStack.size() > 1;
     auto html = RenderMenuHtml(menu, slot, state.SelectedIndex, isSubmenu);
-    MessageSystem::Instance().SendCenterHtml(slot, html);
+    CS2Kit::Core::Kit().Messages.SendCenterHtml(slot, html);
 }
 
 void MenuManager::OnPlayerDisconnect(int slot)
@@ -289,7 +290,7 @@ void MenuManager::OnPlayerDisconnect(int slot)
         return;
 
     _states[slot].Reset();
-    Translations::Instance().ClearPlayerLanguage(slot);
+    CS2Kit::Core::Kit().Translations.ClearPlayerLanguage(slot);
 }
 
 }  // namespace CS2Kit::Menu

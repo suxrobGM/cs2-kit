@@ -1,4 +1,5 @@
 #include "Sdk/Schema.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>
@@ -18,7 +19,7 @@ void EntitySystem::ResolveSchemaOffsets()
     if (_schemaOffsetsResolved)
         return;
 
-    auto& schema = SchemaService::Instance();
+    auto& schema = CS2Kit::Core::Kit().Schema();
 
     _offsetPlayerPawn = schema.GetOffset("CBasePlayerController", "m_hPawn");
     _offsetMovementServices = schema.GetOffset("CBasePlayerPawn", "m_pMovementServices");
@@ -30,14 +31,14 @@ void EntitySystem::ResolveSchemaOffsets()
 
 bool EntitySystem::Initialize()
 {
-    auto& interfaces = GameInterfaces::Instance();
+    auto& interfaces = CS2Kit::Core::Kit().Interfaces;
 
     if (!interfaces.GameResourceService)
     {
         Log::Warn("IGameResourceService not available.");
     }
 
-    int offsetGameEntitySystem = GameData::Instance().GetOffset("GameEntitySystem");
+    int offsetGameEntitySystem = CS2Kit::Core::Kit().GameData.GetOffset("GameEntitySystem");
 
     if (offsetGameEntitySystem < 0)
     {
@@ -64,11 +65,11 @@ bool EntitySystem::Initialize()
 
 CGameEntitySystem* EntitySystem::GetEntitySystem()
 {
-    auto& interfaces = GameInterfaces::Instance();
+    auto& interfaces = CS2Kit::Core::Kit().Interfaces;
 
     if (!interfaces.EntitySystem && interfaces.GameResourceService)
     {
-        int offsetGameEntitySystem = GameData::Instance().GetOffset("GameEntitySystem");
+        int offsetGameEntitySystem = CS2Kit::Core::Kit().GameData.GetOffset("GameEntitySystem");
         if (offsetGameEntitySystem >= 0)
         {
             interfaces.EntitySystem = *reinterpret_cast<CGameEntitySystem**>(

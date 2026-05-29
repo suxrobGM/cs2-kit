@@ -1,4 +1,5 @@
 #include <CS2Kit/Core/Paths.hpp>
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <filesystem>
@@ -118,14 +119,14 @@ const std::string& Translations::ResolveLanguage() const
     return _activeLang;
 }
 
-Translations::SlotScope::SlotScope(int slot) : _prev(Translations::Instance()._currentSlot)
+Translations::SlotScope::SlotScope(int slot) : _prev(CS2Kit::Core::Kit().Translations._currentSlot)
 {
-    Translations::Instance()._currentSlot = slot;
+    CS2Kit::Core::Kit().Translations._currentSlot = slot;
 }
 
 Translations::SlotScope::~SlotScope()
 {
-    Translations::Instance()._currentSlot = _prev;
+    CS2Kit::Core::Kit().Translations._currentSlot = _prev;
 }
 
 std::string Translations::Get(const std::string& key) const

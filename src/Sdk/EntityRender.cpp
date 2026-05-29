@@ -1,4 +1,5 @@
 #include "Sdk/Schema.hpp"
+#include <CS2Kit/Core/Services.hpp>
 
 #include <CS2Kit/Sdk/EntityRender.hpp>
 #include <entity2/entityinstance.h>
@@ -11,7 +12,7 @@ void SetEntityRender(CEntityInstance* entity, RenderMode_t mode, uint32_t color)
     if (!entity)
         return;
 
-    auto& schema = SchemaService::Instance();
+    auto& schema = CS2Kit::Core::Kit().Schema();
     int modeOffset = schema.GetOffset("CBaseModelEntity", "m_nRenderMode");
     int colorOffset = schema.GetOffset("CBaseModelEntity", "m_clrRender");
     if (modeOffset < 0 || colorOffset < 0)

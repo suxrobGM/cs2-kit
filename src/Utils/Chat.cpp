@@ -1,4 +1,5 @@
 #include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Chat.hpp>
 #include <CS2Kit/Utils/ChatColors.hpp>
@@ -27,18 +28,18 @@ std::string EnsureColorPrefix(std::string_view message)
 
 void Print(int slot, std::string_view message)
 {
-    Sdk::MessageSystem::Instance().SendChatMessage(slot, EnsureColorPrefix(message));
+    CS2Kit::Core::Kit().Messages.SendChatMessage(slot, EnsureColorPrefix(message));
 }
 
 void PrintAll(std::string_view message)
 {
     auto rendered = EnsureColorPrefix(message);
-    auto& mgr = Players::PlayerManager::Instance();
+    auto& mgr = CS2Kit::Core::Kit().Players;
     for (auto* p : mgr.GetAllPlayers())
     {
         if (!p)
             continue;
-        Sdk::MessageSystem::Instance().SendChatMessage(p->GetSlot(), rendered);
+        CS2Kit::Core::Kit().Messages.SendChatMessage(p->GetSlot(), rendered);
     }
 }
 
@@ -48,12 +49,12 @@ void PrintFiltered(std::string_view message, const std::function<bool(const Play
         return;
 
     auto rendered = EnsureColorPrefix(message);
-    auto& mgr = Players::PlayerManager::Instance();
+    auto& mgr = CS2Kit::Core::Kit().Players;
     for (auto* p : mgr.GetAllPlayers())
     {
         if (!p || !filter(p))
             continue;
-        Sdk::MessageSystem::Instance().SendChatMessage(p->GetSlot(), rendered);
+        CS2Kit::Core::Kit().Messages.SendChatMessage(p->GetSlot(), rendered);
     }
 }
 
