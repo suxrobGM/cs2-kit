@@ -16,7 +16,7 @@ namespace CS2Kit::Sdk
 class SchemaService : public Core::Singleton<SchemaService>
 {
 public:
-    explicit SchemaService(Token) {}
+    SchemaService() = default;
 
     bool Initialize();
     int GetOffset(const char* className, const char* fieldName);

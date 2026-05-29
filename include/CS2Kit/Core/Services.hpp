@@ -1,0 +1,74 @@
+#pragma once
+
+#include <CS2Kit/Commands/CommandManager.hpp>
+#include <CS2Kit/Core/Scheduler.hpp>
+#include <CS2Kit/Menu/MenuManager.hpp>
+#include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Sdk/ChatInputCapture.hpp>
+#include <CS2Kit/Sdk/ConVarService.hpp>
+#include <CS2Kit/Sdk/Entity.hpp>
+#include <CS2Kit/Sdk/GameData.hpp>
+#include <CS2Kit/Sdk/GameEventService.hpp>
+#include <CS2Kit/Sdk/GameInterfaces.hpp>
+#include <CS2Kit/Sdk/UserMessage.hpp>
+#include <CS2Kit/Utils/Translations.hpp>
+
+#include <memory>
+
+namespace CS2Kit::Sdk
+{
+class SchemaService;  // internal (src/Sdk/Schema.hpp) — held by pointer so this public header stays clean
+}
+
+namespace CS2Kit::Core
+{
+
+/**
+ * @brief Owns every CS2Kit service for one Load/Unload cycle.
+ *
+ * Replaces the per-class process-lifetime singletons: the plugin constructs one
+ * Services on Load and destroys it on Unload, so service state cannot leak across
+ * `meta unload`/`meta reload`. Members are declared in dependency order;
+ * destruction is the reverse (RAII).
+ *
+ * Reach a service via @ref Kit() (e.g. `Kit().Players`, `Kit().Schema()`).
+ */
+class Services
+{
+public:
+    Services();
+    ~Services();
+    Services(const Services&) = delete;
+    Services& operator=(const Services&) = delete;
+
+    // Declaration order == construction order.
+    Sdk::GameInterfaces Interfaces;  // plain interface-pointer holder; populated in CS2Kit::Initialize
+    Sdk::GameData GameData;
+    Sdk::MessageSystem Messages;
+    Sdk::EntitySystem Entities;
+    Sdk::ConVarService ConVars;
+    Sdk::GameEventService Events;
+    Core::Scheduler Scheduler;
+    Sdk::ChatInputCapture ChatInput;
+    Utils::Translations Translations;
+    Players::PlayerManager Players;
+    Commands::CommandManager Commands;
+    Menu::MenuManager Menus;
+
+    /** Internal schema-offset service (forward-declared type). */
+    Sdk::SchemaService& Schema() { return *_schema; }
+
+private:
+    std::unique_ptr<Sdk::SchemaService> _schema;  // constructed last, before public members are used
+};
+
+/** Set/clear the active Services backing @ref Kit(). Called by MetamodPluginBase on Load/Unload. */
+void SetActiveServices(Services* services);
+
+/** The active Services. Asserts if called outside a Load/Unload window. */
+Services& Kit();
+
+/** The active Services, or nullptr — for teardown paths that may run after Shutdown. */
+Services* KitOrNull();
+
+}  // namespace CS2Kit::Core

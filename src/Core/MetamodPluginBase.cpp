@@ -1,5 +1,6 @@
 #include <CS2Kit/CS2Kit.hpp>
 #include <CS2Kit/Core/MetamodPluginBase.hpp>
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Players/Player.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
@@ -26,15 +27,28 @@ SH_DECL_HOOK5_void(IServerGameClients, ClientDisconnect, SH_NOATTRIB, 0, CPlayer
                    const char*, uint64, const char*);
 SH_DECL_HOOK3_void(ICvar, DispatchConCommand, SH_NOATTRIB, 0, ConCommandRef, const CCommandContext&, const CCommand&);
 
+MetamodPluginBase::MetamodPluginBase() = default;
+MetamodPluginBase::~MetamodPluginBase() = default;
+
 bool MetamodPluginBase::Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen, bool late)
 {
     PLUGIN_SAVEVARS();
     _lateLoad = late;
 
+    // Fresh service container per load; wire the accessor before Initialize so kit subsystems
+    // (and the plugin's OnLoad) can reach each other via Kit(). Destroyed in Unload — this is
+    // what makes meta reload start from clean state.
+    _services = std::make_unique<Services>();
+    SetActiveServices(_services.get());
+
     CS2Kit::InitParams params;
     params.LogPrefix = Info().LogTag;
-    if (!CS2Kit::Initialize(ismm, error, maxlen, params))
+    if (!CS2Kit::Initialize(ismm, error, maxlen, *_services, params))
+    {
+        SetActiveServices(nullptr);
+        _services.reset();
         return false;
+    }
 
     RegisterStandardHooks();
     OnRegisterHooks();
@@ -43,7 +57,10 @@ bool MetamodPluginBase::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     {
         snprintf(error, maxlen, "Plugin initialization failed");
         RunDeferred();
-        CS2Kit::Shutdown();
+        CS2Kit::Shutdown(*_services);
+        OnDestroyInstances();
+        SetActiveServices(nullptr);
+        _services.reset();
         return false;
     }
 
@@ -53,9 +70,15 @@ bool MetamodPluginBase::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
 
 bool MetamodPluginBase::Unload(char* error, size_t maxlen)
 {
+    // Order matters: deferred teardown (hook removal, DB close, timer cancel) runs while every
+    // instance is still alive; only then do we tear the instances down (plugin first, then kit),
+    // and null the accessor before the kit services are destroyed so nothing dereferences Kit().
     OnUnload();
     RunDeferred();
-    CS2Kit::Shutdown();
+    CS2Kit::Shutdown(*_services);
+    OnDestroyInstances();
+    SetActiveServices(nullptr);
+    _services.reset();
     return true;
 }
 
@@ -105,7 +128,7 @@ void MetamodPluginBase::RegisterStandardHooks()
 
 void MetamodPluginBase::Hook_GameFrame(bool simulating, bool firstTick, bool lastTick)
 {
-    CS2Kit::OnGameFrame();
+    CS2Kit::OnGameFrame(*_services);
 }
 
 void MetamodPluginBase::Hook_OnClientConnected(CPlayerSlot slot, const char* name, uint64 xuid, const char* networkId,
@@ -122,7 +145,7 @@ void MetamodPluginBase::Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconne
 {
     int slotIdx = slot.Get();
     OnPlayerDisconnect(PlayerManager::Instance().GetPlayerBySlot(slotIdx));
-    CS2Kit::OnPlayerDisconnect(slotIdx);
+    CS2Kit::OnPlayerDisconnect(*_services, slotIdx);
     PlayerManager::Instance().RemovePlayer(slotIdx);
 }
 

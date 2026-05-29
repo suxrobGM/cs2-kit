@@ -19,7 +19,7 @@ constexpr int HudPrintTalk = 3;
 class MessageSystem : public Core::Singleton<MessageSystem>
 {
 public:
-    explicit MessageSystem(Token) {}
+    MessageSystem() = default;
 
     bool Initialize();
     bool InitGameEventManager();

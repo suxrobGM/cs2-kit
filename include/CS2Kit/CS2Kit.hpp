@@ -6,6 +6,8 @@
 namespace SourceMM { class ISmmAPI; }
 using SourceMM::ISmmAPI;
 
+namespace CS2Kit::Core { class Services; }
+
 namespace CS2Kit
 {
 
@@ -28,30 +30,31 @@ struct InitParams
  *
  * Call from Plugin::Load().
  *
- * @param ismm    Metamod API pointer (from Plugin::Load)
- * @param error   Error buffer for failure messages
- * @param maxlen  Size of the error buffer
- * @param params  Optional configuration (log prefix, custom logger, gamedata path override)
+ * @param ismm     Metamod API pointer (from Plugin::Load)
+ * @param error    Error buffer for failure messages
+ * @param maxlen   Size of the error buffer
+ * @param services The plugin-owned service container to populate and initialize.
+ * @param params   Optional configuration (log prefix, custom logger, gamedata path override)
  * @return true on success, false if a critical subsystem failed to initialize.
  */
-bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, const InitParams& params = {});
+bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, Core::Services& services, const InitParams& params = {});
 
 /**
  * @brief Shut down all CS2Kit subsystems.
  * Call from Plugin::Unload().
  */
-void Shutdown();
+void Shutdown(Core::Services& services);
 
 /**
  * @brief Process one game frame. Drives Scheduler and MenuManager.
  * Call from Hook_GameFrame().
  */
-void OnGameFrame();
+void OnGameFrame(Core::Services& services);
 
 /**
  * @brief Clean up state when a player disconnects.
  * Call from Hook_ClientDisconnect().
  */
-void OnPlayerDisconnect(int slot);
+void OnPlayerDisconnect(Core::Services& services, int slot);
 
 }  // namespace CS2Kit

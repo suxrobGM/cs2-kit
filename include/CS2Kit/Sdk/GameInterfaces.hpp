@@ -23,7 +23,7 @@ namespace CS2Kit::Sdk
  */
 struct GameInterfaces : Core::Singleton<GameInterfaces>
 {
-    explicit GameInterfaces(Token) {}
+    GameInterfaces() = default;
 
     IServerGameDLL* ServerGameDLL = nullptr;
     IServerGameClients* ServerGameClients = nullptr;

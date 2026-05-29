@@ -16,7 +16,7 @@ namespace CS2Kit::Sdk
 class ConVarService : public Core::Singleton<ConVarService>
 {
 public:
-    explicit ConVarService(Token) {}
+    ConVarService() = default;
 
     bool Initialize();
 

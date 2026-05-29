@@ -20,7 +20,7 @@ namespace CS2Kit::Players
 class PlayerManager : public Core::Singleton<PlayerManager>
 {
 public:
-    explicit PlayerManager(Token) {}
+    PlayerManager() = default;
 
     Player* AddPlayer(int slot, int64_t steamId, const std::string& name, const std::string& ipAddress);
     void RemovePlayer(int slot);

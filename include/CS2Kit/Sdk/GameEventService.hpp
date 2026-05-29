@@ -18,7 +18,7 @@ namespace CS2Kit::Sdk
 class GameEventService : public Core::Singleton<GameEventService>, public IGameEventListener2
 {
 public:
-    explicit GameEventService(Token) {}
+    GameEventService() = default;
 
     bool Initialize();
 

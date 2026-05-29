@@ -28,7 +28,7 @@ namespace CS2Kit::Sdk
 class ChatInputCapture : public Core::Singleton<ChatInputCapture>
 {
 public:
-    explicit ChatInputCapture(Token) {}
+    ChatInputCapture() = default;
 
     /** Validator return: true = accept and clear; false = re-prompt and keep waiting. */
     using Callback = std::function<bool(int slot, std::string_view text)>;

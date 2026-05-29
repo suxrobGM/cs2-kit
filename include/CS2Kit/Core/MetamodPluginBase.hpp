@@ -6,6 +6,7 @@
 #include <eiface.h>
 #include <functional>
 #include <icvar.h>
+#include <memory>
 #include <string_view>
 #include <vector>
 
@@ -16,6 +17,8 @@ class Player;
 
 namespace CS2Kit::Core
 {
+
+class Services;
 
 /** @brief Your plugin's name, author, version, and log tag. Return it from MetamodPluginBase::Info(). */
 struct PluginInfo
@@ -50,6 +53,9 @@ struct PluginInfo
 class MetamodPluginBase : public ISmmPlugin, public IMetamodListener
 {
 public:
+    MetamodPluginBase();
+    ~MetamodPluginBase();
+
     bool Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen, bool late) override;
     bool Unload(char* error, size_t maxlen) override;
 
@@ -77,6 +83,13 @@ protected:
 
     /** @brief Optional extra teardown on unload. Prefer Defer() — it runs automatically. */
     virtual void OnUnload() {}
+
+    /**
+     * @brief Destroy plugin-owned service instances. Runs on unload AFTER the Defer() cleanups
+     * (so deferred teardown still sees live instances) and BEFORE the kit's own services are
+     * destroyed. Override to `reset()` your Managers container.
+     */
+    virtual void OnDestroyInstances() {}
 
     /** @brief A player joined and is now tracked. @p player is valid (read its SteamID, name, etc.). */
     virtual void OnPlayerConnect(Players::Player* player) {}
@@ -118,6 +131,7 @@ private:
 
     bool _lateLoad = false;
     std::vector<std::function<void()>> _deferred;
+    std::unique_ptr<Services> _services;
 };
 
 }  // namespace CS2Kit::Core

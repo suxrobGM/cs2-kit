@@ -16,7 +16,7 @@ namespace CS2Kit::Core
 class Scheduler : public Singleton<Scheduler>
 {
 public:
-    explicit Scheduler(Token) {}
+    Scheduler() = default;
 
     /** Run `callback` once after `delayMs` milliseconds. Returns a cancellation handle. */
     uint64_t Delay(int64_t delayMs, std::function<void()> callback);

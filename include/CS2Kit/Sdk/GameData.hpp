@@ -15,7 +15,7 @@ namespace CS2Kit::Sdk
 class GameData : public Core::Singleton<GameData>
 {
 public:
-    explicit GameData(Token) {}
+    GameData() = default;
 
     bool Load(const std::string& path);
     int GetOffset(const std::string& name) const;

@@ -19,7 +19,7 @@ class Translations : public Core::Singleton<Translations>
 public:
     static constexpr int MaxSlots = 64;
 
-    explicit Translations(Token) {}
+    Translations() = default;
 
     bool Load(const std::string& dirPath);
     void SetLanguage(const std::string& lang);

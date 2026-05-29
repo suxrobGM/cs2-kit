@@ -15,7 +15,7 @@ namespace CS2Kit::Menu
 class MenuManager : public Core::Singleton<MenuManager>
 {
 public:
-    explicit MenuManager(Token) {}
+    MenuManager() = default;
 
     /** Push @p menu onto the player's stack and start rendering it. */
     void OpenMenu(int slot, std::shared_ptr<Menu> menu);

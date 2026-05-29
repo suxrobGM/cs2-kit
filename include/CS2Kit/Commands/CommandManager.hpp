@@ -34,7 +34,7 @@ using ResultCallback = std::function<void(Players::Player* caller, const Command
 class CommandManager : public Core::Singleton<CommandManager>
 {
 public:
-    explicit CommandManager(Token) { _prefixes = {"!", "."}; }
+    CommandManager() = default;
 
     void Register(Command cmd);
     void Unregister(const std::string& name);
@@ -50,7 +50,7 @@ private:
     std::vector<std::string> ParseArguments(const std::string& text) const;
 
     std::unordered_map<std::string, Command> _commands;
-    std::vector<std::string> _prefixes;
+    std::vector<std::string> _prefixes{"!", "."};
     PermissionCallback _permissionCallback;
     ResultCallback _resultCallback;
 };

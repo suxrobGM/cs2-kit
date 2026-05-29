@@ -5,6 +5,7 @@
 #include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Core/ILogger.hpp>
 #include <CS2Kit/Core/Paths.hpp>
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Sdk/ChatInputCapture.hpp>
 #include <CS2Kit/Sdk/ConVarService.hpp>
@@ -28,7 +29,7 @@ namespace CS2Kit
 static constexpr const char* DefaultGameDataPath = "addons/cs2-kit/gamedata/signatures.jsonc";
 static Core::ConsoleLogger g_consoleLogger;
 
-bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, const InitParams& params)
+bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, Core::Services& services, const InitParams& params)
 {
     // 1. Set up logging
     if (params.Logger)
@@ -54,7 +55,7 @@ bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, const InitParams& par
         return ismm->VInterfaceMatch(ismm->GetServerFactory(), version, 0);
     };
 
-    auto& gi = Sdk::GameInterfaces::Instance();
+    auto& gi = services.Interfaces;
 
     gi.ServerGameDLL = static_cast<IServerGameDLL*>(resolveServer(INTERFACEVERSION_SERVERGAMEDLL));
     if (!gi.ServerGameDLL)
@@ -119,56 +120,56 @@ bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, const InitParams& par
     // 5. Load game data (signatures and offsets)
     const char* gameDataPath = params.GameDataPath ? params.GameDataPath : DefaultGameDataPath;
     Utils::Log::Info("Loading game data from {}...", gameDataPath);
-    Sdk::GameData::Instance().Load(gameDataPath);
+    services.GameData.Load(gameDataPath);
 
     // 6. Initialize SDK subsystems
     Utils::Log::Info("Initializing SDK message system...");
-    if (!Sdk::MessageSystem::Instance().Initialize())
+    if (!services.Messages.Initialize())
     {
         Utils::Log::Error("Failed to initialize message system.");
         return false;
     }
 
     Utils::Log::Info("Initializing schema system...");
-    if (!Sdk::SchemaService::Instance().Initialize())
+    if (!services.Schema().Initialize())
         Utils::Log::Warn("Schema system init failed (button detection may not work).");
 
     Utils::Log::Info("Initializing entity system...");
-    if (!Sdk::EntitySystem::Instance().Initialize())
+    if (!services.Entities.Initialize())
         Utils::Log::Warn("Entity system init failed (menus may not work).");
 
     Utils::Log::Info("Resolving game event manager...");
-    if (!Sdk::MessageSystem::Instance().InitGameEventManager())
+    if (!services.Messages.InitGameEventManager())
         Utils::Log::Warn("Game event manager not resolved (center HTML display will not work).");
 
     Utils::Log::Info("Initializing ConVar service...");
-    if (!Sdk::ConVarService::Instance().Initialize())
+    if (!services.ConVars.Initialize())
         Utils::Log::Warn("ConVar service init failed.");
 
     Utils::Log::Info("Initializing game event service...");
-    if (!Sdk::GameEventService::Instance().Initialize())
+    if (!services.Events.Initialize())
         Utils::Log::Warn("Game event service init failed.");
 
     Utils::Log::Info("CS2Kit initialized.");
     return true;
 }
 
-void Shutdown()
+void Shutdown(Core::Services& services)
 {
-    Sdk::GameEventService::Instance().RemoveAllListeners();
-    Core::Scheduler::Instance().CancelAll();
+    services.Events.RemoveAllListeners();
+    services.Scheduler.CancelAll();
 }
 
-void OnGameFrame()
+void OnGameFrame(Core::Services& services)
 {
-    Core::Scheduler::Instance().OnGameFrame();
-    Menu::MenuManager::Instance().OnGameFrame();
+    services.Scheduler.OnGameFrame();
+    services.Menus.OnGameFrame();
 }
 
-void OnPlayerDisconnect(int slot)
+void OnPlayerDisconnect(Core::Services& services, int slot)
 {
-    Menu::MenuManager::Instance().OnPlayerDisconnect(slot);
-    Sdk::ChatInputCapture::Instance().OnPlayerDisconnect(slot);
+    services.Menus.OnPlayerDisconnect(slot);
+    services.ChatInput.OnPlayerDisconnect(slot);
 }
 
 }  // namespace CS2Kit

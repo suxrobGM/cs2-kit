@@ -51,7 +51,7 @@ constexpr int MaxPlayers = 64;
 class EntitySystem : public Core::Singleton<EntitySystem>
 {
 public:
-    explicit EntitySystem(Token) {}
+    EntitySystem() = default;
 
     bool Initialize();
     CGameEntitySystem* GetEntitySystem();
