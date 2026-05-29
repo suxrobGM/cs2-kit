@@ -8,7 +8,6 @@
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Log.hpp>
-#include <CS2Kit/Utils/Translations.hpp>
 #include <algorithm>
 #include <chrono>
 
@@ -188,8 +187,6 @@ void MenuManager::OnGameFrame()
         auto prev = state.PrevButtons;
         state.PrevButtons = buttons;
 
-        // Render and handle input (incl. submenu builds) in this slot's panel language.
-        Translations::SlotScope langScope(slot);
         HandleInput(slot, buttons, prev);
         RenderMenu(slot);
     }

@@ -26,9 +26,9 @@ constexpr const char* NavBack = "#AA8833";
 
 // Localized footer label; Get() returns the key unchanged when missing, so fall back to the
 // English literal — lets consumers that don't ship nav.* keys still render cleanly.
-static std::string FooterLabel(const char* key, const char* fallback)
+static std::string FooterLabel(const char* key, const char* fallback, int slot)
 {
-    auto value = Kit().Translations.Get(key);
+    auto value = Kit().Translations.Get(key, slot);
     return value == key ? std::string(fallback) : value;
 }
 
@@ -55,24 +55,24 @@ static std::string FooterChunk(const char* keyColor, const char* keyText, const 
     return html.str();
 }
 
-std::string DefaultFooter(bool isSubmenu, bool isPaginated, bool usesHorizontal)
+std::string DefaultFooter(bool isSubmenu, bool isPaginated, bool usesHorizontal, int slot)
 {
     const char* closeColor = isSubmenu ? Theme::NavBack : Theme::NavClose;
-    std::string closeLabel = isSubmenu ? FooterLabel("nav.back", "Back") : FooterLabel("nav.close", "Close");
+    std::string closeLabel = isSubmenu ? FooterLabel("nav.back", "Back", slot) : FooterLabel("nav.close", "Close", slot);
 
     // First row: W/S, the A/D hint for the current row (value-change or paging), and E.
     std::ostringstream row1;
-    row1 << FooterChunk(Theme::NavGold, "[W/S]", FooterLabel("nav.navigate", "Navigate"));
+    row1 << FooterChunk(Theme::NavGold, "[W/S]", FooterLabel("nav.navigate", "Navigate", slot));
 
     bool hasHorizontalHint = usesHorizontal || isPaginated;
     if (usesHorizontal)
-        row1 << " · " << FooterChunk(Theme::NavGold, "[A/D]", FooterLabel("nav.change", "Change"));
+        row1 << " · " << FooterChunk(Theme::NavGold, "[A/D]", FooterLabel("nav.change", "Change", slot));
     else if (isPaginated)
-        row1 << " · " << FooterChunk(Theme::NavGold, "[A/D]", FooterLabel("nav.page", "Page"));
+        row1 << " · " << FooterChunk(Theme::NavGold, "[A/D]", FooterLabel("nav.page", "Page", slot));
 
     const char* selectKey = usesHorizontal ? "nav.confirm" : "nav.select";
     const char* selectFallback = usesHorizontal ? "Confirm" : "Select";
-    row1 << " · " << FooterChunk(Theme::Gold, "[E]", FooterLabel(selectKey, selectFallback));
+    row1 << " · " << FooterChunk(Theme::Gold, "[E]", FooterLabel(selectKey, selectFallback, slot));
 
     std::string closeChunk = FooterChunk(closeColor, "[R]", closeLabel);
 
@@ -162,7 +162,7 @@ std::string RenderMenuHtml(const Menu* menu, int slot, int selectedIndex, bool i
     {
         bool usesHorizontal = selectedIndex >= 0 && selectedIndex < itemCount && menu->Items[selectedIndex] &&
                               menu->Items[selectedIndex]->IsEnabled() && menu->Items[selectedIndex]->UsesHorizontal();
-        html << DefaultFooter(isSubmenu, totalPages > 1, usesHorizontal);
+        html << DefaultFooter(isSubmenu, totalPages > 1, usesHorizontal, slot);
     }
 
     return html.str();

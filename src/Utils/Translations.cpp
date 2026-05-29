@@ -6,8 +6,6 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 
-using CS2Kit::Core::Kit;
-
 namespace CS2Kit::Utils
 {
 
@@ -111,53 +109,34 @@ void Translations::ClearPlayerLanguage(int slot)
     }
 }
 
-const std::string& Translations::ResolveLanguage() const
+const std::string* Translations::LookupIn(const std::string& lang, const std::string& key) const
 {
-    if (_currentSlot >= 0 && _currentSlot < MaxSlots && !_playerLangs[_currentSlot].empty())
-    {
-        return _playerLangs[_currentSlot];
-    }
-
-    return _activeLang;
-}
-
-Translations::SlotScope::SlotScope(int slot) : _prev(Kit().Translations._currentSlot)
-{
-    Kit().Translations._currentSlot = slot;
-}
-
-Translations::SlotScope::~SlotScope()
-{
-    Kit().Translations._currentSlot = _prev;
-}
-
-std::string Translations::Get(const std::string& key) const
-{
-    const std::string& lang = ResolveLanguage();
-
     auto langIt = _translations.find(lang);
     if (langIt != _translations.end())
     {
         auto keyIt = langIt->second.find(key);
         if (keyIt != langIt->second.end())
-        {
-            return keyIt->second;
-        }
+            return &keyIt->second;
     }
+    return nullptr;
+}
 
+std::string Translations::Get(const std::string& key) const
+{
+    return Get(key, -1);  // negative slot skips the per-player lookup, resolving against the active language
+}
+
+std::string Translations::Get(const std::string& key, int slot) const
+{
+    const std::string& lang =
+        (slot >= 0 && slot < MaxSlots && !_playerLangs[slot].empty()) ? _playerLangs[slot] : _activeLang;
+
+    // Pointer (not empty-string) sentinel so a key deliberately mapped to "" is honored, not dropped.
+    if (const std::string* v = LookupIn(lang, key))
+        return *v;
     if (lang != "en")
-    {
-        langIt = _translations.find("en");
-        if (langIt != _translations.end())
-        {
-            auto keyIt = langIt->second.find(key);
-            if (keyIt != langIt->second.end())
-            {
-                return keyIt->second;
-            }
-        }
-    }
-
+        if (const std::string* v = LookupIn("en", key))
+            return *v;
     return key;
 }
 

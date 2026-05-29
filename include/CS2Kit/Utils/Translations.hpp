@@ -10,8 +10,8 @@ namespace CS2Kit::Utils
 
 /**
  * @brief Localization system. Loads one JSON file per language; nested objects flatten into
- * dotted keys (`category.punish`). A @ref SlotScope routes @ref Get through a slot's language
- * (falling back to the active language, then English) without affecting code outside the scope.
+ * dotted keys (`category.punish`). Use @ref Get(key, slot) for per-player text; use
+ * @ref SetPlayerLanguage to register a slot's preferred language.
  */
 class Translations
 {
@@ -23,7 +23,13 @@ public:
     bool Load(const std::string& dirPath);
     void SetLanguage(const std::string& lang);
     const std::string& GetLanguage() const;
+
+    /** Look up a key in the active (server) language, falling back to English. For broadcasts;
+     *  prefer @ref Get(key, slot) for any message addressed to a specific player. */
     std::string Get(const std::string& key) const;
+
+    /** Look up a key in @p slot's registered language, falling back to the active language then English. */
+    std::string Get(const std::string& key, int slot) const;
 
     /** Language codes that were successfully loaded (one per JSON file). */
     std::vector<std::string> GetAvailableLanguages() const;
@@ -32,25 +38,13 @@ public:
     void SetPlayerLanguage(int slot, const std::string& lang);
     void ClearPlayerLanguage(int slot);
 
-    /** RAII: route @ref Get through @p slot's language for the scope's lifetime. Nestable. */
-    struct SlotScope
-    {
-        explicit SlotScope(int slot);
-        ~SlotScope();
-        SlotScope(const SlotScope&) = delete;
-        SlotScope& operator=(const SlotScope&) = delete;
-
-    private:
-        int _prev;
-    };
-
 private:
-    const std::string& ResolveLanguage() const;
+    // Returns a pointer to the stored value (which may be empty), or nullptr when lang/key is absent.
+    const std::string* LookupIn(const std::string& lang, const std::string& key) const;
 
     std::unordered_map<std::string, std::unordered_map<std::string, std::string>> _translations;
     std::string _activeLang = "en";
     std::array<std::string, MaxSlots> _playerLangs{};
-    int _currentSlot = -1;
 };
 
 }  // namespace CS2Kit::Utils
