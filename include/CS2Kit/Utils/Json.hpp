@@ -2,9 +2,11 @@
 
 #include <CS2Kit/Core/Paths.hpp>
 #include <CS2Kit/Utils/Log.hpp>
+#include <CS2Kit/Utils/StringUtils.hpp>
 
 #include <fstream>
 #include <iterator>
+#include <map>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
@@ -93,6 +95,40 @@ public:
             Log::Error("Json: error writing {}: {}", path, e.what());
             return false;
         }
+    }
+
+    /** @brief Recursively replace `{key}` tokens in every string value of @p node (objects/arrays descended). */
+    static void SubstituteTokens(nlohmann::json& node, const std::map<std::string, std::string>& tokens)
+    {
+        if (node.is_string())
+            node = StringUtils::SubstituteTokens(node.get<std::string>(), tokens);
+        else if (node.is_structured())
+            for (auto& child : node)
+                SubstituteTokens(child, tokens);
+    }
+
+    /** @brief Descend a dot-separated path (e.g. "data.room.code") and return the leaf as a string; "" if absent. */
+    static std::string GetStringByPath(const nlohmann::json& root, std::string_view dotPath)
+    {
+        const nlohmann::json* node = &root;
+        for (size_t start = 0; start <= dotPath.size();)
+        {
+            const size_t dot = dotPath.find('.', start);
+            const std::string key(dotPath.substr(start, dot == std::string_view::npos ? std::string_view::npos : dot - start));
+            if (!node->is_object() || !node->contains(key))
+                return {};
+            node = &(*node)[key];
+            if (dot == std::string_view::npos)
+                break;
+            start = dot + 1;
+        }
+
+        if (node->is_string())
+            return node->get<std::string>();
+        // A numeric value (e.g. a room id) is valid; dump() yields "42"/"true" without quotes.
+        if (node->is_primitive() && !node->is_null())
+            return node->dump();
+        return {};
     }
 };
 

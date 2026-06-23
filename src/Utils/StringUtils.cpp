@@ -89,6 +89,13 @@ std::string StringUtils::ReplaceAll(const std::string& str, const std::string& f
     return result;
 }
 
+std::string StringUtils::SubstituteTokens(std::string text, const std::map<std::string, std::string>& tokens)
+{
+    for (const auto& [key, value] : tokens)
+        text = ReplaceAll(text, "{" + key + "}", value);
+    return text;
+}
+
 bool StringUtils::IsNumeric(const std::string& str)
 {
     if (str.empty())
