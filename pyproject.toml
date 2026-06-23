@@ -12,14 +12,8 @@ dependencies = [
     "mypy>=1.19.0",
 ]
 
-[tool.pdm]
-distribution = false
-
-[tool.pdm.scripts]
-configure = "python configure.py"
-configure-vs = "python configure.py --gen=vs --vs-version 19"
-build = "cd scripts && ./build.sh"
-clean = "rm -rf objdir"
+[tool.uv]
+package = false
 
 [tool.ruff]
 line-length = 100

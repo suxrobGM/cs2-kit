@@ -4,10 +4,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Configure with AMBuild (creates objdir folder)
-pdm run python configure.py
+uv run python configure.py
 
 # Build from the objdir folder
-(cd objdir && pdm run ambuild)
+(cd objdir && uv run ambuild)
 
 echo
 echo "=== Build Complete ==="

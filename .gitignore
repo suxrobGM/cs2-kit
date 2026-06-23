@@ -421,8 +421,8 @@ FodyWeavers.xsd
 # AMBuild output
 objdir/
 
-# PDM
-.pdm-python
+# uv
+.venv/
 
 # Doxygen build output
 build/docs/
