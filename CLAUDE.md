@@ -136,4 +136,4 @@ doxygen Doxyfile
 # Output: build/docs/html/index.html
 ```
 
-Source inclusion: compiled as part of the consuming project (which supplies nlohmann/json via its own vcpkg). Static library: run `vcpkg install` first (pulls nlohmann-json), then `python configure.py --sdks cs2 && cd build && ambuild`.
+Source inclusion: compiled as part of the consuming project (which supplies nlohmann/json + libcurl via its own vcpkg). Static library: run `vcpkg install --triplet x64-windows-static` first (pulls nlohmann-json + curl), then `python configure.py --sdks cs2 && cd build && ambuild`.
