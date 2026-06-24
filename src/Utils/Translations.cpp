@@ -76,13 +76,23 @@ bool Translations::Load(const std::string& dirPath)
         for (const auto& [code, keys] : _translations)
         {
             if (code == "en")
+            {
                 continue;
+            }
+
             size_t missing = 0;
             for (const auto& [key, value] : en->second)
+            {
                 if (!keys.contains(key))
+                {
                     ++missing;
+                }
+            }
+
             if (missing > 0)
+            {
                 Log::Warn("Translations: '{}' is missing {} key(s) present in en.", code, missing);
+            }
         }
     }
 
