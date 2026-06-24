@@ -1,5 +1,6 @@
 #include "Sdk/SigScanner.hpp"
 #include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Core/Slot.hpp>
 
 #include <igameevents.h>
 
@@ -83,7 +84,7 @@ bool MessageSystem::InitGameEventManager()
 void MessageSystem::SendCenterHtml(int slot, const std::string& html)
 {
     auto* gameEventManager = Kit().Interfaces.GameEventManager;
-    if (!gameEventManager || slot < 0 || slot >= 64)
+    if (!gameEventManager || !Core::IsValidSlot(slot))
         return;
 
     IGameEvent* pEvent = gameEventManager->CreateEvent("show_survival_respawn_status");
@@ -111,7 +112,7 @@ void MessageSystem::SendCenterHtml(int slot, const std::string& html)
 void MessageSystem::SendChatMessage(int slot, const std::string& message)
 {
     auto& interfaces = Kit().Interfaces;
-    if (!interfaces.GameEventSystem || !interfaces.NetworkMessages || slot < 0 || slot >= 64)
+    if (!interfaces.GameEventSystem || !interfaces.NetworkMessages || !Core::IsValidSlot(slot))
         return;
 
     // CS2 routes server-originated chat through TextMsg with dest=HUD_PRINTTALK rather than

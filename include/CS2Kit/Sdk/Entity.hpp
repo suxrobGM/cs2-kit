@@ -64,6 +64,9 @@ private:
     void ResolveSchemaOffsets();
     CEntityIdentity* GetEntityIdentityByIndex(CGameEntitySystem* pSys, int index);
 
+    /** Read the CGameEntitySystem* out of IGameResourceService at the gamedata offset. nullptr if either is unavailable. */
+    CGameEntitySystem* ReadEntitySystemPointer();
+
     int _offsetPlayerPawn = -1;
     int _offsetMovementServices = -1;
     int _offsetButtons = -1;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CS2Kit/Sdk/MoveType.hpp>
+#include <CS2Kit/Sdk/ObserverMode.hpp>
 #include <cstdint>
 #include <string>
 
@@ -113,10 +114,10 @@ public:
     void SetMoveType(MoveType type) const;
 
     /** Read `m_iObserverMode` from the pawn's CPlayer_ObserverServices. */
-    int GetObserverMode() const;
+    ObserverMode_t GetObserverMode() const;
 
     /** Write `m_iObserverMode` on the pawn's CPlayer_ObserverServices. */
-    void SetObserverMode(uint8_t mode) const;
+    void SetObserverMode(ObserverMode_t mode) const;
 
     /** Read `m_iszPlayerName` from the controller. Empty string if unavailable. */
     std::string GetPlayerName() const;

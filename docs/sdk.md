@@ -112,8 +112,8 @@ Read or force a player into a specific spectator mode:
 ```cpp
 using CS2Kit::Sdk::ObserverMode_t;
 
-if (player.GetObserverMode() != static_cast<int>(ObserverMode_t::Roaming))
-    player.SetObserverMode(static_cast<uint8_t>(ObserverMode_t::Roaming));
+if (player.GetObserverMode() != ObserverMode_t::Roaming)
+    player.SetObserverMode(ObserverMode_t::Roaming);
 ```
 
 ### Player name

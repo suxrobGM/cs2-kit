@@ -31,6 +31,20 @@ void EntitySystem::ResolveSchemaOffsets()
     _schemaOffsetsResolved = true;
 }
 
+CGameEntitySystem* EntitySystem::ReadEntitySystemPointer()
+{
+    auto& interfaces = Kit().Interfaces;
+    if (!interfaces.GameResourceService)
+        return nullptr;
+
+    int offsetGameEntitySystem = Kit().GameData.GetOffset("GameEntitySystem");
+    if (offsetGameEntitySystem < 0)
+        return nullptr;
+
+    return *reinterpret_cast<CGameEntitySystem**>(
+        reinterpret_cast<uintptr_t>(interfaces.GameResourceService) + offsetGameEntitySystem);
+}
+
 bool EntitySystem::Initialize()
 {
     auto& interfaces = Kit().Interfaces;
@@ -51,11 +65,7 @@ bool EntitySystem::Initialize()
         Log::Info("Gamedata loaded (entity system offset: {}).", offsetGameEntitySystem);
     }
 
-    if (interfaces.GameResourceService && offsetGameEntitySystem >= 0)
-    {
-        interfaces.EntitySystem = *reinterpret_cast<CGameEntitySystem**>(
-            reinterpret_cast<uintptr_t>(interfaces.GameResourceService) + offsetGameEntitySystem);
-    }
+    interfaces.EntitySystem = ReadEntitySystemPointer();
 
     if (interfaces.EntitySystem)
     {
@@ -69,15 +79,9 @@ CGameEntitySystem* EntitySystem::GetEntitySystem()
 {
     auto& interfaces = Kit().Interfaces;
 
-    if (!interfaces.EntitySystem && interfaces.GameResourceService)
-    {
-        int offsetGameEntitySystem = Kit().GameData.GetOffset("GameEntitySystem");
-        if (offsetGameEntitySystem >= 0)
-        {
-            interfaces.EntitySystem = *reinterpret_cast<CGameEntitySystem**>(
-                reinterpret_cast<uintptr_t>(interfaces.GameResourceService) + offsetGameEntitySystem);
-        }
-    }
+    if (!interfaces.EntitySystem)
+        interfaces.EntitySystem = ReadEntitySystemPointer();
+
     return interfaces.EntitySystem;
 }
 

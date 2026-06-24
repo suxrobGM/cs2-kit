@@ -217,14 +217,14 @@ void PlayerController::SetMoveType(MoveType type) const
     SetPawnField<uint8_t>("CBaseEntity", "m_nActualMoveType", value);
 }
 
-int PlayerController::GetObserverMode() const
+ObserverMode_t PlayerController::GetObserverMode() const
 {
-    return GetPawnField<uint8_t>("CPlayer_ObserverServices", "m_iObserverMode");
+    return static_cast<ObserverMode_t>(GetPawnField<uint8_t>("CPlayer_ObserverServices", "m_iObserverMode"));
 }
 
-void PlayerController::SetObserverMode(uint8_t mode) const
+void PlayerController::SetObserverMode(ObserverMode_t mode) const
 {
-    SetPawnField<uint8_t>("CPlayer_ObserverServices", "m_iObserverMode", mode);
+    SetPawnField<uint8_t>("CPlayer_ObserverServices", "m_iObserverMode", static_cast<uint8_t>(mode));
 }
 
 std::string PlayerController::GetPlayerName() const
