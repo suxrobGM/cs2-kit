@@ -2,10 +2,55 @@
 #include <CS2Kit/Utils/StringUtils.hpp>
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <sstream>
 
 namespace CS2Kit::Utils
 {
+
+int ParseDuration(std::string_view text)
+{
+    while (!text.empty() && std::isspace(static_cast<unsigned char>(text.front())))
+        text.remove_prefix(1);
+    while (!text.empty() && std::isspace(static_cast<unsigned char>(text.back())))
+        text.remove_suffix(1);
+
+    if (text.empty())
+        return -1;
+    if (text == "0" || text == "perm" || text == "permanent")
+        return 0;
+
+    int multiplier = 1;
+    char suffix = text.back();
+    if (!std::isdigit(static_cast<unsigned char>(suffix)))
+    {
+        switch (suffix)
+        {
+        case 's':
+            multiplier = 1;
+            break;
+        case 'm':
+            multiplier = 60;
+            break;
+        case 'h':
+            multiplier = 3600;
+            break;
+        case 'd':
+            multiplier = 86400;
+            break;
+        default:
+            return -1;
+        }
+        text.remove_suffix(1);
+    }
+
+    int value = 0;
+    auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
+    if (ec != std::errc{} || ptr != text.data() + text.size() || value < 0)
+        return -1;
+
+    return value * multiplier;
+}
 
 std::string StringUtils::ToLower(const std::string& str)
 {

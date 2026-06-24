@@ -2,10 +2,19 @@
 
 #include <map>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace CS2Kit::Utils
 {
+
+/**
+ * Parse a human duration string into seconds. Accepts a bare integer (seconds) or an
+ * integer with a unit suffix: `s` seconds, `m` minutes, `h` hours, `d` days. The literals
+ * `0`, `perm`, and `permanent` mean "permanent" (returns 0). Surrounding whitespace is ignored.
+ * Returns -1 on parse failure, 0 for permanent, otherwise the duration in seconds.
+ */
+int ParseDuration(std::string_view text);
 
 /** @brief Collection of static string manipulation utilities. */
 class StringUtils
