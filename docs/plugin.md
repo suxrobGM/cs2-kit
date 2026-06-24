@@ -61,12 +61,12 @@ SH_DECL_HOOK3(IVEngineServer2, SetClientListening, SH_NOATTRIB, 0, bool, CPlayer
 
 void MyPlugin::OnRegisterHooks()
 {
-    auto& gi = CS2Kit::Sdk::GameInterfaces::Instance();
+    auto& gi = CS2Kit::Core::Kit().Interfaces;
     SH_ADD_HOOK(IVEngineServer2, SetClientListening, gi.Engine,
                 SH_MEMBER(this, &MyPlugin::Hook_SetClientListening), false);
 
     Defer([this] {
-        auto& g = CS2Kit::Sdk::GameInterfaces::Instance();
+        auto& g = CS2Kit::Core::Kit().Interfaces;
         SH_REMOVE_HOOK(IVEngineServer2, SetClientListening, g.Engine,
                        SH_MEMBER(this, &MyPlugin::Hook_SetClientListening), false);
     });

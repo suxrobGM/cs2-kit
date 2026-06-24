@@ -49,9 +49,9 @@ Chat::Print(slot, "Welcome!");
 // Everyone connected:
 Chat::PrintAll("Server restarting in 5 minutes.");
 
-// Subset selected by predicate:
+// Subset selected by predicate (Sys().Admins is the plugin's own manager):
 Chat::PrintFiltered("Admin notice.", [](const Players::Player* p) {
-    return AdminManager::Instance().IsAdmin(p->GetSteamID());
+    return Sys().Admins.IsAdmin(p->GetSteamID());
 });
 ```
 

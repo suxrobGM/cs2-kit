@@ -8,7 +8,7 @@ The command system (`CS2Kit::Commands`) provides a framework for registering and
 
 - **Command** — Data struct holding command metadata and handler
 - **CommandBuilder** — Fluent builder for constructing commands
-- **CommandManager** — Singleton that registers commands, parses chat input, and dispatches handlers
+- **CommandManager** — A CS2-Kit service (reached via `Kit().Commands`) that registers commands, parses chat input, and dispatches handlers
 
 Handlers receive a `CS2Kit::Players::Player*` directly — no caller adapter is required.
 
@@ -17,10 +17,13 @@ Handlers receive a `CS2Kit::Players::Player*` directly — no caller adapter is 
 Use `CommandBuilder` to define commands and register them with `CommandManager`:
 
 ```cpp
-#include <Commands/Command.hpp>
-#include <Commands/CommandManager.hpp>
+#include <CS2Kit/Commands/Command.hpp>
+#include <CS2Kit/Commands/CommandManager.hpp>
+#include <CS2Kit/Core/Services.hpp>
 
-auto& cmdMgr = CS2Kit::Commands::CommandManager::Instance();
+using CS2Kit::Core::Kit;
+
+auto& cmdMgr = Kit().Commands;
 
 cmdMgr.Register(
     CS2Kit::Commands::CommandBuilder("kick")
