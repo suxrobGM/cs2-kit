@@ -14,6 +14,9 @@ import os
 
 VENDOR_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vendor")
 
+# vcpkg triplet (for Windows vcpkg dependencies — nlohmann/json, libcurl)
+VCPKG_TRIPLET = "x64-windows-static"
+
 
 def resolve_vendor_path(folder):
     """Resolve path from vendor/ submodules."""
@@ -208,10 +211,12 @@ class LibraryConfig:
             os.path.join(mms_core, "sourcehook"),
         ]
 
-        # nlohmann/json (submodule at vendor/nlohmann, single_include/ has the headers)
-        nlohmann_include = os.path.join(builder.sourcePath, "vendor", "nlohmann", "single_include")
-        if os.path.isdir(nlohmann_include):
-            cxx.cxxincludes += [nlohmann_include]
+        # vcpkg headers (nlohmann/json, libcurl). Includes only — a static lib
+        # doesn't link its deps; the consuming plugin links libcurl.
+        if cxx.like("msvc"):
+            vcpkg_path = os.path.join(builder.sourcePath, "vcpkg_installed", VCPKG_TRIPLET)
+            if os.path.isdir(vcpkg_path):
+                cxx.cxxincludes += [os.path.join(vcpkg_path, "include")]
 
         # SDK defines
         for other_sdk in self.sdk_manifests:

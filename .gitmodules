@@ -12,6 +12,3 @@
 	path = vendor/mmsource-2.0
 	url = https://github.com/alliedmodders/metamod-source.git
 	branch = master
-[submodule "vendor/nlohmann"]
-	path = vendor/nlohmann
-	url = https://github.com/nlohmann/json.git

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "cs2-kit",
+  "version": "1.0.0",
+  "description": "Reusable C++23 library for CS2 Metamod:Source plugins",
+  "homepage": "https://github.com/suxrobGM/cs2-kit",
+  "license": "MIT",
+  "dependencies": [
+    "nlohmann-json",
+    {
+      "name": "curl",
+      "features": ["ssl"]
+    }
+  ]
+}
