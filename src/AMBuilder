@@ -29,6 +29,11 @@ for sdk_target in Library.sdk_targets:
 
     binary = Library.create_static_library(builder, cxx, sdk)
 
+    # NOTE: src/Http/HttpClient.cpp #includes <curl/curl.h>. The recommended source-inclusion build
+    # inherits libcurl headers from the consuming plugin; a STANDALONE static-library build must add a
+    # curl include dir here for the Http module to compile, e.g.:
+    #   binary.compiler.cxxincludes += [os.path.join(<vcpkg>, "x64-windows-static", "include")]
+
     # Add source files
     for src in SOURCES:
         binary.sources += [src]

@@ -110,7 +110,12 @@ std::vector<const Command*> CommandManager::GetAllCommands() const
 
 std::vector<std::string> CommandManager::ParseArguments(const std::string& text) const
 {
-    return StringUtils::Split(text, ' ');
+    // Drop empty tokens so leading/trailing/repeated spaces (e.g. "ban  Bob") don't yield blank args.
+    std::vector<std::string> parts;
+    for (auto& token : StringUtils::Split(text, ' '))
+        if (!token.empty())
+            parts.push_back(std::move(token));
+    return parts;
 }
 
 }  // namespace CS2Kit::Commands

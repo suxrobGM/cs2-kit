@@ -68,6 +68,24 @@ bool Translations::Load(const std::string& dirPath)
     }
 
     Log::Info("Loaded {} language(s).", loaded);
+
+    // Surface per-language key gaps at load time, rather than silently rendering the raw key at runtime.
+    // "en" is the reference set when present.
+    if (auto en = _translations.find("en"); en != _translations.end() && _translations.size() > 1)
+    {
+        for (const auto& [code, keys] : _translations)
+        {
+            if (code == "en")
+                continue;
+            size_t missing = 0;
+            for (const auto& [key, value] : en->second)
+                if (!keys.contains(key))
+                    ++missing;
+            if (missing > 0)
+                Log::Warn("Translations: '{}' is missing {} key(s) present in en.", code, missing);
+        }
+    }
+
     return loaded > 0;
 }
 
