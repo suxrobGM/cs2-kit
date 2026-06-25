@@ -1,4 +1,3 @@
-# vim: set ts=8 sts=4 sw=4 tw=99 et ft=python:
 # ruff: noqa: F821
 # mypy: ignore-errors
 #
@@ -6,9 +5,7 @@
 
 import os
 
-# =============================================================================
-# SOURCE FILES - Auto-discovered from src/
-# =============================================================================
+# Source files, auto-discovered from src/.
 SRC_DIR = os.path.join(builder.sourcePath, "src")
 
 SOURCES = []
@@ -19,27 +16,15 @@ for root, dirs, files in os.walk(SRC_DIR):
 
 SOURCES.sort()
 
-# =============================================================================
-# BUILD - Static library
-# =============================================================================
-
+# Build the static library.
 for sdk_target in Library.sdk_targets:
-    sdk = sdk_target.sdk
-    cxx = sdk_target.cxx
+    binary = Library.create_static_library(builder, sdk_target)
 
-    binary = Library.create_static_library(builder, cxx, sdk)
+    # Standalone builds compiling src/Http/HttpClient.cpp must add a libcurl
+    # include dir here; the source-inclusion build inherits it from the plugin.
+    binary.sources += SOURCES
 
-    # NOTE: src/Http/HttpClient.cpp #includes <curl/curl.h>. The recommended source-inclusion build
-    # inherits libcurl headers from the consuming plugin; a STANDALONE static-library build must add a
-    # curl include dir here for the Http module to compile, e.g.:
-    #   binary.compiler.cxxincludes += [os.path.join(<vcpkg>, "x64-windows-static", "include")]
-
-    # Add source files
-    for src in SOURCES:
-        binary.sources += [src]
-
-    # Platform-specific libs for SigScanner
     if binary.compiler.like("msvc"):
-        binary.compiler.linkflags += ["psapi.lib"]
+        binary.compiler.linkflags += ["psapi.lib"]  # SigScanner: GetModuleInformation
 
     Library.binaries += [builder.Add(binary)]

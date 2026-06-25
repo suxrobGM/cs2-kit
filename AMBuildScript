@@ -1,18 +1,14 @@
-# vim: set ts=8 sts=4 sw=4 tw=99 et ft=python:
 # ruff: noqa: F821
 # mypy: ignore-errors
 #
 # CS2-Kit - Reusable C++23 library for CS2 Metamod:Source plugins
 # AMBuild Script (Static Library)
-# Note: 'builder' is injected at runtime by AMBuild
 
 import os
 
-# =============================================================================
-# SDK RESOLUTION
-# =============================================================================
-
-VENDOR_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vendor")
+# SDK resolution from vendor/ submodules.
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+VENDOR_DIR = os.path.join(ROOT_DIR, "vendor")
 
 # vcpkg triplet for Windows deps (nlohmann/json, libcurl)
 VCPKG_TRIPLET = "x64-windows-static"
@@ -53,10 +49,9 @@ SdkHelpers = builder.Eval(
     os.path.join(hl2sdk_manifests_root, "SdkHelpers.ambuild"), {"Project": "metamod"}
 )
 
+# SDK .proto files this library (UserMessage.cpp et al.) needs generated.
+Protobuf = builder.Eval(os.path.join(ROOT_DIR, "Protobuf.ambuild"))
 
-# =============================================================================
-# LIBRARY CONFIG CLASS
-# =============================================================================
 
 class LibraryConfig:
     def __init__(self):
@@ -188,11 +183,16 @@ class LibraryConfig:
         elif cxx.target.platform == "windows":
             cxx.defines += ["WIN32", "_WINDOWS"]
 
-    def create_static_library(self, context, compiler, sdk):
-        """Create a static library with SDK and Metamod includes configured."""
+    def create_static_library(self, context, sdk_target):
+        """Create a static library with SDK includes, Metamod, and protobuf configured."""
+        compiler = sdk_target.cxx
+        sdk = sdk_target.sdk
         binary = compiler.StaticLibrary("cs2-kit")
         cxx = binary.compiler
         mms_core = os.path.join(self.mms_root, "core")
+
+        # SDK protobuf headers (.pb.h/.pb.cc) — UserMessage.cpp et al. include them.
+        Protobuf.attach(context, binary, sdk_target)
 
         # Public include directory (for #include <CS2Kit/...>)
         cxx.cxxincludes += [
@@ -232,10 +232,7 @@ class LibraryConfig:
         return binary
 
 
-# =============================================================================
-# BUILD
-# =============================================================================
-
+# Build the cs2-kit static library.
 Library = LibraryConfig()
 Library.detect_sdks()
 Library.configure()
