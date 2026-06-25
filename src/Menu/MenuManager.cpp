@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <chrono>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace CS2Kit::Menu
 {
@@ -119,7 +119,7 @@ void MenuManager::CloseMenu(int slot)
     if (state.MenuStack.empty())
     {
         SetPlayerFrozen(slot, false);
-        Kit().Messages.ClearCenterHtml(slot);
+        Engine().Messages.ClearCenterHtml(slot);
         state.Reset();
     }
     else
@@ -141,7 +141,7 @@ void MenuManager::CloseAllMenus(int slot)
     auto& state = _states[slot];
     SetPlayerFrozen(slot, false);
     state.Reset();
-    Kit().Messages.ClearCenterHtml(slot);
+    Engine().Messages.ClearCenterHtml(slot);
 }
 
 void MenuManager::SetPlayerFrozen(int slot, bool frozen)
@@ -183,7 +183,7 @@ void MenuManager::OnGameFrame()
         if (!state.HasMenu())
             continue;
 
-        uint64_t buttons = Kit().Entities.GetPlayerButtons(slot);
+        uint64_t buttons = Engine().Entities.GetPlayerButtons(slot);
         auto prev = state.PrevButtons;
         state.PrevButtons = buttons;
 
@@ -209,7 +209,7 @@ void MenuManager::HandleInput(int slot, uint64_t buttons, uint64_t prevButtons)
 
     // While a chat-input capture is active, the only key we honor is R (cancel) — every
     // other input is ignored so the menu doesn't drift while the player types in chat.
-    auto& capture = Kit().ChatInput;
+    auto& capture = Engine().ChatInput;
     if (capture.IsCapturing(slot))
     {
         if (pressed & IN_RELOAD)
@@ -271,16 +271,16 @@ void MenuManager::RenderMenu(int slot)
         return;
 
     // While a capture is pending, render a prompt overlay instead of the item list.
-    if (auto* prompt = Kit().ChatInput.GetPrompt(slot); prompt != nullptr)
+    if (auto* prompt = Engine().ChatInput.GetPrompt(slot); prompt != nullptr)
     {
         auto html = RenderCaptureOverlay(menu->Title, *prompt);
-        Kit().Messages.SendCenterHtml(slot, html);
+        Engine().Messages.SendCenterHtml(slot, html);
         return;
     }
 
     bool isSubmenu = state.MenuStack.size() > 1;
     auto html = RenderMenuHtml(menu, slot, state.SelectedIndex, isSubmenu);
-    Kit().Messages.SendCenterHtml(slot, html);
+    Engine().Messages.SendCenterHtml(slot, html);
 }
 
 void MenuManager::OnPlayerDisconnect(int slot)
@@ -289,7 +289,7 @@ void MenuManager::OnPlayerDisconnect(int slot)
         return;
 
     _states[slot].Reset();
-    Kit().Translations.ClearPlayerLanguage(slot);
+    Engine().Translations.ClearPlayerLanguage(slot);
 }
 
 }  // namespace CS2Kit::Menu

@@ -1,147 +1,105 @@
 #include <CS2Kit/Http/HttpClient.hpp>
 
-// Static libcurl on Windows: must be declared before including curl.h or symbols resolve to dllimport.
-#ifndef CURL_STATICLIB
-#define CURL_STATICLIB
-#endif
-#include <curl/curl.h>
+#include <cpr/cpr.h>
+
+#include <chrono>
+#include <future>
+#include <utility>
 
 namespace CS2Kit::Http
 {
 
-namespace
+struct HttpClient::Impl
 {
-size_t WriteCallback(char* ptr, size_t size, size_t nmemb, void* userdata)
-{
-    const size_t total = size * nmemb;
-    static_cast<std::string*>(userdata)->append(ptr, total);
-    return total;
-}
-}  // namespace
+    struct Pending
+    {
+        std::future<HttpResult> Result;
+        HttpCompletion OnComplete;
+    };
 
-void HttpClient::Start()
-{
-    if (_running)
-        return;
+    std::vector<Pending> Items;
+};
 
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-    _running = true;
-    _worker = std::thread([this] { WorkerLoop(); });
-}
+HttpClient::HttpClient() : _impl(std::make_unique<Impl>()) {}
+
+HttpClient::~HttpClient() = default;
+
+void HttpClient::Start() {}
 
 void HttpClient::Stop()
 {
-    if (!_running)
-        return;
-
-    {
-        std::lock_guard<std::mutex> lock(_jobMutex);
-        _running = false;
-    }
-    _jobCv.notify_all();
-
-    if (_worker.joinable())
-        _worker.join();
-
-    curl_global_cleanup();
-
-    // Worker has joined: no other thread touches these queues now.
-    std::queue<Job> emptyJobs;
-    std::swap(_jobs, emptyJobs);
-    _completions.clear();
+    // Block until in-flight requests finish, then drop their (unrun) completions. Joining here — on
+    // the plugin Unload path, not in DllMain — is what keeps `meta reload` from leaving live worker
+    // threads pointing into the unmapped DLL.
+    for (auto& p : _impl->Items)
+        p.Result.wait();
+    _impl->Items.clear();
 }
 
 void HttpClient::Post(std::string url, std::string body, std::vector<std::string> headers, long timeoutMs,
                       HttpCompletion onComplete)
 {
+    // The worker touches only CPR + strings, never engine state; the callback is replayed on the
+    // game thread in DispatchCompletions().
+    auto task = [url = std::move(url), body = std::move(body), headers = std::move(headers),
+                 timeoutMs]() -> HttpResult
     {
-        std::lock_guard<std::mutex> lock(_jobMutex);
-        if (!_running)
-            return;
-        _jobs.push(Job{std::move(url), std::move(body), std::move(headers), timeoutMs, std::move(onComplete)});
-    }
-    _jobCv.notify_one();
+        cpr::Header header;
+        for (const auto& line : headers)
+        {
+            const size_t colon = line.find(':');
+            if (colon == std::string::npos)
+                continue;
+            size_t valueStart = colon + 1;
+            while (valueStart < line.size() && line[valueStart] == ' ')
+                ++valueStart;
+            header[line.substr(0, colon)] = line.substr(valueStart);
+        }
+
+        cpr::Response response =
+            cpr::Post(cpr::Url{url}, cpr::Body{body}, header, cpr::Timeout{std::chrono::milliseconds{timeoutMs}});
+
+        HttpResult result;
+        if (response.error)
+        {
+            result.Error = response.error.message;
+        }
+        else
+        {
+            result.Ok = true;
+            result.StatusCode = static_cast<long>(response.status_code);
+            result.Body = std::move(response.text);
+        }
+        return result;
+    };
+
+    _impl->Items.push_back({std::async(std::launch::async, std::move(task)), std::move(onComplete)});
 }
 
 void HttpClient::DispatchCompletions()
 {
-    std::vector<Completion> ready;
-    {
-        std::lock_guard<std::mutex> lock(_completionMutex);
-        if (_completions.empty())
-            return;
-        ready.swap(_completions);
-    }
+    auto& items = _impl->Items;
 
-    for (auto& c : ready)
+    // Collect ready completions and compact the list *before* invoking callbacks: a callback may
+    // re-enter Post() and append to items.
+    std::vector<Impl::Pending> ready;
+    for (auto it = items.begin(); it != items.end();)
     {
-        if (c.OnComplete)
-            c.OnComplete(c.Result);
-    }
-}
-
-void HttpClient::WorkerLoop()
-{
-    while (true)
-    {
-        Job job;
+        if (it->Result.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
         {
-            std::unique_lock<std::mutex> lock(_jobMutex);
-            _jobCv.wait(lock, [this] { return !_running || !_jobs.empty(); });
-            if (!_running)
-                return;  // shutdown: drop any queued jobs, only the in-flight request (if any) finishes
-            job = std::move(_jobs.front());
-            _jobs.pop();
-        }
-
-        HttpResult result;
-        CURL* curl = curl_easy_init();
-        if (!curl)
-        {
-            result.Error = "curl_easy_init failed";
+            ready.push_back(std::move(*it));
+            it = items.erase(it);
         }
         else
         {
-            std::string response;
-            curl_easy_setopt(curl, CURLOPT_URL, job.Url.c_str());
-            curl_easy_setopt(curl, CURLOPT_POST, 1L);
-            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, job.Body.c_str());
-            curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(job.Body.size()));
-            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteCallback);
-            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-            curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, job.TimeoutMs);
-            curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
-            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-
-            curl_slist* headerList = nullptr;
-            for (const auto& h : job.Headers)
-                headerList = curl_slist_append(headerList, h.c_str());
-            if (headerList)
-                curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerList);
-
-            const CURLcode rc = curl_easy_perform(curl);
-            if (rc == CURLE_OK)
-            {
-                long code = 0;
-                curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
-                result.Ok = true;
-                result.StatusCode = code;
-                result.Body = std::move(response);
-            }
-            else
-            {
-                result.Error = curl_easy_strerror(rc);
-            }
-
-            if (headerList)
-                curl_slist_free_all(headerList);
-            curl_easy_cleanup(curl);
+            ++it;
         }
+    }
 
-        {
-            std::lock_guard<std::mutex> lock(_completionMutex);
-            _completions.push_back({std::move(job.OnComplete), std::move(result)});
-        }
+    for (auto& p : ready)
+    {
+        if (p.OnComplete)
+            p.OnComplete(p.Result.get());
     }
 }
 

@@ -5,7 +5,7 @@
 #include <CS2Kit/Utils/Log.hpp>
 #include <schemasystem/schemasystem.h>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace CS2Kit::Sdk
 {
@@ -14,7 +14,7 @@ using namespace CS2Kit::Utils;
 
 bool SchemaService::Initialize()
 {
-    if (!Kit().Interfaces.SchemaSystem)
+    if (!Engine().Interfaces.SchemaSystem)
     {
         Log::Warn("ISchemaSystem not available.");
         return false;
@@ -26,7 +26,7 @@ bool SchemaService::Initialize()
 
 int SchemaService::GetOffset(const char* className, const char* fieldName)
 {
-    auto* schemaSystem = Kit().Interfaces.SchemaSystem;
+    auto* schemaSystem = Engine().Interfaces.SchemaSystem;
     if (!schemaSystem)
         return -1;
 

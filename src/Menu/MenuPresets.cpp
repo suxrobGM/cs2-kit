@@ -7,7 +7,7 @@
 #include <string_view>
 #include <utility>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace CS2Kit::Menu
 {
@@ -18,7 +18,7 @@ std::shared_ptr<Menu> BuildPlayerPicker(int viewerSlot, const std::string& title
 {
     MenuBuilder builder(title);
 
-    auto players = Kit().Players.GetAllPlayers();
+    auto players = Engine().Players.GetAllPlayers();
     for (auto* p : players)
     {
         int targetSlot = p->GetSlot();

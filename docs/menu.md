@@ -36,7 +36,7 @@ auto menu = MenuBuilder("Admin Panel")
     .OnClose([](int slot) { /* cleanup */ })
     .Build();
 
-CS2Kit::Core::Kit().Menus.OpenMenu(playerSlot, menu);
+CS2Kit::Core::Engine().Menus.OpenMenu(playerSlot, menu);
 ```
 
 ## Option Types
@@ -61,7 +61,7 @@ Every row is a @ref CS2Kit::Menu::MenuOption subclass. The builder methods const
 
 ```cpp
 .AddToggle("Beacon", "ON", "OFF",
-    [slot](int) { return Sys().Effects.IsActive(slot, EffectId::Beacon); },  // plugin-owned manager
+    [slot](int) { return App().Effects.IsActive(slot, EffectId::Beacon); },  // plugin-owned manager
     [slot](int) { Effects::ToggleBeacon(slot); })
 ```
 
@@ -79,7 +79,7 @@ builder.AddChoice<int>(
     [idx](int, int newIdx) { *idx = newIdx; },
     [admin, target](int slot, const int& hp) {
         Actions::DoSetHealth(admin, target, hp);
-        CS2Kit::Core::Kit().Menus.CloseAllMenus(slot);
+        CS2Kit::Core::Engine().Menus.CloseAllMenus(slot);
     });
 ```
 
@@ -117,7 +117,7 @@ builder.AddChoice<int>(
     /*maxLength=*/32)
 ```
 
-This relies on @ref CS2Kit::Sdk::ChatInputCapture — the plugin must call `Kit().ChatInput.TryConsume(slot, text)` from its chat-message hook before its own command parsing, suppressing the chat broadcast when the call returns `true`. See the [SDK guide](@ref sdk_guide) for the integration snippet.
+This relies on @ref CS2Kit::Sdk::ChatInputCapture — the plugin must call `Engine().ChatInput.TryConsume(slot, text)` from its chat-message hook before its own command parsing, suppressing the chat broadcast when the call returns `true`. See the [SDK guide](@ref sdk_guide) for the integration snippet.
 
 ### Submenu — push a built submenu
 

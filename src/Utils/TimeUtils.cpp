@@ -1,9 +1,8 @@
+#include <CS2Kit/Utils/StringUtils.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
-#include <algorithm>
-#include <cctype>
+#include <charconv>
 #include <chrono>
 #include <format>
-#include <regex>
 
 namespace CS2Kit::Utils
 {
@@ -16,41 +15,50 @@ int64_t TimeUtils::Now()
 
 int64_t TimeUtils::ParseDuration(const std::string& duration)
 {
-    std::string lower = duration;
-    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+    std::string lower = StringUtils::ToLower(duration);
 
     if (lower.empty() || lower == "0" || lower == "perm" || lower == "permanent")
         return 0;
 
-    std::regex pattern(R"((\d+)([smhdw]))");
-    std::smatch matches;
-    if (std::regex_match(lower, matches, pattern))
+    // "<digits><unit>" where unit is one of s/m/h/d/w (was regex `(\d+)([smhdw])`, full match).
+    size_t digits = 0;
+    while (digits < lower.size() && lower[digits] >= '0' && lower[digits] <= '9')
     {
-        try
+        ++digits;
+    }
+
+    if (digits > 0 && digits + 1 == lower.size())
+    {
+        int64_t mult = 0;
+        switch (lower[digits])
         {
-            int64_t value = std::stoll(matches[1].str());
-            switch (matches[2].str()[0])
-            {
-            case 's':
-                return value;
-            case 'm':
-                return value * SecondsPerMinute;
-            case 'h':
-                return value * SecondsPerHour;
-            case 'd':
-                return value * SecondsPerDay;
-            case 'w':
-                return value * SecondsPerWeek;
-            default:
-                return 0;
-            }
+        case 's':
+            mult = 1;
+            break;
+        case 'm':
+            mult = SecondsPerMinute;
+            break;
+        case 'h':
+            mult = SecondsPerHour;
+            break;
+        case 'd':
+            mult = SecondsPerDay;
+            break;
+        case 'w':
+            mult = SecondsPerWeek;
+            break;
+        default:
+            break;
         }
-        catch (...)
+
+        int64_t value = 0;
+        if (mult != 0 && std::from_chars(lower.data(), lower.data() + digits, value).ec == std::errc{})
         {
-            return 0;
+            return value * mult;
         }
     }
 
+    // Bare integer (or leading-integer) fallback, mirroring the original std::stoll behavior.
     try
     {
         return std::stoll(duration);

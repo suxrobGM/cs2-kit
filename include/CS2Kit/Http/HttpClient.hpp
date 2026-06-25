@@ -2,35 +2,35 @@
 
 #include "HttpResult.hpp"
 
-#include <condition_variable>
-#include <mutex>
-#include <queue>
+#include <memory>
 #include <string>
-#include <thread>
 #include <vector>
 
 namespace CS2Kit::Http
 {
 
 /**
- * Async HTTP client. A single worker thread performs blocking libcurl requests off the game
- * thread; completions are queued and replayed on the game thread via `DispatchCompletions()` so
- * callbacks may safely touch engine state. No engine API may be called from the completion before it.
+ * Async HTTP client. Requests run off the game thread (CPR's worker pool); completions are queued
+ * and replayed on the game thread via `DispatchCompletions()` so callbacks may safely touch engine
+ * state. No engine API may be called from a completion before that dispatch.
  */
 class HttpClient
 {
 public:
-    HttpClient() = default;
+    HttpClient();
+    ~HttpClient();
+    HttpClient(const HttpClient&) = delete;
+    HttpClient& operator=(const HttpClient&) = delete;
 
-    /** Init libcurl and spawn the worker thread. Idempotent. */
+    /** Reserved for API symmetry; CPR initialises libcurl lazily, so this is a no-op. */
     void Start();
 
-    /** Signal + join the worker, clean up libcurl, drop any unrun completions. Idempotent. */
+    /** Wait out any in-flight requests and drop their (unrun) completions. Idempotent. */
     void Stop();
 
     /**
      * Enqueue an async POST. `headers` are full "Key: Value" lines. `onComplete` runs on the game
-     * thread on a later `DispatchCompletions()`. No-op if the client isn't running.
+     * thread on a later `DispatchCompletions()`.
      */
     void Post(std::string url, std::string body, std::vector<std::string> headers, long timeoutMs,
               HttpCompletion onComplete);
@@ -39,32 +39,8 @@ public:
     void DispatchCompletions();
 
 private:
-    struct Job
-    {
-        std::string Url;
-        std::string Body;
-        std::vector<std::string> Headers;
-        long TimeoutMs = 0;
-        HttpCompletion OnComplete;
-    };
-
-    struct Completion
-    {
-        HttpCompletion OnComplete;
-        HttpResult Result;
-    };
-
-    void WorkerLoop();
-
-    std::thread _worker;
-    bool _running = false;
-
-    std::mutex _jobMutex;
-    std::condition_variable _jobCv;
-    std::queue<Job> _jobs;
-
-    std::mutex _completionMutex;
-    std::vector<Completion> _completions;
+    struct Impl;
+    std::unique_ptr<Impl> _impl;
 };
 
 }  // namespace CS2Kit::Http

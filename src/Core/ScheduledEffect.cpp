@@ -19,12 +19,12 @@ struct ScheduledEffect::State
             return;
         stopped = true;
 
-        if (auto* kit = KitOrNull())
+        if (auto* engine = EngineOrNull())
         {
             if (tickTimer)
-                kit->Scheduler.Cancel(tickTimer);
+                engine->Scheduler.Cancel(tickTimer);
             if (stopTimer)
-                kit->Scheduler.Cancel(stopTimer);
+                engine->Scheduler.Cancel(stopTimer);
         }
         tickTimer = 0;
         stopTimer = 0;
@@ -44,7 +44,7 @@ ScheduledEffect::ScheduledEffect(int64_t tickIntervalMs, int64_t durationMs, std
 {
     _state->onStop = std::move(onStop);
 
-    auto& sched = Kit().Scheduler;
+    auto& sched = Engine().Scheduler;
     if (onTick && tickIntervalMs > 0)
         _state->tickTimer = sched.Repeat(tickIntervalMs, std::move(onTick));
 

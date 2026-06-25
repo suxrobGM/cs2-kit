@@ -5,7 +5,7 @@
 #include <CS2Kit/Utils/ChatColors.hpp>
 #include <string>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace CS2Kit::Utils::Chat
 {
@@ -30,18 +30,18 @@ std::string EnsureColorPrefix(std::string_view message)
 
 void Print(int slot, std::string_view message)
 {
-    Kit().Messages.SendChatMessage(slot, EnsureColorPrefix(message));
+    Engine().Messages.SendChatMessage(slot, EnsureColorPrefix(message));
 }
 
 void PrintAll(std::string_view message)
 {
     auto rendered = EnsureColorPrefix(message);
-    auto& mgr = Kit().Players;
+    auto& mgr = Engine().Players;
     for (auto* p : mgr.GetAllPlayers())
     {
         if (!p)
             continue;
-        Kit().Messages.SendChatMessage(p->GetSlot(), rendered);
+        Engine().Messages.SendChatMessage(p->GetSlot(), rendered);
     }
 }
 
@@ -51,12 +51,12 @@ void PrintFiltered(std::string_view message, const std::function<bool(const Play
         return;
 
     auto rendered = EnsureColorPrefix(message);
-    auto& mgr = Kit().Players;
+    auto& mgr = Engine().Players;
     for (auto* p : mgr.GetAllPlayers())
     {
         if (!p || !filter(p))
             continue;
-        Kit().Messages.SendChatMessage(p->GetSlot(), rendered);
+        Engine().Messages.SendChatMessage(p->GetSlot(), rendered);
     }
 }
 

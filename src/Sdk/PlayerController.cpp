@@ -13,7 +13,7 @@
 #include <entity2/entityinstance.h>
 #include <mathlib/vector.h>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace CS2Kit::Sdk
 {
@@ -30,7 +30,7 @@ void CallVtableByName(void* target, const char* name, Args... args)
 {
     if (!target)
         return;
-    int index = Kit().GameData.GetOffset(name);
+    int index = Engine().GameData.GetOffset(name);
     if (index < 0)
     {
         Log::Warn("PlayerController: vtable offset '{}' not found.", name);
@@ -42,7 +42,7 @@ void CallVtableByName(void* target, const char* name, Args... args)
 
 PlayerController::PlayerController(int slot) : _slot(slot)
 {
-    _controller = Kit().Entities.GetPlayerController(slot);
+    _controller = Engine().Entities.GetPlayerController(slot);
 }
 
 bool PlayerController::IsValid() const
@@ -60,12 +60,12 @@ CEntityInstance* PlayerController::GetPawn() const
     if (!_controller)
         return nullptr;
 
-    int offset = Kit().Schema().GetOffset("CCSPlayerController", "m_hPlayerPawn");
+    int offset = Engine().Schema().GetOffset("CCSPlayerController", "m_hPlayerPawn");
     if (offset < 0)
         return nullptr;
 
     auto hPawn = *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(_controller) + offset);
-    return Kit().Entities.ResolveEntityHandle(hPawn);
+    return Engine().Entities.ResolveEntityHandle(hPawn);
 }
 
 void PlayerController::Kick(const char* reason) const
@@ -73,7 +73,7 @@ void PlayerController::Kick(const char* reason) const
     if (!IsValid())
         return;
 
-    auto* engine = Kit().Interfaces.Engine;
+    auto* engine = Engine().Interfaces.Engine;
     if (!engine)
     {
         Log::Warn("PlayerController::Kick: IVEngineServer2 not available.");
@@ -85,7 +85,7 @@ void PlayerController::Kick(const char* reason) const
 
 int PlayerController::SchemaOffset(const char* className, const char* fieldName) const
 {
-    return Kit().Schema().GetOffset(className, fieldName);
+    return Engine().Schema().GetOffset(className, fieldName);
 }
 
 int PlayerController::GetHealth() const
@@ -110,7 +110,7 @@ bool PlayerController::IsAlive() const
 
 uint64_t PlayerController::GetButtons() const
 {
-    return Kit().Entities.GetPlayerButtons(_slot);
+    return Engine().Entities.GetPlayerButtons(_slot);
 }
 
 void PlayerController::SetHealth(int health) const
@@ -232,7 +232,7 @@ std::string PlayerController::GetPlayerName() const
     if (!_controller)
         return {};
 
-    int offset = Kit().Schema().GetOffset("CBasePlayerController", "m_iszPlayerName");
+    int offset = Engine().Schema().GetOffset("CBasePlayerController", "m_iszPlayerName");
     if (offset < 0)
         return {};
 
@@ -248,7 +248,7 @@ void PlayerController::SetPlayerName(const std::string& name) const
     if (!_controller)
         return;
 
-    int offset = Kit().Schema().GetOffset("CBasePlayerController", "m_iszPlayerName");
+    int offset = Engine().Schema().GetOffset("CBasePlayerController", "m_iszPlayerName");
     if (offset < 0)
         return;
 

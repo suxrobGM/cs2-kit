@@ -14,7 +14,7 @@
 #include <networksystem/netmessage.h>
 #include <usermessages.pb.h>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace CS2Kit::Sdk
 {
@@ -23,7 +23,7 @@ using namespace CS2Kit::Utils;
 
 bool MessageSystem::Initialize()
 {
-    auto& interfaces = Kit().Interfaces;
+    auto& interfaces = Engine().Interfaces;
 
     if (!interfaces.GameEventSystem)
     {
@@ -43,8 +43,8 @@ bool MessageSystem::Initialize()
 
 bool MessageSystem::InitGameEventManager()
 {
-    auto& interfaces = Kit().Interfaces;
-    auto& gameData = Kit().GameData;
+    auto& interfaces = Engine().Interfaces;
+    auto& gameData = Engine().GameData;
 
     void* eventManagerAddr = gameData.ResolveSignature("GameEventManager");
     if (eventManagerAddr)
@@ -83,7 +83,7 @@ bool MessageSystem::InitGameEventManager()
 
 void MessageSystem::SendCenterHtml(int slot, const std::string& html)
 {
-    auto* gameEventManager = Kit().Interfaces.GameEventManager;
+    auto* gameEventManager = Engine().Interfaces.GameEventManager;
     if (!gameEventManager || !Core::IsValidSlot(slot))
         return;
 
@@ -111,7 +111,7 @@ void MessageSystem::SendCenterHtml(int slot, const std::string& html)
 
 void MessageSystem::SendChatMessage(int slot, const std::string& message)
 {
-    auto& interfaces = Kit().Interfaces;
+    auto& interfaces = Engine().Interfaces;
     if (!interfaces.GameEventSystem || !interfaces.NetworkMessages || !Core::IsValidSlot(slot))
         return;
 

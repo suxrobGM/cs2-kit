@@ -1,8 +1,7 @@
 #include "Sdk/Schema.hpp"
 
+#include <CS2Kit/Core/ActiveService.hpp>
 #include <CS2Kit/Core/Services.hpp>
-
-#include <cassert>
 
 namespace CS2Kit::Core
 {
@@ -11,25 +10,19 @@ Services::Services() : _schema(std::make_unique<Sdk::SchemaService>()) {}
 
 Services::~Services() = default;
 
-namespace
-{
-Services* g_active = nullptr;
-}  // namespace
-
 void SetActiveServices(Services* services)
 {
-    g_active = services;
+    ActiveService<Services>::Set(services);
 }
 
-Services& Kit()
+Services& Engine()
 {
-    assert(g_active && "CS2Kit::Kit() called with no active Services (outside Load/Unload)");
-    return *g_active;
+    return ActiveService<Services>::Get();
 }
 
-Services* KitOrNull()
+Services* EngineOrNull()
 {
-    return g_active;
+    return ActiveService<Services>::GetOrNull();
 }
 
 }  // namespace CS2Kit::Core

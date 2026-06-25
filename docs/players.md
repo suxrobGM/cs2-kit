@@ -7,7 +7,7 @@
 The player module (`CS2Kit::Players`) tracks connected players by slot and SteamID. It is intentionally minimal — only identity and connection metadata. Plugin-specific state (admin flags, punishment cache, stats) belongs in your own managers, keyed off SteamID, not on the `Player` type.
 
 - **Player** — Identity record: slot, SteamID, name, IP, connect time
-- **PlayerManager** — Two indexed maps (slot, SteamID) for O(1) lookup; a CS2-Kit service reached via `Kit().Players`
+- **PlayerManager** — Two indexed maps (slot, SteamID) for O(1) lookup; a CS2-Kit service reached via `Engine().Players`
 
 Single-threaded by design. All access happens from game-thread Metamod hooks, so no mutex is needed.
 
@@ -16,19 +16,19 @@ Single-threaded by design. All access happens from game-thread Metamod hooks, so
 If your plugin derives from @ref CS2Kit::Core::MetamodPluginBase, this is automatic: the base calls `AddPlayer` on connect and `RemovePlayer` on disconnect, then hands your `OnPlayerConnect(Player*)` / `OnPlayerDisconnect(Player*)` overrides the live `Player*`. Just override those.
 
 Without the base, drive `PlayerManager` from your own connect/disconnect hooks. Reach the manager
-via the `Kit()` accessor (`#include <CS2Kit/Core/Services.hpp>`, `using CS2Kit::Core::Kit;`):
+via the `Engine()` accessor (`#include <CS2Kit/Core/Services.hpp>`, `using CS2Kit::Core::Engine;`):
 
 ```cpp
 // OnClientConnected hook:
-Kit().Players.AddPlayer(slot.Get(), static_cast<int64_t>(xuid),
+Engine().Players.AddPlayer(slot.Get(), static_cast<int64_t>(xuid),
                         name ? name : "", address ? address : "");
 
 // ClientDisconnect hook:
 CS2Kit::OnPlayerDisconnect(slot.Get());
-Kit().Players.RemovePlayer(slot.Get());
+Engine().Players.RemovePlayer(slot.Get());
 
 // Plugin::Unload():
-Kit().Players.Clear();
+Engine().Players.Clear();
 ```
 
 ## Player API
@@ -71,7 +71,7 @@ Do not store `Player*` across the disconnect callback. If you need to remember a
 `Player` deliberately does not carry admin flags, mute/gag flags, or any other plugin concern. Keep
 that state in your own services, keyed by SteamID. A plugin's managers are plain classes (no base) —
 gather them in one struct, construct it in `OnLoad`, drop it on unload, and reach it via a free
-accessor. admin-system calls the struct `Managers` and the accessor `Sys()`:
+accessor. admin-system calls the struct `Managers` and the accessor `App()`:
 
 ```cpp
 class AdminManager
@@ -87,11 +87,11 @@ struct Managers
     AdminManager Admins;
     // ... other plugin managers
 };
-Managers& Sys();   // returns the live struct; valid only between OnLoad and unload
+Managers& App();   // returns the live struct; valid only between OnLoad and unload
 
-// Query when you need it (Kit().Players is the CS2-Kit manager; Sys().Admins is yours):
-auto* player = Kit().Players.GetPlayerBySlot(slot);
-if (player && Sys().Admins.IsAdmin(player->GetSteamID()))
+// Query when you need it (Engine().Players is the CS2-Kit manager; App().Admins is yours):
+auto* player = Engine().Players.GetPlayerBySlot(slot);
+if (player && App().Admins.IsAdmin(player->GetSteamID()))
 {
     // ...
 }

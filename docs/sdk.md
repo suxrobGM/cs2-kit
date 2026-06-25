@@ -12,10 +12,10 @@ Centralized holder for all SDK interface pointers. Automatically populated by `C
 
 ```cpp
 #include <CS2Kit/Core/Services.hpp>
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 // After CS2Kit::Initialize(), all interfaces are available:
-auto& gi = Kit().Interfaces;
+auto& gi = Engine().Interfaces;
 auto* engine = gi.Engine;       // IVEngineServer2*
 auto* cvar = gi.CVar;           // ICvar*
 auto* schema = gi.SchemaSystem; // ISchemaSystem*
@@ -23,7 +23,7 @@ auto* schema = gi.SchemaSystem; // ISchemaSystem*
 ```
 
 All other Sdk classes read from this holder internally. The other examples on this page reach their
-service the same way — `Kit().GameData`, `Kit().Entities`, `Kit().Schema()`, and so on.
+service the same way — `Engine().GameData`, `Engine().Entities`, `Engine().Schema()`, and so on.
 
 ## GameData (Signature Management)
 
@@ -32,7 +32,7 @@ CS2-Kit ships built-in gamedata (`gamedata/signatures.jsonc`) that is automatica
 Consumer plugins can also use GameData for their own signatures:
 
 ```cpp
-auto& gd = Kit().GameData;
+auto& gd = Engine().GameData;
 
 // Find a raw signature address
 void* addr = gd.FindSignature("CCSPlayerController_Kick");
@@ -63,7 +63,7 @@ void* resolved = gd.ResolveSignature("SomeFunction");
 Access player controllers and entity data:
 
 ```cpp
-auto& es = Kit().Entities;
+auto& es = Engine().Entities;
 
 // Get the raw controller entity by slot
 auto* controller = es.GetPlayerController(slot);
@@ -145,7 +145,7 @@ SetEntityRender(prop, RenderMode_t::Normal, ColorOpaqueWhite);
 Resolves entity field offsets at runtime using CS2's schema system. Results are cached:
 
 ```cpp
-auto& schema = Kit().Schema();
+auto& schema = Engine().Schema();
 
 // Get field offset
 int32_t offset = schema.GetOffset("CCSPlayerPawn", "m_iHealth");
@@ -178,7 +178,7 @@ Wildcard bytes are represented as `??` in pattern strings.
 Read and write ConVars with type safety:
 
 ```cpp
-auto& cvars = Kit().ConVars;
+auto& cvars = Engine().ConVars;
 
 // Typed getters return std::optional
 if (auto gravity = cvars.GetFloat("sv_gravity"))
@@ -198,7 +198,7 @@ uint64_t id = cvars.OnChange([](const char* name, const char* oldValue, const ch
 Create, fire, and listen for game events:
 
 ```cpp
-auto& events = Kit().Events;
+auto& events = Engine().Events;
 
 // Listen for player death; returns an id you can pass to RemoveListener.
 uint64_t id = events.Listen("player_death", [](IGameEvent* event) {
@@ -213,7 +213,7 @@ uint64_t id = events.Listen("player_death", [](IGameEvent* event) {
 Send chat and center-HTML messages to players:
 
 ```cpp
-auto& msg = Kit().Messages;
+auto& msg = Engine().Messages;
 
 // Send a chat line to a specific player (prefer CS2Kit::Utils::Chat for colored output)
 msg.SendChatMessage(slot, "Hello, player!");
@@ -228,7 +228,7 @@ msg.ClearCenterHtml(slot);
 Per-slot pending-prompt registry that backs the menu system's free-text @ref CS2Kit::Menu::InputOption. Use it directly when you need a prompt outside of a menu (e.g. a chat command that asks the player to type a value as a follow-up).
 
 ```cpp
-auto& capture = Kit().ChatInput;
+auto& capture = Engine().ChatInput;
 
 capture.BeginCapture(slot, "Enter your nickname:",
     [](int s, std::string_view text) -> bool {
@@ -248,7 +248,7 @@ Suppressing a chat broadcast has to happen in the `say` / `say_team` hook. With 
 ```cpp
 bool MyPlugin::OnPlayerChat(Player* p, std::string_view message, bool team) override
 {
-    if (Kit().ChatInput.TryConsume(p->GetSlot(), message))
+    if (Engine().ChatInput.TryConsume(p->GetSlot(), message))
         return true;   // capture handled it; don't broadcast
     return false;      // fall through to normal chat handling
 }

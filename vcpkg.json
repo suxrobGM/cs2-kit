@@ -8,7 +8,7 @@
   "dependencies": [
     "nlohmann-json",
     {
-      "name": "curl",
+      "name": "cpr",
       "features": ["ssl"]
     }
   ]

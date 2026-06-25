@@ -19,7 +19,7 @@ CS2Kit
 ## Design Principles
 
 - **Single-threaded** — All code runs on the game thread. No mutexes needed. Metamod hooks are always called from the main thread.
-- **Service container** — CS2-Kit's services live in one `CS2Kit::Core::Services` instance, constructed on Load and destroyed on Unload, reached via the `Kit()` accessor. No process-lifetime singletons — state cannot leak across `meta unload` / `meta reload`.
+- **Service container** — CS2-Kit's services live in one `CS2Kit::Core::Services` instance, constructed on Load and destroyed on Unload, reached via the `Engine()` accessor. No process-lifetime singletons — state cannot leak across `meta unload` / `meta reload`.
 - **Builder pattern** — Complex objects (commands, menus) are constructed via fluent builders.
 - **Minimal boilerplate** — `CS2Kit::Initialize(ismm, error, maxlen)` handles all SDK interface resolution, gamedata loading, and subsystem init. Deriving from `MetamodPluginBase` removes the rest: the ISmmPlugin getters, the Load/Unload skeleton, the standard hooks, and the player lifecycle. `ILogger` has a built-in default.
 
@@ -38,7 +38,7 @@ drives `PlayerManager::AddPlayer`/`RemovePlayer`, and exposes virtual callbacks 
   `Defer()` for removal. The consumer still provides `PLUGIN_EXPOSE` / `PLUGIN_GLOBALVARS`, which
   define the per-plugin SourceHook globals the base links against.
 
-## Service container (`Kit()`)
+## Service container (`Engine()`)
 
 CS2-Kit's own services — `PlayerManager`, `CommandManager`, `MenuManager`, the SDK wrappers,
 `Translations`, and the rest — are members of a single `CS2Kit::Core::Services` instance. The base
@@ -46,21 +46,21 @@ constructs one `Services` on Load and destroys it on Unload (members are built i
 and torn down in reverse, RAII), so service state cannot leak across `meta unload` / `meta reload`.
 There are no process-lifetime singletons and no `::Instance()` accessors.
 
-Reach a service through the free `Kit()` accessor (`Kit()` asserts if called outside a Load/Unload
-window; `KitOrNull()` returns the active `Services*` or `nullptr` for late-teardown paths):
+Reach a service through the free `Engine()` accessor (`Engine()` asserts if called outside a Load/Unload
+window; `EngineOrNull()` returns the active `Services*` or `nullptr` for late-teardown paths):
 
 ```cpp
 #include <CS2Kit/Core/Services.hpp>
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
-Kit().Players.GetPlayerBySlot(slot);   // member field
-Kit().Commands.Register(...);          // member field
-Kit().Schema().GetOffset(...);         // Schema() is a method
+Engine().Players.GetPlayerBySlot(slot);   // member field
+Engine().Commands.Register(...);          // member field
+Engine().Schema().GetOffset(...);         // Schema() is a method
 ```
 
 A consumer plugin keeps its **own** managers the same way: declare them in a plain struct
 (admin-system calls it `Managers`), construct it in `OnLoad`, drop it on unload, and reach it via a
-free accessor (admin-system's is `Sys()`). It does not derive from any base.
+free accessor (admin-system's is `App()`). It does not derive from any base.
 
 ```cpp
 struct Managers {
@@ -68,10 +68,10 @@ struct Managers {
     Admin::AdminManager  Admins;     // declaration order == construction order; destroyed in reverse
     Admin::Effects::EffectManager Effects;
 };
-Managers& Sys();                     // returns the live struct; valid only between OnLoad and unload
+Managers& App();                     // returns the live struct; valid only between OnLoad and unload
 
 // Usage:
-Sys().Admins.IsAdmin(steamId);
+App().Admins.IsAdmin(steamId);
 ```
 
 ## Module Dependencies

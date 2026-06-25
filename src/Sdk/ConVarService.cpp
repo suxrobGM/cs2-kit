@@ -5,7 +5,7 @@
 #include <icvar.h>
 #include <tier1/convar.h>
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace
 {
@@ -17,7 +17,7 @@ void GlobalConVarChangeCallback(ConVarRefAbstract* ref, CSplitScreenSlot /*slot*
         return;
 
     const char* name = ref->GetName();
-    Kit().ConVars.DispatchChange(name, oldValue, newValue);
+    Engine().ConVars.DispatchChange(name, oldValue, newValue);
 }
 
 }  // namespace
@@ -28,7 +28,7 @@ using namespace CS2Kit::Utils;
 
 bool ConVarService::Initialize()
 {
-    if (!Kit().Interfaces.CVar)
+    if (!Engine().Interfaces.CVar)
     {
         Log::Error("ConVarService: ICvar not available.");
         return false;
@@ -113,7 +113,7 @@ bool ConVarService::SetString(const char* name, const char* value)
 
 void ConVarService::ExecuteServerCommand(const char* command)
 {
-    auto* engine = Kit().Interfaces.Engine;
+    auto* engine = Engine().Interfaces.Engine;
     if (!engine)
     {
         Log::Warn("ConVarService::ExecuteServerCommand: IVEngineServer2 not available.");
@@ -127,7 +127,7 @@ uint64_t ConVarService::OnChange(ChangeCallback callback)
 {
     if (!_globalCallbackInstalled)
     {
-        auto* cvar = Kit().Interfaces.CVar;
+        auto* cvar = Engine().Interfaces.CVar;
         if (cvar)
         {
             cvar->InstallGlobalChangeCallback(&GlobalConVarChangeCallback);

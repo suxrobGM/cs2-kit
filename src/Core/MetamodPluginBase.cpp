@@ -13,7 +13,7 @@
 // own the standard hooks and call PLUGIN_SAVEVARS in Load().
 PLUGIN_GLOBALVARS();
 
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
 namespace CS2Kit::Core
 {
@@ -39,7 +39,7 @@ bool MetamodPluginBase::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     _info = Info();  // capture once; the ISmmPlugin getters read this copy
 
     // Fresh service container per load; wire the accessor before Initialize so kit subsystems
-    // (and the plugin's OnLoad) can reach each other via Kit(). Destroyed in Unload — this is
+    // (and the plugin's OnLoad) can reach each other via Engine(). Destroyed in Unload — this is
     // what makes meta reload start from clean state.
     _services = std::make_unique<Services>();
     SetActiveServices(_services.get());
@@ -75,7 +75,7 @@ bool MetamodPluginBase::Unload(char* error, size_t maxlen)
 {
     // Order matters: deferred teardown (hook removal, DB close, timer cancel) runs while every
     // instance is still alive; only then do we tear the instances down (plugin first, then kit),
-    // and null the accessor before the kit services are destroyed so nothing dereferences Kit().
+    // and null the accessor before the kit services are destroyed so nothing dereferences Engine().
     OnUnload();
     RunDeferred();
     CS2Kit::Shutdown(*_services);
@@ -104,7 +104,7 @@ void MetamodPluginBase::RunDeferred()
 
 void MetamodPluginBase::RegisterStandardHooks()
 {
-    auto& gi = Kit().Interfaces;
+    auto& gi = Engine().Interfaces;
 
     SH_ADD_HOOK(IServerGameDLL, GameFrame, gi.ServerGameDLL, SH_MEMBER(this, &MetamodPluginBase::Hook_GameFrame), true);
     SH_ADD_HOOK(IServerGameClients, OnClientConnected, gi.ServerGameClients,
@@ -115,7 +115,7 @@ void MetamodPluginBase::RegisterStandardHooks()
                 false);
 
     Defer([this] {
-        auto& g = Kit().Interfaces;
+        auto& g = Engine().Interfaces;
         SH_REMOVE_HOOK(IServerGameDLL, GameFrame, g.ServerGameDLL, SH_MEMBER(this, &MetamodPluginBase::Hook_GameFrame),
                        true);
         SH_REMOVE_HOOK(IServerGameClients, OnClientConnected, g.ServerGameClients,
@@ -139,7 +139,7 @@ void MetamodPluginBase::Hook_OnClientConnected(CPlayerSlot slot, const char* nam
 {
     int slotIdx = slot.Get();
     int64_t steamId = static_cast<int64_t>(xuid);
-    Player* player = Kit().Players.AddPlayer(slotIdx, steamId, name ? name : "", address ? address : "");
+    Player* player = Engine().Players.AddPlayer(slotIdx, steamId, name ? name : "", address ? address : "");
     OnPlayerConnect(player);
 }
 
@@ -147,9 +147,9 @@ void MetamodPluginBase::Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconne
                                               uint64 xuid, const char* networkId)
 {
     int slotIdx = slot.Get();
-    OnPlayerDisconnect(Kit().Players.GetPlayerBySlot(slotIdx));
+    OnPlayerDisconnect(Engine().Players.GetPlayerBySlot(slotIdx));
     CS2Kit::OnPlayerDisconnect(*_services, slotIdx);
-    Kit().Players.RemovePlayer(slotIdx);
+    Engine().Players.RemovePlayer(slotIdx);
 }
 
 void MetamodPluginBase::Hook_DispatchConCommand(ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args)
@@ -176,7 +176,7 @@ void MetamodPluginBase::Hook_DispatchConCommand(ConCommandRef cmd, const CComman
     if (!Core::IsValidSlot(slotIdx))
         return;
 
-    Player* player = Kit().Players.GetPlayerBySlot(slotIdx);
+    Player* player = Engine().Players.GetPlayerBySlot(slotIdx);
     if (!player)
         return;
 

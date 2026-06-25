@@ -31,7 +31,7 @@ namespace CS2Kit::Core
  * `meta unload`/`meta reload`. Members are declared in dependency order;
  * destruction is the reverse (RAII).
  *
- * Reach a service via @ref Kit() (e.g. `Kit().Players`, `Kit().Schema()`).
+ * Reach a service via @ref Engine() (e.g. `Engine().Players`, `Engine().Schema()`).
  */
 class Services
 {
@@ -62,13 +62,13 @@ private:
     std::unique_ptr<Sdk::SchemaService> _schema;  // constructed last, before public members are used
 };
 
-/** Set/clear the active Services backing @ref Kit(). Called by MetamodPluginBase on Load/Unload. */
+/** Set/clear the active Services backing @ref Engine(). Called by MetamodPluginBase on Load/Unload. */
 void SetActiveServices(Services* services);
 
 /** The active Services. Asserts if called outside a Load/Unload window. */
-Services& Kit();
+Services& Engine();
 
 /** The active Services, or nullptr — for teardown paths that may run after Shutdown. */
-Services* KitOrNull();
+Services* EngineOrNull();
 
 }  // namespace CS2Kit::Core

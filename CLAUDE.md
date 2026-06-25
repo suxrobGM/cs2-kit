@@ -58,7 +58,7 @@ Doxyfile                        # Doxygen configuration
 
 - **C++17 nested namespaces:** `namespace CS2Kit::Sdk { ... }`
 - **`.hpp` headers** (not `.h`)
-- **Service container + accessor** (`Services` reached via `Kit()`; no per-class singletons)
+- **Service container + accessor** (`Services` reached via `Engine()`; no per-class singletons)
 - **Designated initializers** for struct construction
 - **`std::format`** for string formatting
 - **`std::function`** for all callbacks
@@ -88,23 +88,23 @@ PLUGIN_EXPOSE(MyPlugin, g_MyPlugin);  // consumer .cpp; PLUGIN_GLOBALVARS() in h
 - `MetamodPluginBase.cpp` carries `PLUGIN_GLOBALVARS()` so it can reference the SourceHook globals
   the consumer's `PLUGIN_EXPOSE` defines (works under source inclusion and static-lib linking).
 
-### Service Container (Kit / Sys)
+### Service Container (Engine / App)
 
 cs2-kit's services live in one `CS2Kit::Core::Services` object, constructed on Load and destroyed on
 Unload (declaration order = construction order; destruction is reverse). Reach any service through the
-`Kit()` accessor — there are no process-lifetime singletons:
+`Engine()` accessor — there are no process-lifetime singletons:
 
 ```cpp
 #include <CS2Kit/Core/Services.hpp>
-using CS2Kit::Core::Kit;
+using CS2Kit::Core::Engine;
 
-Kit().Players.GetPlayerBySlot(slot);
-Kit().Menus.OpenMenu(slot, menu);
-Kit().Schema().GetOffset("CBaseEntity", "m_iTeamNum");
+Engine().Players.GetPlayerBySlot(slot);
+Engine().Menus.OpenMenu(slot, menu);
+Engine().Schema().GetOffset("CBaseEntity", "m_iTeamNum");
 ```
 
 A consuming plugin owns its OWN managers the same way: put them in a plain struct (e.g. `Managers`)
-built in `OnLoad` and reached via a free `Sys()` accessor. Plugin managers are plain classes — they do
+built in `OnLoad` and reached via a free `App()` accessor. Plugin managers are plain classes — they do
 not derive from any base.
 
 ### Builder Pattern
