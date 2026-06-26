@@ -18,7 +18,7 @@ package = false
 [tool.ruff]
 line-length = 100
 target-version = "py314"
-extend-exclude = ["AMBuildScript", "**/AMBuilder"]
+extend-exclude = ["AMBuildScript", "**/AMBuilder", "vendor"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP"]
@@ -28,7 +28,7 @@ python_version = "3.14"
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
-exclude = ["AMBuildScript", "AMBuilder"]
+exclude = ["AMBuildScript", "AMBuilder", "vendor"]
 
 [[tool.mypy.overrides]]
 module = "ambuild2.*"

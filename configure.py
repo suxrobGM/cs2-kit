@@ -8,7 +8,9 @@ import os
 import sys
 
 # Add AMBuild path from vendor/mmsource-2.0 if available
-mms_ambuild = os.path.join(os.path.dirname(__file__), "vendor", "mmsource-2.0", "third_party", "ambuild")
+mms_ambuild = os.path.join(
+    os.path.dirname(__file__), "vendor", "mmsource-2.0", "third_party", "ambuild"
+)
 if os.path.exists(mms_ambuild):
     sys.path.insert(0, mms_ambuild)
 
