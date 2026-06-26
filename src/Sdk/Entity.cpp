@@ -1,6 +1,6 @@
 #include "Sdk/Schema.hpp"
-#include <CS2Kit/Core/Services.hpp>
 
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
@@ -41,8 +41,8 @@ CGameEntitySystem* EntitySystem::ReadEntitySystemPointer()
     if (offsetGameEntitySystem < 0)
         return nullptr;
 
-    return *reinterpret_cast<CGameEntitySystem**>(
-        reinterpret_cast<uintptr_t>(interfaces.GameResourceService) + offsetGameEntitySystem);
+    return *reinterpret_cast<CGameEntitySystem**>(reinterpret_cast<uintptr_t>(interfaces.GameResourceService) +
+                                                  offsetGameEntitySystem);
 }
 
 bool EntitySystem::Initialize()

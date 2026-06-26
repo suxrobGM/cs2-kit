@@ -2,9 +2,9 @@
 #include "Sdk/Schema.hpp"
 
 #include <CS2Kit/CS2Kit.hpp>
-#include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Core/ILogger.hpp>
 #include <CS2Kit/Core/Paths.hpp>
+#include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Sdk/ChatInputCapture.hpp>
@@ -60,12 +60,12 @@ bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, Core::Services& servi
     // Resolve each required interface, erroring out on the first one that is missing. The macro
     // keeps this type-safe (decltype, no void** punning) while collapsing the per-interface
     // resolve-and-check boilerplate to one line each.
-#define CS2KIT_RESOLVE(field, factory, version)                                                                        \
-    gi.field = static_cast<decltype(gi.field)>(factory(version));                                                      \
-    if (!gi.field)                                                                                                     \
-    {                                                                                                                  \
-        ismm->Format(error, maxlen, "Could not find interface: %s", version);                                          \
-        return false;                                                                                                  \
+#define CS2KIT_RESOLVE(field, factory, version)                               \
+    gi.field = static_cast<decltype(gi.field)>(factory(version));             \
+    if (!gi.field)                                                            \
+    {                                                                         \
+        ismm->Format(error, maxlen, "Could not find interface: %s", version); \
+        return false;                                                         \
     }
 
     CS2KIT_RESOLVE(ServerGameDLL, resolveServer, INTERFACEVERSION_SERVERGAMEDLL)

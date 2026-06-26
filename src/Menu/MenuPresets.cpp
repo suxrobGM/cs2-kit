@@ -3,7 +3,6 @@
 #include <CS2Kit/Menu/MenuPresets.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
-
 #include <string_view>
 #include <utility>
 

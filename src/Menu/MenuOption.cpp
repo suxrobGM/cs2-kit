@@ -1,5 +1,5 @@
-#include <CS2Kit/Menu/Menu.hpp>
 #include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Menu/Menu.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Menu/Options/InputOption.hpp>
 #include <CS2Kit/Menu/Options/SubmenuOption.hpp>
@@ -28,14 +28,13 @@ void InputOption::OnActivate(int slot)
     auto setter = _set;
     int maxLen = _maxLength;
 
-    Engine().ChatInput.BeginCapture(slot, _prompt,
-                                                   [setter, maxLen](int s, std::string_view text) -> bool {
-                                                       if (maxLen > 0 && static_cast<int>(text.size()) > maxLen)
-                                                           return false;
-                                                       if (!setter)
-                                                           return true;
-                                                       return setter(s, text);
-                                                   });
+    Engine().ChatInput.BeginCapture(slot, _prompt, [setter, maxLen](int s, std::string_view text) -> bool {
+        if (maxLen > 0 && static_cast<int>(text.size()) > maxLen)
+            return false;
+        if (!setter)
+            return true;
+        return setter(s, text);
+    });
 }
 
 }  // namespace CS2Kit::Menu

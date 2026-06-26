@@ -1,7 +1,6 @@
 #include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/ChatInputCapture.hpp>
-
 #include <utility>
 
 using CS2Kit::Core::Engine;
@@ -24,9 +23,7 @@ void ChatInputCapture::BeginCapture(int slot, std::string prompt, Callback callb
 
     if (timeoutMs > 0)
     {
-        p.TimeoutHandle = Engine().Scheduler.Delay(timeoutMs, [slot]() {
-            Engine().ChatInput.CancelCapture(slot);
-        });
+        p.TimeoutHandle = Engine().Scheduler.Delay(timeoutMs, [slot]() { Engine().ChatInput.CancelCapture(slot); });
     }
 
     _pending[slot] = std::move(p);

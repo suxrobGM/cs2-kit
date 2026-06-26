@@ -1,6 +1,6 @@
 #include "Sdk/Schema.hpp"
-#include <CS2Kit/Core/Services.hpp>
 
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/EntityRender.hpp>
 #include <entity2/entityinstance.h>
 

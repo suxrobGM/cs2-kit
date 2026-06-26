@@ -1,8 +1,6 @@
 #include <CS2Kit/Http/HttpClient.hpp>
-
-#include <cpr/cpr.h>
-
 #include <chrono>
+#include <cpr/cpr.h>
 #include <future>
 #include <utility>
 
@@ -42,8 +40,7 @@ void HttpClient::Post(std::string url, std::string body, std::vector<std::string
     // The worker touches only CPR + strings, never engine state; the callback is replayed on the
     // game thread in DispatchCompletions().
     auto task = [url = std::move(url), body = std::move(body), headers = std::move(headers),
-                 timeoutMs]() -> HttpResult
-    {
+                 timeoutMs]() -> HttpResult {
         cpr::Header header;
         for (const auto& line : headers)
         {

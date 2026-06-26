@@ -1,6 +1,6 @@
 #include "Menu/MenuRenderer.hpp"
-#include <CS2Kit/Core/Services.hpp>
 
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Menu/MenuOption.hpp>
 #include <CS2Kit/Sdk/ChatInputCapture.hpp>
@@ -125,8 +125,8 @@ void MenuManager::CloseMenu(int slot)
     else
     {
         state.SelectedIndex = 0;
-        if (auto* parent = state.GetCurrentMenu(); parent && !parent->Items.empty() &&
-                                                       !IsCursorTarget(parent->Items[0]))
+        if (auto* parent = state.GetCurrentMenu();
+            parent && !parent->Items.empty() && !IsCursorTarget(parent->Items[0]))
         {
             StepCursor(parent->Items, state.SelectedIndex, +1);
         }

@@ -1,9 +1,8 @@
 #include "Menu/MenuRenderer.hpp"
-#include <CS2Kit/Core/Services.hpp>
 
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuOption.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
-
 #include <algorithm>
 #include <sstream>
 
@@ -58,7 +57,8 @@ static std::string FooterChunk(const char* keyColor, const char* keyText, const 
 std::string DefaultFooter(bool isSubmenu, bool isPaginated, bool usesHorizontal, int slot)
 {
     const char* closeColor = isSubmenu ? Theme::NavBack : Theme::NavClose;
-    std::string closeLabel = isSubmenu ? FooterLabel("nav.back", "Back", slot) : FooterLabel("nav.close", "Close", slot);
+    std::string closeLabel =
+        isSubmenu ? FooterLabel("nav.back", "Back", slot) : FooterLabel("nav.close", "Close", slot);
 
     // First row: W/S, the A/D hint for the current row (value-change or paging), and E.
     std::ostringstream row1;

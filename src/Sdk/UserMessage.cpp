@@ -1,9 +1,9 @@
 #include "Sdk/SigScanner.hpp"
-#include <CS2Kit/Core/Services.hpp>
-#include <CS2Kit/Core/Slot.hpp>
 
 #include <igameevents.h>
 
+#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Core/Slot.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>

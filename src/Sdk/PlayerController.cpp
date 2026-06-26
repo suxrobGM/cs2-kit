@@ -1,7 +1,7 @@
 #include "Sdk/Schema.hpp"
-#include <CS2Kit/Core/Services.hpp>
 #include "Sdk/VirtualCall.hpp"
 
+#include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/EntityRender.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>

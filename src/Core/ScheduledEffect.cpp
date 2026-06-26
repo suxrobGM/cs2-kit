@@ -1,6 +1,5 @@
 #include <CS2Kit/Core/ScheduledEffect.hpp>
 #include <CS2Kit/Core/Services.hpp>
-
 #include <utility>
 
 namespace CS2Kit::Core
