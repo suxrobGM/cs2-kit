@@ -20,8 +20,8 @@ SOURCES.sort()
 for sdk_target in Library.sdk_targets:
     binary = Library.create_static_library(builder, sdk_target)
 
-    # Standalone builds compiling src/Http/HttpClient.cpp must add a libcurl
-    # include dir here; the source-inclusion build inherits it from the plugin.
+    # Standalone builds compiling src/Http/HttpClient.cpp inherit CPR headers from
+    # the configured dependency include paths.
     binary.sources += SOURCES
 
     if binary.compiler.like("msvc"):

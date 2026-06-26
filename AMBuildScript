@@ -10,7 +10,7 @@ import os
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 VENDOR_DIR = os.path.join(ROOT_DIR, "vendor")
 
-# vcpkg triplet for Windows deps (nlohmann/json, libcurl)
+# vcpkg triplet for Windows deps (nlohmann-json, cpr)
 VCPKG_TRIPLET = "x64-windows-static"
 
 
@@ -211,7 +211,7 @@ class LibraryConfig:
             os.path.join(mms_core, "sourcehook"),
         ]
 
-        # vcpkg headers (nlohmann/json, libcurl); a static lib links no deps — the plugin links curl.
+        # vcpkg headers (nlohmann-json, cpr); a static lib links no deps.
         if cxx.like("msvc"):
             vcpkg_path = os.path.join(builder.sourcePath, "vcpkg_installed", VCPKG_TRIPLET)
             if os.path.isdir(vcpkg_path):

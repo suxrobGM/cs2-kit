@@ -36,7 +36,7 @@ gamedata/                       # Engine signatures and offsets (auto-loaded)
 
 docs/                           # Doxygen extra pages (mainpage, guides)
 vendor/                         # SDK submodules (hl2sdk-cs2, hl2sdk-manifests, mmsource-2.0)
-vcpkg.json                      # Third-party deps (nlohmann-json, curl) — installed via vcpkg
+vcpkg.json                      # Third-party deps (nlohmann-json, cpr) — installed via vcpkg
 Doxyfile                        # Doxygen configuration
 .github/workflows/docs.yml     # Auto-deploy docs to GitHub Pages
 ```
@@ -136,4 +136,4 @@ doxygen Doxyfile
 # Output: build/docs/html/index.html
 ```
 
-Source inclusion: compiled as part of the consuming project (which supplies nlohmann/json + libcurl via its own vcpkg). Static library: run `vcpkg install --triplet x64-windows-static` first (pulls nlohmann-json + curl), then `python configure.py --sdks cs2 && cd build && ambuild`.
+Source inclusion: compiled as part of the consuming project (which supplies nlohmann-json + CPR via its own dependency setup). Static library: run `vcpkg install --triplet x64-windows-static` first (pulls nlohmann-json + CPR), then `python configure.py --sdks cs2 && cd build && ambuild`.
