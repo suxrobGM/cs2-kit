@@ -10,6 +10,5 @@
 
     // JSON
     "esbenp.prettier-vscode"
-  ],
-  "unwantedRecommendations": ["llvm-vs-code-extensions.vscode-clangd"]
+  ]
 }
