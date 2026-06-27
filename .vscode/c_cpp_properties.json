@@ -77,10 +77,10 @@
         "_GLIBCXX_USE_CXX11_ABI=0",
         "_FILE_OFFSET_BITS=64"
       ],
-      "compilerPath": "/usr/bin/clang++",
+      "compilerPath": "/usr/bin/g++-14",
       "cStandard": "c17",
       "cppStandard": "c++23",
-      "intelliSenseMode": "linux-clang-x64"
+      "intelliSenseMode": "linux-gcc-x64"
     }
   ],
   "version": 4
