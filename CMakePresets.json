@@ -1,0 +1,69 @@
+{
+  "version": 4,
+  "configurePresets": [
+    {
+      "name": "linux-steamrt-release",
+      "displayName": "Linux Steam Runtime Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/linux-steamrt-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/linux-steamrt-release/generators/conan_toolchain.cmake",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "linux-steamrt-debug",
+      "displayName": "Linux Steam Runtime Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/linux-steamrt-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/linux-steamrt-debug/generators/conan_toolchain.cmake",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "windows-msvc-release",
+      "displayName": "Windows MSVC Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/windows-msvc-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/windows-msvc-release/generators/conan_toolchain.cmake",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded"
+      }
+    },
+    {
+      "name": "windows-msvc-debug",
+      "displayName": "Windows MSVC Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/windows-msvc-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/windows-msvc-debug/generators/conan_toolchain.cmake",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDebug"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "linux-steamrt-release",
+      "configurePreset": "linux-steamrt-release"
+    },
+    {
+      "name": "linux-steamrt-debug",
+      "configurePreset": "linux-steamrt-debug"
+    },
+    {
+      "name": "windows-msvc-release",
+      "configurePreset": "windows-msvc-release"
+    },
+    {
+      "name": "windows-msvc-debug",
+      "configurePreset": "windows-msvc-debug"
+    }
+  ]
+}

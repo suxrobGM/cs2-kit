@@ -421,6 +421,12 @@ FodyWeavers.xsd
 # AMBuild output
 objdir/
 
+# CMake/Conan build output
+build/
+CMakeUserPresets.json
+.conan/
+package/
+
 # uv
 .venv/
 

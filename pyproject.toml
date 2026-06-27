@@ -7,7 +7,9 @@ requires-python = ">=3.14"
 license = { text = "MIT" }
 
 dependencies = [
-    "ambuild @ git+https://github.com/alliedmodders/ambuild.git",
+    "cmake>=4.3.4",
+    "conan>=2.29.1",
+    "ninja>=1.13.0",
     "ruff>=0.14.0",
     "mypy>=1.19.0",
 ]
@@ -18,7 +20,7 @@ package = false
 [tool.ruff]
 line-length = 100
 target-version = "py314"
-extend-exclude = ["AMBuildScript", "**/AMBuilder", "vendor"]
+extend-exclude = ["vendor"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP"]
@@ -28,8 +30,4 @@ python_version = "3.14"
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
-exclude = ["AMBuildScript", "AMBuilder", "vendor"]
-
-[[tool.mypy.overrides]]
-module = "ambuild2.*"
-ignore_missing_imports = true
+exclude = ["vendor"]

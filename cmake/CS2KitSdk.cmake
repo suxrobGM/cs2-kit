@@ -1,0 +1,215 @@
+include_guard(GLOBAL)
+
+get_filename_component(CS2KIT_ROOT_DIR_DEFAULT "${CMAKE_CURRENT_LIST_DIR}/.." REALPATH)
+set(CS2KIT_ROOT_DIR "${CS2KIT_ROOT_DIR_DEFAULT}" CACHE PATH "CS2Kit repository root")
+set(CS2KIT_HL2SDK_DIR "${CS2KIT_ROOT_DIR}/vendor/hl2sdk-cs2" CACHE PATH "HL2SDK CS2 path")
+set(CS2KIT_MMSOURCE_DIR "${CS2KIT_ROOT_DIR}/vendor/mmsource-2.0" CACHE PATH "Metamod:Source path")
+
+function(cs2kit_require_path path description)
+    if(NOT EXISTS "${path}")
+        message(FATAL_ERROR "${description} not found at ${path}. Run git submodule update --init --recursive.")
+    endif()
+endfunction()
+
+function(cs2kit_platform_arch out_var)
+    if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+        message(FATAL_ERROR "Only x86_64 builds are supported.")
+    endif()
+
+    if(WIN32)
+        set("${out_var}" "windows-x86_64" PARENT_SCOPE)
+    elseif(UNIX)
+        set("${out_var}" "linux-x86_64" PARENT_SCOPE)
+    else()
+        message(FATAL_ERROR "Only Windows and Linux builds are supported.")
+    endif()
+endfunction()
+
+function(cs2kit_configure_sdk)
+    cs2kit_require_path("${CS2KIT_HL2SDK_DIR}" "HL2SDK CS2")
+    cs2kit_require_path("${CS2KIT_MMSOURCE_DIR}" "Metamod:Source")
+
+    cs2kit_platform_arch(CS2KIT_PLATFORM_ARCH)
+    set(CS2KIT_PLATFORM_ARCH "${CS2KIT_PLATFORM_ARCH}" CACHE INTERNAL "CS2Kit platform architecture")
+
+    if(NOT TARGET cs2kit_metamod)
+        add_library(cs2kit_metamod INTERFACE)
+        add_library(CS2Kit::Metamod ALIAS cs2kit_metamod)
+    endif()
+
+    target_include_directories(cs2kit_metamod INTERFACE
+        "${CS2KIT_MMSOURCE_DIR}/core"
+        "${CS2KIT_MMSOURCE_DIR}/core/sourcehook"
+    )
+
+    if(NOT TARGET cs2kit_hl2sdk)
+        add_library(cs2kit_hl2sdk INTERFACE)
+        add_library(CS2Kit::HL2SDK ALIAS cs2kit_hl2sdk)
+    endif()
+
+    target_include_directories(cs2kit_hl2sdk INTERFACE
+        "${CS2KIT_HL2SDK_DIR}/thirdparty/protobuf-3.21.8/src"
+        "${CS2KIT_HL2SDK_DIR}/public"
+        "${CS2KIT_HL2SDK_DIR}/public/engine"
+        "${CS2KIT_HL2SDK_DIR}/public/mathlib"
+        "${CS2KIT_HL2SDK_DIR}/public/tier0"
+        "${CS2KIT_HL2SDK_DIR}/public/tier1"
+        "${CS2KIT_HL2SDK_DIR}/public/entity2"
+        "${CS2KIT_HL2SDK_DIR}/public/game/server"
+        "${CS2KIT_HL2SDK_DIR}/game/shared"
+        "${CS2KIT_HL2SDK_DIR}/game/server"
+        "${CS2KIT_HL2SDK_DIR}/common"
+    )
+
+    target_compile_definitions(cs2kit_hl2sdk INTERFACE
+        SOURCE_ENGINE=25
+        GAME_DLL
+        RAD_TELEMETRY_DISABLED
+        META_IS_SOURCE2
+        X64BITS
+        PLATFORM_64BITS
+    )
+
+    target_compile_options(cs2kit_hl2sdk INTERFACE
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-pipe>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-fno-strict-aliasing>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wall>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-sign-compare>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-uninitialized>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-unused>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-switch>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-msse>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-fPIC>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-fvisibility=hidden>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-fvisibility-inlines-hidden>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-non-virtual-dtor>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-overloaded-virtual>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-register>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-invalid-offsetof>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-delete-non-virtual-dtor>
+        $<$<CXX_COMPILER_ID:MSVC>:/W3>
+        $<$<CXX_COMPILER_ID:MSVC>:/EHsc>
+        $<$<CXX_COMPILER_ID:MSVC>:/TP>
+        $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
+    )
+
+    if(WIN32)
+        target_compile_definitions(cs2kit_hl2sdk INTERFACE
+            WIN32
+            WIN64
+            _WINDOWS
+            COMPILER_MSVC
+            COMPILER_MSVC64
+            _CRT_SECURE_NO_DEPRECATE
+            _CRT_SECURE_NO_WARNINGS
+            _CRT_NONSTDC_NO_DEPRECATE
+            NOMINMAX
+        )
+
+        target_link_libraries(cs2kit_hl2sdk INTERFACE
+            "${CS2KIT_HL2SDK_DIR}/lib/public/win64/2015/libprotobuf.lib"
+            "${CS2KIT_HL2SDK_DIR}/lib/public/win64/mathlib.lib"
+            "${CS2KIT_HL2SDK_DIR}/lib/public/win64/tier0.lib"
+            "${CS2KIT_HL2SDK_DIR}/lib/public/win64/tier1.lib"
+            "${CS2KIT_HL2SDK_DIR}/lib/public/win64/interfaces.lib"
+            legacy_stdio_definitions.lib
+        )
+    else()
+        target_compile_definitions(cs2kit_hl2sdk INTERFACE
+            stricmp=strcasecmp
+            _stricmp=strcasecmp
+            _snprintf=snprintf
+            _vsnprintf=vsnprintf
+            HAVE_STDINT_H
+            GNUC
+            COMPILER_GCC
+            LINUX
+            _LINUX
+            POSIX
+            _FILE_OFFSET_BITS=64
+            _GLIBCXX_USE_CXX11_ABI=0
+        )
+
+        target_link_libraries(cs2kit_hl2sdk INTERFACE
+            m
+            "${CS2KIT_HL2SDK_DIR}/lib/linux64/mathlib.a"
+            "${CS2KIT_HL2SDK_DIR}/lib/linux64/tier1.a"
+            "${CS2KIT_HL2SDK_DIR}/lib/linux64/interfaces.a"
+            "${CS2KIT_HL2SDK_DIR}/lib/linux64/release/libprotobuf.a"
+            "${CS2KIT_HL2SDK_DIR}/lib/linux64/libtier0.so"
+            $<$<CXX_COMPILER_ID:Clang>:gcc_eh>
+        )
+
+        target_link_options(cs2kit_hl2sdk INTERFACE
+            -static-libstdc++
+            $<$<CXX_COMPILER_ID:GNU>:-static-libgcc>
+        )
+    endif()
+endfunction()
+
+function(cs2kit_generate_sdk_protobuf out_sources out_includes)
+    if(WIN32)
+        set(protoc_path "${CS2KIT_HL2SDK_DIR}/devtools/bin/protoc.exe")
+    else()
+        set(protoc_path "${CS2KIT_HL2SDK_DIR}/devtools/bin/linux/protoc")
+    endif()
+
+    cs2kit_require_path("${protoc_path}" "HL2SDK protoc")
+
+    set(common_proto_dir "${CS2KIT_HL2SDK_DIR}/common")
+    set(shared_proto_dir "${CS2KIT_HL2SDK_DIR}/game/shared")
+    set(google_proto_dir "${CS2KIT_HL2SDK_DIR}/thirdparty/protobuf-3.21.8/src")
+
+    set(generated_root "${CMAKE_CURRENT_BINARY_DIR}/generated/hl2sdk-cs2")
+    set(generated_public_dir "${generated_root}/public")
+    set(generated_shared_dir "${generated_root}/game/shared")
+
+    set(generated_sources)
+
+    foreach(proto_name IN ITEMS network_connection networkbasetypes engine_gcmessages)
+        set(proto_file "${common_proto_dir}/${proto_name}.proto")
+        set(output_cc "${generated_public_dir}/${proto_name}.pb.cc")
+        set(output_h "${generated_public_dir}/${proto_name}.pb.h")
+
+        add_custom_command(
+            OUTPUT "${output_cc}" "${output_h}"
+            COMMAND "${CMAKE_COMMAND}" -E make_directory "${generated_public_dir}"
+            COMMAND "${protoc_path}"
+                "--proto_path=${common_proto_dir}"
+                "--proto_path=${google_proto_dir}"
+                "--cpp_out=${generated_public_dir}"
+                "${proto_file}"
+            DEPENDS "${proto_file}" "${protoc_path}"
+            COMMENT "Generating ${proto_name}.pb.cc"
+            VERBATIM
+        )
+
+        list(APPEND generated_sources "${output_cc}")
+    endforeach()
+
+    foreach(proto_name IN ITEMS usermessages usercmd gameevents)
+        set(proto_file "${shared_proto_dir}/${proto_name}.proto")
+        set(output_cc "${generated_shared_dir}/${proto_name}.pb.cc")
+        set(output_h "${generated_shared_dir}/${proto_name}.pb.h")
+
+        add_custom_command(
+            OUTPUT "${output_cc}" "${output_h}"
+            COMMAND "${CMAKE_COMMAND}" -E make_directory "${generated_shared_dir}"
+            COMMAND "${protoc_path}"
+                "--proto_path=${common_proto_dir}"
+                "--proto_path=${shared_proto_dir}"
+                "--proto_path=${google_proto_dir}"
+                "--cpp_out=${generated_shared_dir}"
+                "${proto_file}"
+            DEPENDS "${proto_file}" "${protoc_path}"
+            COMMENT "Generating ${proto_name}.pb.cc"
+            VERBATIM
+        )
+
+        list(APPEND generated_sources "${output_cc}")
+    endforeach()
+
+    set_source_files_properties(${generated_sources} PROPERTIES GENERATED TRUE)
+    set("${out_sources}" "${generated_sources}" PARENT_SCOPE)
+    set("${out_includes}" "${generated_public_dir};${generated_shared_dir}" PARENT_SCOPE)
+endfunction()
