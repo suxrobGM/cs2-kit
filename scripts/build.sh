@@ -40,6 +40,7 @@ BuildDir="$RepoRoot/build/$Preset"
 run_tool conan install "$RepoRoot" \
     --output-folder "$BuildDir/generators" \
     --build=missing \
+    --lockfile "$RepoRoot/conan.lock" \
     --profile:host "$Profile" \
     --profile:build "$Profile" \
     "${ExtraSettings[@]}"
