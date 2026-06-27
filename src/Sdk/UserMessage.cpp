@@ -141,7 +141,7 @@ void MessageSystem::SendChatMessage(int slot, const std::string& message)
     pTextMsg->set_dest(HudPrintTalk);
     pTextMsg->add_param(message.c_str());
 
-    uint64_t clients = (1ULL << slot);
+    uint64 clients = (1ULL << slot);
 
     interfaces.GameEventSystem->PostEventAbstract(-1, false, 1, &clients, _textMsgInternal, pMsg, 0,
                                                   NetChannelBufType_t::BUF_RELIABLE);
