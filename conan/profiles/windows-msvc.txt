@@ -1,0 +1,13 @@
+# Windows MSVC (local dev; deploy path is Linux). compiler.version=195 = cl 19.5x
+# (VS 2022/2026); older VS: override -s compiler.version=193|194.
+# build_type and compiler.runtime_type are passed per build, so one profile serves both.
+[settings]
+os=Windows
+arch=x86_64
+compiler=msvc
+compiler.version=195
+compiler.runtime=static
+compiler.cppstd=23
+
+[conf]
+tools.cmake.cmaketoolchain:generator=Ninja

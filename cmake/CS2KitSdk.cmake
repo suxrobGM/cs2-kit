@@ -4,6 +4,7 @@ get_filename_component(CS2KIT_ROOT_DIR_DEFAULT "${CMAKE_CURRENT_LIST_DIR}/.." RE
 set(CS2KIT_ROOT_DIR "${CS2KIT_ROOT_DIR_DEFAULT}" CACHE PATH "CS2Kit repository root")
 set(CS2KIT_HL2SDK_DIR "${CS2KIT_ROOT_DIR}/vendor/hl2sdk-cs2" CACHE PATH "HL2SDK CS2 path")
 set(CS2KIT_MMSOURCE_DIR "${CS2KIT_ROOT_DIR}/vendor/mmsource-2.0" CACHE PATH "Metamod:Source path")
+set(CS2KIT_GAMEDATA_DIR "${CS2KIT_ROOT_DIR}/gamedata" CACHE PATH "CS2Kit shared gamedata path")
 
 function(cs2kit_require_path path description)
     if(NOT EXISTS "${path}")
