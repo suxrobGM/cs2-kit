@@ -27,9 +27,9 @@ conanfile.py           Third-party deps
 ## Build Commands
 
 ```bash
-scripts/build.sh
-scripts/build.sh windows-msvc-release
-scripts/build.sh linux-steamrt-release
+uv run poe build
+uv run poe build windows-msvc-release
+uv run poe build-linux
 ```
 
 Consuming projects should use:

@@ -4,9 +4,9 @@
     {
       "label": "Build (Static Library)",
       "type": "shell",
-      "command": "bash",
+      "command": "python",
       "args": [
-        "${workspaceFolder}/scripts/build.sh"
+        "${workspaceFolder}/scripts/build.py"
       ],
       "group": {
         "kind": "build",

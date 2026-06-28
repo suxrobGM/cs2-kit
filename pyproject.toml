@@ -12,10 +12,16 @@ dependencies = [
     "ninja>=1.13.0",
     "ruff>=0.14.0",
     "mypy>=1.19.0",
+    "poethepoet>=0.47.0",
 ]
 
 [tool.uv]
 package = false
+
+[tool.poe.tasks]
+build = "python scripts/build.py"
+build-linux = "python scripts/build.py linux-steamrt-release"
+lint = "ruff check ."
 
 [tool.ruff]
 line-length = 100
