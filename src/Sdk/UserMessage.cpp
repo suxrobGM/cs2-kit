@@ -6,10 +6,10 @@
 #include <CS2Kit/Core/Slot.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
+#include <CS2Kit/Sdk/RecipientFilter.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <engine/igameeventsystem.h>
-#include <irecipientfilter.h>
 #include <networksystem/inetworkmessages.h>
 #include <networksystem/netmessage.h>
 #include <usermessages.pb.h>
@@ -141,10 +141,8 @@ void MessageSystem::SendChatMessage(int slot, const std::string& message)
     pTextMsg->set_dest(HudPrintTalk);
     pTextMsg->add_param(message.c_str());
 
-    uint64 clients = (1ULL << slot);
-
-    interfaces.GameEventSystem->PostEventAbstract(-1, false, 1, &clients, _textMsgInternal, pMsg, 0,
-                                                  NetChannelBufType_t::BUF_RELIABLE);
+    SingleRecipientFilter filter(slot);
+    interfaces.GameEventSystem->PostEventAbstract(-1, false, &filter, _textMsgInternal, pMsg, 0);
 
     interfaces.NetworkMessages->DeallocateNetMessageAbstract(_textMsgInternal, pMsg);
 }
