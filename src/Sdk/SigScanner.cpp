@@ -135,8 +135,8 @@ static const char* BaseName(const char* path)
 
 struct ModuleScan
 {
-    const char* name;             // basename to match, e.g. "libserver.so"
-    size_t bestSpan;              // largest module span seen so far (selects the real lib)
+    const char* name;               // basename to match, e.g. "libserver.so"
+    size_t bestSpan;                // largest module span seen so far (selects the real lib)
     std::vector<ScanRange> ranges;  // PT_LOAD segments of the selected module
 };
 
@@ -159,8 +159,7 @@ static int DlIterateCallback(struct dl_phdr_info* info, size_t /*size*/, void* d
         size_t segEnd = phdr.p_vaddr + phdr.p_memsz;
         if (segEnd > span)
             span = segEnd;
-        segments.push_back(
-            {reinterpret_cast<const uint8_t*>(info->dlpi_addr + phdr.p_vaddr), phdr.p_memsz});
+        segments.push_back({reinterpret_cast<const uint8_t*>(info->dlpi_addr + phdr.p_vaddr), phdr.p_memsz});
     }
 
     if (span > mod->bestSpan)
