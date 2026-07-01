@@ -3,7 +3,6 @@
 #include <CS2Kit/Core/Paths.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
-
 #include <fstream>
 #include <iterator>
 #include <map>
@@ -18,7 +17,7 @@ namespace CS2Kit::Utils
 /**
  * @brief System.Text.Json-style helpers for mapping C++ types to and from JSON.
  *
- * Works with any type that has nlohmann `to_json`/`from_json` — easiest via the
+ * Works with any type that has nlohmann `to_json`/`from_json` - easiest via the
  * `NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT` macro, which keys on member names
  * (they must match the JSON keys) and defaults any missing key. The `Try*` variants
  * catch and log instead of throwing; a missing key is fine, a wrong-typed value is not.
@@ -114,7 +113,8 @@ public:
         for (size_t start = 0; start <= dotPath.size();)
         {
             const size_t dot = dotPath.find('.', start);
-            const std::string key(dotPath.substr(start, dot == std::string_view::npos ? std::string_view::npos : dot - start));
+            const std::string key(
+                dotPath.substr(start, dot == std::string_view::npos ? std::string_view::npos : dot - start));
             if (!node->is_object() || !node->contains(key))
                 return {};
             node = &(*node)[key];

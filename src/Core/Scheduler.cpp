@@ -66,12 +66,12 @@ void Scheduler::OnGameFrame()
 
     for (uint64_t id : toFire)
     {
-        // Re-find by ID — the timer may have been cancelled by an earlier callback in this batch.
+        // Re-find by ID - the timer may have been cancelled by an earlier callback in this batch.
         auto it = std::find_if(_timers.begin(), _timers.end(), [id](const Timer& t) { return t.Id == id; });
         if (it == _timers.end())
             continue;
 
-        // Copy out before invoking — the callback can mutate _timers (including reallocating it).
+        // Copy out before invoking - the callback can mutate _timers (including reallocating it).
         int64_t interval = it->Interval;
         auto callback = it->Callback;
 

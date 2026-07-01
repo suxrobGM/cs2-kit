@@ -11,7 +11,7 @@ namespace CS2Kit::Players
  *
  * Tracks identity (slot, SteamID, name, IP) and connection time.
  * Plugin-specific state (admin flags, punishment cache, etc.) belongs in
- * separate plugin-side managers keyed by SteamID — not on this type.
+ * separate plugin-side managers keyed by SteamID - not on this type.
  */
 class Player
 {

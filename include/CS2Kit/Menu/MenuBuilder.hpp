@@ -2,7 +2,6 @@
 
 #include <CS2Kit/Menu/Menu.hpp>
 #include <CS2Kit/Menu/Options.hpp>
-
 #include <memory>
 #include <string>
 #include <utility>
@@ -50,7 +49,7 @@ public:
 
     /**
      * Bind a (primary, secondary) slot context for context-aware rows added afterwards.
-     * Lets call sites drop the repeated `[a, b, fn](int){ fn(a, b); }` capture on every row —
+     * Lets call sites drop the repeated `[a, b, fn](int){ fn(a, b); }` capture on every row -
      * e.g. an admin menu binds (adminSlot, targetSlot) once, then adds action rows with @ref
      * AddContextButton.
      */
@@ -68,7 +67,12 @@ public:
         int a = _ctxPrimary;
         int b = _ctxSecondary;
         return AddButton(
-            label, [a, b, fn = std::move(onActivate)](int) { if (fn) fn(a, b); }, enabled);
+            label,
+            [a, b, fn = std::move(onActivate)](int) {
+                if (fn)
+                    fn(a, b);
+            },
+            enabled);
     }
 
     /** Append an action row with a label that is recomputed every render. */

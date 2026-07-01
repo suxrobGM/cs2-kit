@@ -3,17 +3,23 @@
 #include <CS2Kit/Core/ILogger.hpp>
 
 // Forward declaration for Metamod API
-namespace SourceMM { class ISmmAPI; }
+namespace SourceMM
+{
+class ISmmAPI;
+}
 using SourceMM::ISmmAPI;
 
-namespace CS2Kit::Core { class Services; }
+namespace CS2Kit::Core
+{
+class Services;
+}
 
 namespace CS2Kit
 {
 
 /**
  * @brief Initialization parameters for CS2Kit.
- * All fields are optional — CS2Kit provides sensible defaults.
+ * All fields are optional - CS2Kit provides sensible defaults.
  */
 struct InitParams
 {

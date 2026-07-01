@@ -39,7 +39,7 @@ bool MetamodPluginBase::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     _info = Info();  // capture once; the ISmmPlugin getters read this copy
 
     // Fresh service container per load; wire the accessor before Initialize so kit subsystems
-    // (and the plugin's OnLoad) can reach each other via Engine(). Destroyed in Unload — this is
+    // (and the plugin's OnLoad) can reach each other via Engine(). Destroyed in Unload - this is
     // what makes meta reload start from clean state.
     _services = std::make_unique<Services>();
     SetActiveServices(_services.get());

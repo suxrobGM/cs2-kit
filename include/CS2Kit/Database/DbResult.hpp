@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Utils/Log.hpp>
-
 #include <expected>
 #include <string>
 #include <string_view>
@@ -20,7 +19,7 @@ using DbResult = std::expected<T, std::string>;
  * instead of silently swallowing it. `fn` returns the success value `T`.
  *
  * SECURITY: `what` is a short caller label (e.g. the method name). NEVER pass a connection string,
- * DSN, or password into `what`, and keep secrets out of the queries `fn` runs — the exception text is
+ * DSN, or password into `what`, and keep secrets out of the queries `fn` runs - the exception text is
  * logged verbatim.
  */
 template <typename Fn>

@@ -11,9 +11,9 @@ namespace CS2Kit::Sdk
  */
 enum class MoveType : uint8_t
 {
-    None = 0,    ///< MOVETYPE_NONE — frozen in place.
-    Walk = 2,    ///< MOVETYPE_WALK — normal player movement.
-    NoClip = 7,  ///< MOVETYPE_NOCLIP — free fly-through-walls movement.
+    None = 0,    ///< MOVETYPE_NONE - frozen in place.
+    Walk = 2,    ///< MOVETYPE_WALK - normal player movement.
+    NoClip = 7,  ///< MOVETYPE_NOCLIP - free fly-through-walls movement.
 };
 
 }  // namespace CS2Kit::Sdk

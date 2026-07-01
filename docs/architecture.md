@@ -18,10 +18,10 @@ CS2Kit
 
 ## Design Principles
 
-- **Single-threaded** — All code runs on the game thread. No mutexes needed. Metamod hooks are always called from the main thread.
-- **Service container** — CS2-Kit's services live in one `CS2Kit::Core::Services` instance, constructed on Load and destroyed on Unload, reached via the `Engine()` accessor. No process-lifetime singletons — state cannot leak across `meta unload` / `meta reload`.
-- **Builder pattern** — Complex objects (commands, menus) are constructed via fluent builders.
-- **Minimal boilerplate** — `CS2Kit::Initialize(ismm, error, maxlen)` handles all SDK interface resolution, gamedata loading, and subsystem init. Deriving from `MetamodPluginBase` removes the rest: the ISmmPlugin getters, the Load/Unload skeleton, the standard hooks, and the player lifecycle. `ILogger` has a built-in default.
+- **Single-threaded** - All code runs on the game thread. No mutexes needed. Metamod hooks are always called from the main thread.
+- **Service container** - CS2-Kit's services live in one `CS2Kit::Core::Services` instance, constructed on Load and destroyed on Unload, reached via the `Engine()` accessor. No process-lifetime singletons - state cannot leak across `meta unload` / `meta reload`.
+- **Builder pattern** - Complex objects (commands, menus) are constructed via fluent builders.
+- **Minimal boilerplate** - `CS2Kit::Initialize(ismm, error, maxlen)` handles all SDK interface resolution, gamedata loading, and subsystem init. Deriving from `MetamodPluginBase` removes the rest: the ISmmPlugin getters, the Load/Unload skeleton, the standard hooks, and the player lifecycle. `ILogger` has a built-in default.
 
 ## Plugin lifecycle (MetamodPluginBase)
 
@@ -30,18 +30,18 @@ owns the four standard SourceHook hooks (GameFrame, client connect/disconnect, c
 drives `PlayerManager::AddPlayer`/`RemovePlayer`, and exposes virtual callbacks (`OnLoad`,
 `OnPlayerConnect`, `OnPlayerDisconnect`, `OnPlayerChat`, `OnRegisterHooks`) for plugin logic.
 
-- **Teardown stack** — `Defer(fn)` pushes a cleanup callback; the stack runs in reverse (LIFO)
+- **Teardown stack** - `Defer(fn)` pushes a cleanup callback; the stack runs in reverse (LIFO)
   on unload **and** on a failed load. This keeps setup and teardown adjacent in the source and
   guarantees `CS2Kit::Shutdown()` runs even when `OnLoad()` rejects the load.
-- **Hook ownership** — the base owns the standard hooks (their `SH_DECL_HOOK` lives inside the
+- **Hook ownership** - the base owns the standard hooks (their `SH_DECL_HOOK` lives inside the
   library). Custom hooks are registered by the consumer in `OnRegisterHooks()` and paired with
   `Defer()` for removal. The consumer still provides `PLUGIN_EXPOSE` / `PLUGIN_GLOBALVARS`, which
   define the per-plugin SourceHook globals the base links against.
 
 ## Service container (`Engine()`)
 
-CS2-Kit's own services — `PlayerManager`, `CommandManager`, `MenuManager`, the SDK wrappers,
-`Translations`, and the rest — are members of a single `CS2Kit::Core::Services` instance. The base
+CS2-Kit's own services - `PlayerManager`, `CommandManager`, `MenuManager`, the SDK wrappers,
+`Translations`, and the rest - are members of a single `CS2Kit::Core::Services` instance. The base
 constructs one `Services` on Load and destroys it on Unload (members are built in dependency order
 and torn down in reverse, RAII), so service state cannot leak across `meta unload` / `meta reload`.
 There are no process-lifetime singletons and no `::Instance()` accessors.
@@ -118,4 +118,4 @@ CS2-Kit uses `std::function` callbacks throughout:
 
 | Interface | Purpose | Required? |
 |-----------|---------|-----------|
-| `ILogger` | Logging backend (Info/Warn/Error) | No — built-in `ConsoleLogger` used by default |
+| `ILogger` | Logging backend (Info/Warn/Error) | No - built-in `ConsoleLogger` used by default |

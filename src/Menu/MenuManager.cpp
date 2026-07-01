@@ -207,7 +207,7 @@ void MenuManager::HandleInput(int slot, uint64_t buttons, uint64_t prevButtons)
     if (now - state.LastInputTime < InputDebounceMs)
         return;
 
-    // While a chat-input capture is active, the only key we honor is R (cancel) — every
+    // While a chat-input capture is active, the only key we honor is R (cancel) - every
     // other input is ignored so the menu doesn't drift while the player types in chat.
     auto& capture = Engine().ChatInput;
     if (capture.IsCapturing(slot))

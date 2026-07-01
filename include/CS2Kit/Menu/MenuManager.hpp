@@ -10,7 +10,7 @@ namespace CS2Kit::Menu
 /**
  * @brief WASD-navigated center-HTML menus for all players.
  * Supports a per-player menu stack (submenus push, R pops back).
- * Driven by OnGameFrame() — reads button state each tick for input.
+ * Driven by OnGameFrame() - reads button state each tick for input.
  */
 class MenuManager
 {

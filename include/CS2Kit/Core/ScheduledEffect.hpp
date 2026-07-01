@@ -11,8 +11,8 @@ namespace CS2Kit::Core
  * @brief A repeating routine with an optional fixed lifetime, driven by the Scheduler.
  *
  * `onTick` runs every `tickIntervalMs`. If `durationMs > 0` the effect auto-stops after that
- * long. `onStop` runs exactly once when the effect ends for any reason — duration elapsed,
- * Stop(), move-assignment, or destruction — making it the single place to undo whatever
+ * long. `onStop` runs exactly once when the effect ends for any reason - duration elapsed,
+ * Stop(), move-assignment, or destruction - making it the single place to undo whatever
  * `onTick` applied. Move-only; the underlying timers are cancelled when the last owner goes away.
  *
  * @code

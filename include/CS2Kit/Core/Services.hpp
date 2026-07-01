@@ -12,12 +12,11 @@
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
-
 #include <memory>
 
 namespace CS2Kit::Sdk
 {
-class SchemaService;  // internal (src/Sdk/Schema.hpp) — held by pointer so this public header stays clean
+class SchemaService;  // internal (src/Sdk/Schema.hpp) - held by pointer so this public header stays clean
 }
 
 namespace CS2Kit::Core
@@ -68,7 +67,7 @@ void SetActiveServices(Services* services);
 /** The active Services. Asserts if called outside a Load/Unload window. */
 Services& Engine();
 
-/** The active Services, or nullptr — for teardown paths that may run after Shutdown. */
+/** The active Services, or nullptr - for teardown paths that may run after Shutdown. */
 Services* EngineOrNull();
 
 }  // namespace CS2Kit::Core

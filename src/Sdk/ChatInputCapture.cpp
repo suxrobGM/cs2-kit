@@ -55,7 +55,7 @@ bool ChatInputCapture::TryConsume(int slot, std::string_view text)
             Engine().Scheduler.Cancel(timeoutHandle);
         opt.reset();
     }
-    // Either way we suppress the chat broadcast — the player typed a value, not a chat message.
+    // Either way we suppress the chat broadcast - the player typed a value, not a chat message.
     return true;
 }
 

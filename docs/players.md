@@ -4,10 +4,10 @@
 
 ## Overview
 
-The player module (`CS2Kit::Players`) tracks connected players by slot and SteamID. It is intentionally minimal — only identity and connection metadata. Plugin-specific state (admin flags, punishment cache, stats) belongs in your own managers, keyed off SteamID, not on the `Player` type.
+The player module (`CS2Kit::Players`) tracks connected players by slot and SteamID. It is intentionally minimal - only identity and connection metadata. Plugin-specific state (admin flags, punishment cache, stats) belongs in your own managers, keyed off SteamID, not on the `Player` type.
 
-- **Player** — Identity record: slot, SteamID, name, IP, connect time
-- **PlayerManager** — Two indexed maps (slot, SteamID) for O(1) lookup; a CS2-Kit service reached via `Engine().Players`
+- **Player** - Identity record: slot, SteamID, name, IP, connect time
+- **PlayerManager** - Two indexed maps (slot, SteamID) for O(1) lookup; a CS2-Kit service reached via `Engine().Players`
 
 Single-threaded by design. All access happens from game-thread Metamod hooks, so no mutex is needed.
 
@@ -64,12 +64,12 @@ Engine().Players.Clear();
 - `AddPlayer(slot, …)` reassigns that slot (e.g., a new player joins the same slot), or
 - `Clear()` is called.
 
-Do not store `Player*` across the disconnect callback. If you need to remember a player after they leave, copy the SteamID — that is the stable identifier.
+Do not store `Player*` across the disconnect callback. If you need to remember a player after they leave, copy the SteamID - that is the stable identifier.
 
 ## Plugin-Specific State
 
 `Player` deliberately does not carry admin flags, mute/gag flags, or any other plugin concern. Keep
-that state in your own services, keyed by SteamID. A plugin's managers are plain classes (no base) —
+that state in your own services, keyed by SteamID. A plugin's managers are plain classes (no base) -
 gather them in one struct, construct it in `OnLoad`, drop it on unload, and reach it via a free
 accessor. admin-system calls the struct `Managers` and the accessor `App()`:
 

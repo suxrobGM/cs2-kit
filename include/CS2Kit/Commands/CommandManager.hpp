@@ -20,7 +20,7 @@ using PermissionCallback = std::function<bool(int64_t steamId, const std::string
 /**
  * @brief Invoked after a command handler returns.
  *
- * Lets the host plugin pipe `CommandResult.Message` (success or error) back to the caller —
+ * Lets the host plugin pipe `CommandResult.Message` (success or error) back to the caller -
  * e.g., as a colored chat reply. Also invoked for early dispatch failures (bad arg count,
  * permission denied) with a synthesized `CommandResult` so the caller still gets feedback.
  */

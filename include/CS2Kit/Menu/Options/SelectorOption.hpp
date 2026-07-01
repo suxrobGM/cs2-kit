@@ -56,7 +56,7 @@ public:
             return;
         }
 
-        // No explicit commit callback — E advances like D so the row stays interactive
+        // No explicit commit callback - E advances like D so the row stays interactive
         // for plain "pick a value" menus where there's no separate apply step.
         OnHorizontal(slot, +1);
     }

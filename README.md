@@ -5,18 +5,18 @@
 
 A C++23 toolkit for building Counter-Strike 2 server plugins on Metamod:Source 2.0.
 
-CS2Kit handles the boilerplate of a CS2 plugin — engine setup, hooks, player tracking, menus, chat, and config — so you can focus on your plugin's actual features.
+CS2Kit handles the boilerplate of a CS2 plugin - engine setup, hooks, player tracking, menus, chat, and config - so you can focus on your plugin's actual features.
 
 > **Work in progress.** The API is still evolving and may change between versions.
 
 ## What you get
 
-- **Plugin base** — subclass one class and your plugin lifecycle, hooks, and player tracking are wired up for you.
-- **Chat commands** — register `!commands` with aliases, argument checks, and permission gating.
-- **Menus** — WASD-navigated in-game menus with buttons, toggles, sliders, choices, and submenus.
-- **Players** — fast lookup of connected players by slot or SteamID.
-- **Engine SDK** — friendly wrappers over entities, ConVars, game events, and messages.
-- **Utilities** — JSON config, SteamID conversions, colored chat, translations, and timers.
+- **Plugin base** - subclass one class and your plugin lifecycle, hooks, and player tracking are wired up for you.
+- **Chat commands** - register `!commands` with aliases, argument checks, and permission gating.
+- **Menus** - WASD-navigated in-game menus with buttons, toggles, sliders, choices, and submenus.
+- **Players** - fast lookup of connected players by slot or SteamID.
+- **Engine SDK** - friendly wrappers over entities, ConVars, game events, and messages.
+- **Utilities** - JSON config, SteamID conversions, colored chat, translations, and timers.
 
 ## Quick start
 
@@ -52,15 +52,15 @@ MyPlugin g_MyPlugin;
 PLUGIN_EXPOSE(MyPlugin, g_MyPlugin);
 ```
 
-That's a working plugin — the base sets up the engine, registers the standard hooks, and tracks players. The [Getting Started guide](https://suxrobgm.github.io/cs2-kit/) walks through the build setup and the rest of the callbacks.
+That's a working plugin - the base sets up the engine, registers the standard hooks, and tracks players. The [Getting Started guide](https://suxrobgm.github.io/cs2-kit/) walks through the build setup and the rest of the callbacks.
 
 ## Documentation
 
 Full guides and API reference: **[suxrobgm.github.io/cs2-kit](https://suxrobgm.github.io/cs2-kit/)**
 
-- **Getting Started** — install, build setup, and your first plugin
-- **Plugin Base** — lifecycle, callbacks, and custom hooks
-- **Commands, Menus, Players, SDK, Chat** — per-feature guides
+- **Getting Started** - install, build setup, and your first plugin
+- **Plugin Base** - lifecycle, callbacks, and custom hooks
+- **Commands, Menus, Players, SDK, Chat** - per-feature guides
 
 ## Contributing
 

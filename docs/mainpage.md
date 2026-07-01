@@ -1,6 +1,6 @@
 # CS2-Kit {#mainpage}
 
-> **Work in Progress** — This library is under active development. The API is unstable and subject to breaking changes. Features may be added, removed, or redesigned without notice.
+> **Work in Progress** - This library is under active development. The API is unstable and subject to breaking changes. Features may be added, removed, or redesigned without notice.
 
 **CS2-Kit** is a C++23 library for building [Counter-Strike 2](https://www.counter-strike.net/) server plugins with [Metamod:Source 2.0](https://www.metamodsource.net/). It provides reusable abstractions over the HL2SDK so plugin developers can focus on game logic instead of engine internals.
 
@@ -17,14 +17,14 @@
 
 <h2>Guides</h2>
 
-- @subpage getting_started — Prerequisites and integration guide
-- @subpage architecture — Design patterns and module overview
-- @subpage plugin_guide — Building a plugin with MetamodPluginBase
-- @subpage commands_guide — Command system usage
-- @subpage menus_guide — Menu system usage
-- @subpage players_guide — Player tracking and lookup
-- @subpage chat_guide — Colored chat output
-- @subpage sdk_guide — SDK wrappers guide
+- @subpage getting_started - Prerequisites and integration guide
+- @subpage architecture - Design patterns and module overview
+- @subpage plugin_guide - Building a plugin with MetamodPluginBase
+- @subpage commands_guide - Command system usage
+- @subpage menus_guide - Menu system usage
+- @subpage players_guide - Player tracking and lookup
+- @subpage chat_guide - Colored chat output
+- @subpage sdk_guide - SDK wrappers guide
 
 <h2>License</h2>
 

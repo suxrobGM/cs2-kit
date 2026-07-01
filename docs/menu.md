@@ -4,7 +4,7 @@
 
 ## Overview
 
-The menu system (`CS2Kit::Menu`) provides WASD-navigated center-HTML menus for CS2. Each row is a typed @ref CS2Kit::Menu::MenuOption — buttons, toggles, choice cycles, sliders, progress bars, free-text inputs, and submenu links — built fluently with @ref CS2Kit::Menu::MenuBuilder.
+The menu system (`CS2Kit::Menu`) provides WASD-navigated center-HTML menus for CS2. Each row is a typed @ref CS2Kit::Menu::MenuOption - buttons, toggles, choice cycles, sliders, progress bars, free-text inputs, and submenu links - built fluently with @ref CS2Kit::Menu::MenuBuilder.
 
 Players interact using:
 
@@ -21,7 +21,7 @@ The `[R]` hint in the footer renders as **Close** on a root menu and **Back** on
 
 ## Building Menus
 
-Use @ref CS2Kit::Menu::MenuBuilder to construct menus with a fluent API. Pull `MenuBuilder.hpp` — it includes every concrete option type via the aggregate `Options.hpp`:
+Use @ref CS2Kit::Menu::MenuBuilder to construct menus with a fluent API. Pull `MenuBuilder.hpp` - it includes every concrete option type via the aggregate `Options.hpp`:
 
 ```cpp
 #include <CS2Kit/Menu/MenuBuilder.hpp>
@@ -43,21 +43,21 @@ CS2Kit::Core::Engine().Menus.OpenMenu(playerSlot, menu);
 
 Every row is a @ref CS2Kit::Menu::MenuOption subclass. The builder methods construct the right type for you; only reach for `AddOption(std::shared_ptr<MenuOption>)` if you need a custom subclass.
 
-### Text — non-selectable label
+### Text - non-selectable label
 
-`AddText(label)` — heading or divider. Rendered in muted color, skipped by W/S.
+`AddText(label)` - heading or divider. Rendered in muted color, skipped by W/S.
 
-### Button — plain action
+### Button - plain action
 
-`AddButton(label, onActivate, enabled = true)` — fires the callback on E. The dynamic-label variant `AddDynamicButton(getLabel, onActivate, enabled = true)` recomputes the label every frame, useful when the row reflects live state but isn't a toggle.
+`AddButton(label, onActivate, enabled = true)` - fires the callback on E. The dynamic-label variant `AddDynamicButton(getLabel, onActivate, enabled = true)` recomputes the label every frame, useful when the row reflects live state but isn't a toggle.
 
 ```cpp
 .AddButton("Slay", [admin, target](int) { Actions::DoSlay(admin, target); }, hasSlayPerm)
 ```
 
-### Toggle — boolean state
+### Toggle - boolean state
 
-`AddToggle(title, onLabel, offLabel, getState, onToggle, enabled = true)` — renders `"<title>: <onLabel|offLabel>"`. Both **E** and **A/D** flip. State lives wherever the caller keeps it (engine field, an `EffectManager`, a config struct); pass getter and toggle callbacks.
+`AddToggle(title, onLabel, offLabel, getState, onToggle, enabled = true)` - renders `"<title>: <onLabel|offLabel>"`. Both **E** and **A/D** flip. State lives wherever the caller keeps it (engine field, an `EffectManager`, a config struct); pass getter and toggle callbacks.
 
 ```cpp
 .AddToggle("Beacon", "ON", "OFF",
@@ -65,11 +65,11 @@ Every row is a @ref CS2Kit::Menu::MenuOption subclass. The builder methods const
     [slot](int) { Effects::ToggleBeacon(slot); })
 ```
 
-### Choice — string-labeled cycle
+### Choice - string-labeled cycle
 
-`AddChoice<T>(title, choices, getIndex, setIndex, onCommit = nullptr, enabled = true)` — A/D walks the list (wrapping), E commits the current value via `onCommit`. Each choice is `{label, value}`; `T` is whatever you want to pass to `onCommit`. State is *index-based* and external — the caller decides where the index lives (a captured `std::shared_ptr<int>` is fine for ephemeral menu state).
+`AddChoice<T>(title, choices, getIndex, setIndex, onCommit = nullptr, enabled = true)` - A/D walks the list (wrapping), E commits the current value via `onCommit`. Each choice is `{label, value}`; `T` is whatever you want to pass to `onCommit`. State is *index-based* and external - the caller decides where the index lives (a captured `std::shared_ptr<int>` is fine for ephemeral menu state).
 
-When `onCommit` is omitted, **E advances to the next value** (same as D) so the row stays interactive — useful for plain "pick a value, no separate apply" rows where the change is read live by another part of the menu.
+When `onCommit` is omitted, **E advances to the next value** (same as D) so the row stays interactive - useful for plain "pick a value, no separate apply" rows where the change is read live by another part of the menu.
 
 ```cpp
 auto idx = std::make_shared<int>(0);
@@ -83,13 +83,13 @@ builder.AddChoice<int>(
     });
 ```
 
-### Selector — formatted cycle for non-string values
+### Selector - formatted cycle for non-string values
 
-`AddSelector<T>(title, values, formatter, getIndex, setIndex, onCommit = nullptr, enabled = true)` — like Choice, but you supply a `std::function<std::string(const T&)>` to derive the label. Use it when the value type doesn't carry its own pretty name (e.g. seconds → `"5m"`, an enum → a translated label). Same E-advances-when-no-onCommit fallback as Choice.
+`AddSelector<T>(title, values, formatter, getIndex, setIndex, onCommit = nullptr, enabled = true)` - like Choice, but you supply a `std::function<std::string(const T&)>` to derive the label. Use it when the value type doesn't carry its own pretty name (e.g. seconds → `"5m"`, an enum → a translated label). Same E-advances-when-no-onCommit fallback as Choice.
 
-### Slider — numeric range
+### Slider - numeric range
 
-`AddSlider(title, min, max, step, getValue, setValue, enabled = true)` — A/D adjusts in `step` units, clamped to `[min, max]`. Renders `"<title>: [▮▮▮▯▯▯▯▯▯▯] 30/100"`. E does nothing by default.
+`AddSlider(title, min, max, step, getValue, setValue, enabled = true)` - A/D adjusts in `step` units, clamped to `[min, max]`. Renders `"<title>: [▮▮▮▯▯▯▯▯▯▯] 30/100"`. E does nothing by default.
 
 ```cpp
 .AddSlider("Speed", /*min=*/100, /*max=*/500, /*step=*/50,
@@ -97,13 +97,13 @@ builder.AddChoice<int>(
     [slot](int, int v)  { SetSpeed(slot, v); })
 ```
 
-### ProgressBar — read-only
+### ProgressBar - read-only
 
-`AddProgressBar(title, getValue, max)` — non-selectable. Renders the same bar shape as Slider but is skipped by the cursor.
+`AddProgressBar(title, getValue, max)` - non-selectable. Renders the same bar shape as Slider but is skipped by the cursor.
 
-### Input — free-text via chat
+### Input - free-text via chat
 
-`AddInput(title, prompt, get, set, maxLength = 64, enabled = true)` — pressing E pauses the menu, shows the prompt overlay, and routes the player's next chat line into the validator. Return `false` from `set` to re-prompt for invalid input; `true` accepts and resumes the menu. **R** during capture cancels.
+`AddInput(title, prompt, get, set, maxLength = 64, enabled = true)` - pressing E pauses the menu, shows the prompt overlay, and routes the player's next chat line into the validator. Return `false` from `set` to re-prompt for invalid input; `true` accepts and resumes the menu. **R** during capture cancels.
 
 ```cpp
 .AddInput("Custom duration", "Enter duration (e.g. 30s, 5m, 2h, 7d)",
@@ -117,11 +117,11 @@ builder.AddChoice<int>(
     /*maxLength=*/32)
 ```
 
-This relies on @ref CS2Kit::Sdk::ChatInputCapture — the plugin must call `Engine().ChatInput.TryConsume(slot, text)` from its chat-message hook before its own command parsing, suppressing the chat broadcast when the call returns `true`. See the [SDK guide](@ref sdk_guide) for the integration snippet.
+This relies on @ref CS2Kit::Sdk::ChatInputCapture - the plugin must call `Engine().ChatInput.TryConsume(slot, text)` from its chat-message hook before its own command parsing, suppressing the chat broadcast when the call returns `true`. See the [SDK guide](@ref sdk_guide) for the integration snippet.
 
-### Submenu — push a built submenu
+### Submenu - push a built submenu
 
-`AddSubmenu(label, factory, enabled = true)` — the factory is invoked lazily on E, and the returned menu is pushed onto the player's stack. R pops back to the parent.
+`AddSubmenu(label, factory, enabled = true)` - the factory is invoked lazily on E, and the returned menu is pushed onto the player's stack. R pops back to the parent.
 
 ```cpp
 .AddSubmenu("Settings", [](int slot) {
@@ -131,7 +131,7 @@ This relies on @ref CS2Kit::Sdk::ChatInputCapture — the plugin must call `Engi
 })
 ```
 
-### AddOption — escape hatch
+### AddOption - escape hatch
 
 `AddOption(std::shared_ptr<MenuOption>)` lets you append a custom subclass. Override `GetLabel(slot)`, `OnActivate(slot)`, and optionally `OnHorizontal(slot, direction)` (return `true` to consume A/D, `false` to fall through to page-jump).
 
@@ -163,9 +163,9 @@ auto menu = MenuBuilder("Custom Menu")
 2. `OnGameFrame()` reads `IN_FORWARD/IN_BACK/IN_USE/IN_RELOAD/IN_MOVELEFT/IN_MOVERIGHT` each tick and dispatches via the @ref CS2Kit::Menu::MenuOption virtuals.
 3. Submenus push onto the stack; **R** pops back. `CloseAllMenus(slot)` clears the entire stack.
 4. Input is debounced (200ms) to prevent accidental double-presses.
-5. While a chat-input capture is active for the slot, only **R** is honored — every other key is ignored so the cursor doesn't drift while the player types.
+5. While a chat-input capture is active for the slot, only **R** is honored - every other key is ignored so the cursor doesn't drift while the player types.
 
-`CS2Kit::OnGameFrame()` (every tick) and `CS2Kit::OnPlayerDisconnect(slot)` drive this — both are called for you when the plugin derives from @ref CS2Kit::Core::MetamodPluginBase, or wire them yourself otherwise.
+`CS2Kit::OnGameFrame()` (every tick) and `CS2Kit::OnPlayerDisconnect(slot)` drive this - both are called for you when the plugin derives from @ref CS2Kit::Core::MetamodPluginBase, or wire them yourself otherwise.
 
 ## Header Layout
 

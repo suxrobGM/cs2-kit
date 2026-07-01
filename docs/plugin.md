@@ -9,15 +9,15 @@ metadata, and implement only the callbacks you care about.
 
 ## What the base owns
 
-- **Metadata getters** — all eight `Get*()` methods are answered from @ref CS2Kit::Core::PluginInfo.
-- **Lifecycle** — `Load()` runs `PLUGIN_SAVEVARS()`, `CS2Kit::Initialize()`, registers the standard
+- **Metadata getters** - all eight `Get*()` methods are answered from @ref CS2Kit::Core::PluginInfo.
+- **Lifecycle** - `Load()` runs `PLUGIN_SAVEVARS()`, `CS2Kit::Initialize()`, registers the standard
   hooks, then calls your `OnLoad()`. If `OnLoad()` returns `false`, the teardown stack runs and
-  `CS2Kit::Shutdown()` is called before the load is rejected — so a failed init never leaks
+  `CS2Kit::Shutdown()` is called before the load is rejected - so a failed init never leaks
   initialized subsystems.
-- **Standard hooks** — `GameFrame` → `CS2Kit::OnGameFrame()`; client connect → `PlayerManager::AddPlayer`
+- **Standard hooks** - `GameFrame` → `CS2Kit::OnGameFrame()`; client connect → `PlayerManager::AddPlayer`
   then `OnPlayerConnect`; client disconnect → `OnPlayerDisconnect` then `CS2Kit::OnPlayerDisconnect`
   then `PlayerManager::RemovePlayer`; `say`/`say_team` → parsed and routed to `OnPlayerChat`.
-- **Teardown stack** — `Defer()` registers cleanups that run in reverse (LIFO) on unload or failed load.
+- **Teardown stack** - `Defer()` registers cleanups that run in reverse (LIFO) on unload or failed load.
 
 ## Required overrides
 
@@ -46,7 +46,7 @@ protected:
 |----------|---------------|-------|
 | `OnUnload()` | On unload, before the teardown stack | Prefer `Defer()` for most cleanup |
 | `OnPlayerConnect(Player*)` | After the player is added to `PlayerManager` | Non-null in the normal flow |
-| `OnPlayerDisconnect(Player*)` | Before the player is removed | May be null — guard it |
+| `OnPlayerDisconnect(Player*)` | Before the player is removed | May be null - guard it |
 | `OnPlayerChat(Player*, string_view, bool team)` | On `say` / `say_team` | Return `true` to supercede (suppress the original chat) |
 | `OnRegisterHooks()` | Once during load, after the standard hooks | Add custom SourceHook hooks here |
 
@@ -90,7 +90,7 @@ PLUGIN_EXPOSE(MyPlugin, g_MyPlugin);
 ## Configuration
 
 Pair the base with @ref CS2Kit::Utils::Json for settings. Define a struct that mirrors your JSON
-(member names must match the keys) and map it once with the nlohmann macro — missing keys keep their
+(member names must match the keys) and map it once with the nlohmann macro - missing keys keep their
 defaults, so only a malformed file or a wrong-typed value fails the load:
 
 ```cpp

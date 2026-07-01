@@ -50,7 +50,7 @@
   },
 
   "signatures": {
-    // CSource2Server::g_GameEventManager — global pointer to IGameEventManager2.
+    // CSource2Server::g_GameEventManager - global pointer to IGameEventManager2.
     // Used to fire legacy game events (e.g. player_hurt, player_death).
     // The "offset" field is the RIP-relative displacement to resolve the
     // actual pointer from the matched instruction.
@@ -66,7 +66,7 @@
       }
     },
 
-    // GetLegacyGameEventListener — function pointer used to obtain an
+    // GetLegacyGameEventListener - function pointer used to obtain an
     // IGameEventListener2 instance for subscribing to legacy game events.
     // No RIP offset needed; the matched address IS the function pointer.
     "LegacyGameEventListener": {

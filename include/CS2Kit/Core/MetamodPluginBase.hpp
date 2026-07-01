@@ -34,7 +34,7 @@ struct PluginInfo
 };
 
 /**
- * @brief Base class for a Metamod:Source plugin — handles the boilerplate so you don't have to.
+ * @brief Base class for a Metamod:Source plugin - handles the boilerplate so you don't have to.
  *
  * Subclassing this gets you a working plugin: it wires up the engine, registers the common
  * hooks (game frame, player connect/disconnect, chat), and tracks connected players for you.
@@ -75,13 +75,13 @@ protected:
     virtual PluginInfo Info() const = 0;
 
     /**
-     * @brief Set up your plugin here — load config, connect services, register commands.
+     * @brief Set up your plugin here - load config, connect services, register commands.
      * Return false to abort the load; the base then runs your Defer() cleanups and shuts down.
      * @param late true if the plugin was loaded after the server had already started.
      */
     virtual bool OnLoad(bool late) = 0;
 
-    /** @brief Optional extra teardown on unload. Prefer Defer() — it runs automatically. */
+    /** @brief Optional extra teardown on unload. Prefer Defer() - it runs automatically. */
     virtual void OnUnload() {}
 
     /**
@@ -94,7 +94,7 @@ protected:
     /** @brief A player joined and is now tracked. @p player is valid (read its SteamID, name, etc.). */
     virtual void OnPlayerConnect(Players::Player* player) {}
 
-    /** @brief A player is leaving, still tracked for this call. @p player may be null — check it. */
+    /** @brief A player is leaving, still tracked for this call. @p player may be null - check it. */
     virtual void OnPlayerDisconnect(Players::Player* player) {}
 
     /**
@@ -116,7 +116,7 @@ protected:
     /** @brief True if the plugin was loaded after the server started, rather than at boot. */
     bool IsLateLoad() const { return _lateLoad; }
 
-    // The base's own callbacks for the standard hooks. They forward to the virtuals above —
+    // The base's own callbacks for the standard hooks. They forward to the virtuals above -
     // you don't call these directly.
     void Hook_GameFrame(bool simulating, bool firstTick, bool lastTick);
     void Hook_OnClientConnected(CPlayerSlot slot, const char* name, uint64 xuid, const char* networkId,

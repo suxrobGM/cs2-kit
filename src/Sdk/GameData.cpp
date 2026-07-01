@@ -89,7 +89,7 @@ void* GameData::ResolveSignature(const std::string& name) const
     if (!match)
         return nullptr;
 
-    const int sigOffset = _signatures.at(name).Offset;  // entry exists — FindSignature matched
+    const int sigOffset = _signatures.at(name).Offset;  // entry exists - FindSignature matched
     if (sigOffset == 0)
         return match;
 

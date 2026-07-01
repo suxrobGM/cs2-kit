@@ -6,11 +6,11 @@
 
 The command system (`CS2Kit::Commands`) provides a framework for registering and dispatching chat commands. It includes:
 
-- **Command** — Data struct holding command metadata and handler
-- **CommandBuilder** — Fluent builder for constructing commands
-- **CommandManager** — A CS2-Kit service (reached via `Engine().Commands`) that registers commands, parses chat input, and dispatches handlers
+- **Command** - Data struct holding command metadata and handler
+- **CommandBuilder** - Fluent builder for constructing commands
+- **CommandManager** - A CS2-Kit service (reached via `Engine().Commands`) that registers commands, parses chat input, and dispatches handlers
 
-Handlers receive a `CS2Kit::Players::Player*` directly — no caller adapter is required.
+Handlers receive a `CS2Kit::Players::Player*` directly - no caller adapter is required.
 
 ## Registering Commands
 
@@ -46,7 +46,7 @@ cmdMgr.Register(
 
 | Method | Description |
 |--------|-------------|
-| `CommandBuilder(name)` | Constructor — sets the primary command name |
+| `CommandBuilder(name)` | Constructor - sets the primary command name |
 | `.WithAliases({...})` | Alternative names (e.g., `{"k", "boot"}`) |
 | `.WithDescription(desc)` | Human-readable description |
 | `.WithUsage(usage)` | Usage string shown in help |
@@ -84,7 +84,7 @@ cmdMgr.SetPermissionCallback(
 
 Command handlers receive a `CS2Kit::Players::Player*` (the same pointer returned by `PlayerManager::GetPlayerBySlot`). Use `caller->GetSteamID()` and `caller->GetName()` directly.
 
-Server-console commands are not currently dispatched through `CommandManager` — only chat messages are. If console support is added later, the signature will be revised then.
+Server-console commands are not currently dispatched through `CommandManager` - only chat messages are. If console support is added later, the signature will be revised then.
 
 ## CommandResult
 
@@ -98,7 +98,7 @@ struct CommandResult
 };
 ```
 
-By default the result is discarded after dispatch. Register a `ResultCallback` on `CommandManager` to forward `Message` somewhere — typically as a chat reply via @ref chat_guide :
+By default the result is discarded after dispatch. Register a `ResultCallback` on `CommandManager` to forward `Message` somewhere - typically as a chat reply via @ref chat_guide :
 
 ```cpp
 cmdMgr.SetResultCallback(

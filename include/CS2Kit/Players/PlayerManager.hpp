@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Players/Player.hpp>
-
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -13,7 +12,7 @@ namespace CS2Kit::Players
 /**
  * @brief Manages all connected players, indexed by slot and SteamID.
  *
- * Main-thread-only (no mutex) — all access happens from game-thread callbacks.
+ * Main-thread-only (no mutex) - all access happens from game-thread callbacks.
  * Plugins call AddPlayer/RemovePlayer from their connect/disconnect hooks.
  */
 class PlayerManager

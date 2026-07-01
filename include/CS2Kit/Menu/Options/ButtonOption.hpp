@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Menu/MenuOption.hpp>
-
 #include <functional>
 #include <string>
 #include <utility>
@@ -22,7 +21,7 @@ public:
         _enabled = enabled;
     }
 
-    /** Dynamic-label variant — replaces the legacy `AddDynamicItem`. */
+    /** Dynamic-label variant - replaces the legacy `AddDynamicItem`. */
     ButtonOption(LabelFn dynamicLabel, ActivateFn onActivate, bool enabled = true)
         : _dynamicLabel(std::move(dynamicLabel)), _onActivate(std::move(onActivate))
     {

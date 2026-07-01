@@ -20,7 +20,7 @@ enum class RenderMode_t : uint8_t
 /** RGBA white at 100% alpha. Low byte is R, high byte is A in CS2's m_clrRender. */
 constexpr uint32_t ColorOpaqueWhite = 0xFFFFFFFFu;
 
-/** RGBA white at 0% alpha — fully invisible. */
+/** RGBA white at 0% alpha - fully invisible. */
 constexpr uint32_t ColorInvisible = 0x00FFFFFFu;
 
 /**

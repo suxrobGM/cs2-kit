@@ -24,7 +24,7 @@ constexpr const char* NavBack = "#AA8833";
 }  // namespace Theme
 
 // Localized footer label; Get() returns the key unchanged when missing, so fall back to the
-// English literal — lets consumers that don't ship nav.* keys still render cleanly.
+// English literal - lets consumers that don't ship nav.* keys still render cleanly.
 static std::string FooterLabel(const char* key, const char* fallback, int slot)
 {
     auto value = Engine().Translations.Get(key, slot);
@@ -79,7 +79,7 @@ std::string DefaultFooter(bool isSubmenu, bool isPaginated, bool usesHorizontal,
     std::ostringstream html;
     html << "<font class='fontSize-s'>" << row1.str();
 
-    // With an A/D hint there are four chunks — splitting onto two short rows is more reliable
+    // With an A/D hint there are four chunks - splitting onto two short rows is more reliable
     // than relying on the HUD's word wrap, which sometimes pushes [R] past the visible area.
     if (hasHorizontalHint)
         html << "<br>" << closeChunk;
@@ -110,7 +110,7 @@ static std::string RenderItems(const Menu* menu, int slot, int selectedIndex, in
         }
         else if (!selectable)
         {
-            // Rendered without a cursor glyph — the row is informational, not a target.
+            // Rendered without a cursor glyph - the row is informational, not a target.
             html << "<font color='" << Theme::WarmGray << "'>" << title << "</font><br>";
         }
         else if (i == selectedIndex)

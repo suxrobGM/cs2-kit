@@ -6,14 +6,14 @@
 
 The chat module (`CS2Kit::Utils::Chat` and `CS2Kit::Utils::ChatColors`) is a thin layer over the engine's `TextMsg / HUD_PRINTTALK` user message (CS2 silently drops `SayText2` from non-player sources after the 2026 update). It gives plugins:
 
-- **ChatColors** — `inline constexpr` constants for the 15 in-line CS2 chat color escapes, plus `ParseNamed` and `Strip` helpers
-- **Chat::Print / PrintAll / PrintFiltered** — one-liners for sending colored chat lines to a slot, all players, or a filtered subset
+- **ChatColors** - `inline constexpr` constants for the 15 in-line CS2 chat color escapes, plus `ParseNamed` and `Strip` helpers
+- **Chat::Print / PrintAll / PrintFiltered** - one-liners for sending colored chat lines to a slot, all players, or a filtered subset
 
-Built on top of `CS2Kit::Sdk::MessageSystem::SendChatMessage`, which `CS2Kit::Initialize` wires up automatically — no extra setup needed.
+Built on top of `CS2Kit::Sdk::MessageSystem::SendChatMessage`, which `CS2Kit::Initialize` wires up automatically - no extra setup needed.
 
 ## Color Constants
 
-CS2's chat (`TextMsg / HUD_PRINTTALK`) reads ASCII bytes `0x01`-`0x10` as in-line color toggles. Embed them anywhere in a message; everything until the next escape (or `Default`) renders in that color. Byte values mirror the [SwiftlyS2 mapping](https://github.com/swiftly-solution/swiftlys2) — what CS2 actually renders today.
+CS2's chat (`TextMsg / HUD_PRINTTALK`) reads ASCII bytes `0x01`-`0x10` as in-line color toggles. Embed them anywhere in a message; everything until the next escape (or `Default`) renders in that color. Byte values mirror the [SwiftlyS2 mapping](https://github.com/swiftly-solution/swiftlys2) - what CS2 actually renders today.
 
 | Constant(s) | Byte | Color |
 |---|---|---|
@@ -33,7 +33,7 @@ CS2's chat (`TextMsg / HUD_PRINTTALK`) reads ASCII bytes `0x01`-`0x10` as in-lin
 | `LightRed` | `\x0F` | Light red |
 | `Gold` / `Orange` | `\x10` | Gold / orange |
 
-All are `inline constexpr std::string_view` so they compose cleanly with `std::format`. Names that share a byte (e.g. `Gold` / `Orange`) are aliases — pick whichever reads better at the call site.
+All are `inline constexpr std::string_view` so they compose cleanly with `std::format`. Names that share a byte (e.g. `Gold` / `Orange`) are aliases - pick whichever reads better at the call site.
 
 ## Sending Messages
 
@@ -116,4 +116,4 @@ All accept `std::string_view`.
 
 ## Threading
 
-Like the rest of CS2-Kit, the chat helpers are main-thread-only. Call them from your Metamod hooks, scheduled timers, or command handlers — never from a worker thread.
+Like the rest of CS2-Kit, the chat helpers are main-thread-only. Call them from your Metamod hooks, scheduled timers, or command handlers - never from a worker thread.

@@ -15,7 +15,7 @@ namespace CS2Kit::Menu
  * `OnHorizontal` returns false).
  *
  * Concrete option types live in `CS2Kit/Menu/Options/`. Most consumers don't need
- * the individual headers — `CS2Kit/Menu/MenuBuilder.hpp` brings them all in.
+ * the individual headers - `CS2Kit/Menu/MenuBuilder.hpp` brings them all in.
  */
 class MenuOption
 {

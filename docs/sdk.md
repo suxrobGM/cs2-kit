@@ -8,7 +8,7 @@ The Sdk module (`CS2Kit::Sdk`) provides typed wrappers around HL2SDK interfaces,
 
 ## GameInterfaces
 
-Centralized holder for all SDK interface pointers. Automatically populated by `CS2Kit::Initialize()` — no manual setup needed.
+Centralized holder for all SDK interface pointers. Automatically populated by `CS2Kit::Initialize()` - no manual setup needed.
 
 ```cpp
 #include <CS2Kit/Core/Services.hpp>
@@ -23,7 +23,7 @@ auto* schema = gi.SchemaSystem; // ISchemaSystem*
 ```
 
 All other Sdk classes read from this holder internally. The other examples on this page reach their
-service the same way — `Engine().GameData`, `Engine().Entities`, `Engine().Schema()`, and so on.
+service the same way - `Engine().GameData`, `Engine().Entities`, `Engine().Schema()`, and so on.
 
 ## GameData (Signature Management)
 
@@ -81,7 +81,7 @@ below) rather than working with the raw `CEntityInstance*`.
 ## PlayerController
 
 Typed wrapper around `CCSPlayerController` providing common operations. Construct it from a player
-slot — it resolves the controller entity internally (check `IsValid()` if the slot may be empty):
+slot - it resolves the controller entity internally (check `IsValid()` if the slot may be empty):
 
 ```cpp
 CS2Kit::Sdk::PlayerController player(slot);
@@ -97,7 +97,7 @@ player.Respawn();
 
 ### Visibility
 
-`SetVisible` toggles transparency on the player pawn body. Weapons, gloves, and grenades stay visible — CS2 routes those through systems a server plugin can't reach (the client-side glow/render pipeline), and there is currently no known server-side path to hide them.
+`SetVisible` toggles transparency on the player pawn body. Weapons, gloves, and grenades stay visible - CS2 routes those through systems a server plugin can't reach (the client-side glow/render pipeline), and there is currently no known server-side path to hide them.
 
 ```cpp
 player.SetVisible(false);          // body fully invisible (alpha = 0)
@@ -138,7 +138,7 @@ SetEntityRender(prop, RenderMode_t::TransTexture, ColorInvisible);
 SetEntityRender(prop, RenderMode_t::Normal, ColorOpaqueWhite);
 ```
 
-`m_clrRender` is RGBA packed as `(A << 24) | (B << 16) | (G << 8) | R` — `ColorInvisible` (`0x00FFFFFF`) is white at zero alpha.
+`m_clrRender` is RGBA packed as `(A << 24) | (B << 16) | (G << 8) | R` - `ColorInvisible` (`0x00FFFFFF`) is white at zero alpha.
 
 ## SchemaService
 
@@ -243,7 +243,7 @@ The validator returns `true` to accept the input (capture clears) or `false` to 
 
 ### Plumbing the chat hook
 
-Suppressing a chat broadcast has to happen in the `say` / `say_team` hook. With @ref CS2Kit::Core::MetamodPluginBase that hook is the base's, routed to your `OnPlayerChat` override — call @ref CS2Kit::Sdk::ChatInputCapture::TryConsume there and return `true` to supersede:
+Suppressing a chat broadcast has to happen in the `say` / `say_team` hook. With @ref CS2Kit::Core::MetamodPluginBase that hook is the base's, routed to your `OnPlayerChat` override - call @ref CS2Kit::Sdk::ChatInputCapture::TryConsume there and return `true` to supersede:
 
 ```cpp
 bool MyPlugin::OnPlayerChat(Player* p, std::string_view message, bool team) override
@@ -265,4 +265,4 @@ If no capture is pending for the slot, `TryConsume` returns `false`.
 | `TryConsume(slot, text)` | Route a chat line to the active prompt. Returns `true` when the message was consumed. |
 | `CancelCapture(slot)` | Drop the pending prompt without firing the callback. |
 | `GetPrompt(slot)` | Returns the active prompt string (used by `MenuRenderer` to draw the overlay), or `nullptr`. |
-| `OnPlayerDisconnect(slot)` | Lifecycle hook — called automatically by `CS2Kit::OnPlayerDisconnect`. |
+| `OnPlayerDisconnect(slot)` | Lifecycle hook - called automatically by `CS2Kit::OnPlayerDisconnect`. |

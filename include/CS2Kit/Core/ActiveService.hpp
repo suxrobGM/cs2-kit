@@ -25,7 +25,7 @@ public:
         return *_active;
     }
 
-    /** The active instance, or nullptr — for teardown paths that may run after Set(nullptr). */
+    /** The active instance, or nullptr - for teardown paths that may run after Set(nullptr). */
     static T* GetOrNull() { return _active; }
 
 private:

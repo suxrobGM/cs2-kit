@@ -15,7 +15,7 @@ namespace CS2Kit::Sdk
  * @brief Per-player pending-prompt registry for menu free-text input.
  *
  * The plugin's chat hook is expected to call @ref TryConsume on every incoming
- * `say`/`say_team` message before its own command parsing — when a capture is
+ * `say`/`say_team` message before its own command parsing - when a capture is
  * active for that slot, the message is routed to the registered callback and the
  * caller should suppress the chat broadcast (return true).
  *

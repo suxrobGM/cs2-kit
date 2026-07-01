@@ -23,7 +23,7 @@ using namespace CS2Kit::Utils;
 namespace
 {
 // Resolve a vtable index by its gamedata name and call it on `target`. No-op (with a warning)
-// when the offset is missing or `target` is null — collapses the lookup/guard/dispatch the
+// when the offset is missing or `target` is null - collapses the lookup/guard/dispatch the
 // vtable wrappers all repeat.
 template <typename... Args>
 void CallVtableByName(void* target, const char* name, Args... args)

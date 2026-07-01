@@ -26,8 +26,8 @@ void HttpClient::Start() {}
 
 void HttpClient::Stop()
 {
-    // Block until in-flight requests finish, then drop their (unrun) completions. Joining here — on
-    // the plugin Unload path, not in DllMain — is what keeps `meta reload` from leaving live worker
+    // Block until in-flight requests finish, then drop their (unrun) completions. Joining here - on
+    // the plugin Unload path, not in DllMain - is what keeps `meta reload` from leaving live worker
     // threads pointing into the unmapped DLL.
     for (auto& p : _impl->Items)
         p.Result.wait();
