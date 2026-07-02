@@ -18,7 +18,9 @@ namespace
 std::string EnsureColorPrefix(std::string_view message)
 {
     std::string_view prefix =
-        (!message.empty() && static_cast<unsigned char>(message.front()) <= 0x10) ? " " : ChatColors::Default;
+        (!message.empty() && static_cast<unsigned char>(message.front()) <= 0x10)  // 0x01-0x10: color escape bytes
+            ? " "
+            : ChatColors::Default;
 
     std::string out;
     out.reserve(prefix.size() + message.size());

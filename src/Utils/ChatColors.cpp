@@ -40,7 +40,7 @@ std::string Strip(std::string_view text)
     out.reserve(text.size());
     for (char c : text)
     {
-        if (static_cast<unsigned char>(c) > 0x10)
+        if (static_cast<unsigned char>(c) > 0x10)  // 0x01-0x10 are chat color escape bytes
             out.push_back(c);
     }
     return out;

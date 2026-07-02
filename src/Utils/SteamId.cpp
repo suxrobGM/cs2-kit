@@ -69,7 +69,7 @@ std::optional<int64_t> SteamId::FromSteamId(const std::string& steamId)
 
 bool SteamId::IsValid(int64_t steamId64)
 {
-    return steamId64 >= SteamId64Base && steamId64 < (SteamId64Base + 0x100000000LL);
+    return steamId64 >= SteamId64Base && steamId64 < (SteamId64Base + 0x100000000LL);  // account IDs are 32-bit
 }
 
 uint32_t SteamId::GetAccountId(int64_t steamId64)

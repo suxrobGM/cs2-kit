@@ -37,6 +37,7 @@ CGameEntitySystem* EntitySystem::ReadEntitySystemPointer()
     if (!interfaces.GameResourceService)
         return nullptr;
 
+    // "GameEntitySystem" = byte offset of the CGameEntitySystem* cached inside CGameResourceService.
     int offsetGameEntitySystem = Engine().GameData.GetOffset("GameEntitySystem");
     if (offsetGameEntitySystem < 0)
         return nullptr;
@@ -102,10 +103,10 @@ CEntityIdentity* EntitySystem::GetEntityIdentityByIndex(CGameEntitySystem* pSys,
 
 CEntityInstance* EntitySystem::ResolveEntityHandle(uint32_t handle)
 {
-    if (handle == 0xFFFFFFFF)
+    if (handle == 0xFFFFFFFF)  // INVALID_EHANDLE_INDEX: unset/cleared handle
         return nullptr;
 
-    int entryIndex = handle & 0x7FFF;
+    int entryIndex = handle & 0x7FFF;  // low 15 bits = entity index, high bits = serial number
 
     auto* pSys = GetEntitySystem();
     if (!pSys)
@@ -124,6 +125,7 @@ CEntityInstance* EntitySystem::GetPlayerController(int slot)
     if (!pSys || slot < 0 || slot >= MaxPlayers)
         return nullptr;
 
+    // Controllers occupy entity indices 1..MaxPlayers (index 0 is worldspawn).
     CEntityIdentity* pIdentity = GetEntityIdentityByIndex(pSys, slot + 1);
     if (!pIdentity)
         return nullptr;
@@ -158,7 +160,7 @@ uint64_t EntitySystem::GetPlayerButtons(int slot)
 
     auto* pButtonStates = reinterpret_cast<uint64_t*>(pMovementServices + _offsetButtons + _offsetButtonStates);
 
-    return pButtonStates[0];
+    return pButtonStates[0];  // m_pButtonStates is uint64[3]: [0] held, [1] changed, [2] scroll
 }
 
 bool EntitySystem::IsPlayerSlotValid(int slot)
