@@ -16,6 +16,7 @@ endif()
 project(cs2-kit VERSION 1.0.0 LANGUAGES CXX)
 
 option(CS2KIT_BUILD_STANDALONE "Build CS2Kit as a standalone project" ${PROJECT_IS_TOP_LEVEL})
+option(CS2KIT_ENABLE_POSTGRES "Build the CS2Kit::Database Postgres client (requires libpqxx)" OFF)
 
 # Conan imported targets are directory-scoped; make them visible to sibling
 # plugin directories when cs2-kit is vendored into a monorepo.
@@ -27,6 +28,9 @@ include(CS2KitSdk)
 
 find_package(cpr CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+if(CS2KIT_ENABLE_POSTGRES)
+    find_package(libpqxx CONFIG REQUIRED)
+endif()
 
 cs2kit_configure_sdk()
 cs2kit_generate_sdk_protobuf(CS2KIT_PROTO_SOURCES CS2KIT_PROTO_INCLUDE_DIRS)
@@ -34,6 +38,9 @@ cs2kit_generate_sdk_protobuf(CS2KIT_PROTO_SOURCES CS2KIT_PROTO_INCLUDE_DIRS)
 file(GLOB_RECURSE CS2KIT_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
+if(NOT CS2KIT_ENABLE_POSTGRES)
+    list(FILTER CS2KIT_SOURCES EXCLUDE REGEX "src/Database/")
+endif()
 
 add_library(cs2-kit STATIC
     ${CS2KIT_SOURCES}
@@ -66,6 +73,11 @@ target_link_libraries(cs2-kit
         nlohmann_json::nlohmann_json
 )
 
+if(CS2KIT_ENABLE_POSTGRES)
+    # PUBLIC: PostgresDatabase.hpp exposes pqxx types in its templates.
+    target_link_libraries(cs2-kit PUBLIC libpqxx::pqxx)
+endif()
+
 if(WIN32)
     target_link_libraries(cs2-kit PUBLIC psapi)
 endif()
@@ -80,6 +92,7 @@ if(BUILD_TESTING)
     add_executable(cs2kit-utils-tests
         tests/MicroTestMain.cpp
         tests/MemoryAccessTests.cpp
+        tests/MigratorTests.cpp
         tests/ParseDurationTests.cpp
         tests/SlotThrottleTests.cpp
         tests/StringUtilsTests.cpp
