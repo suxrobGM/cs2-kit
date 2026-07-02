@@ -1,6 +1,5 @@
 #include "Sdk/SigScanner.hpp"
 
-#include <bit>
 #include <igameevents.h>
 
 #include <CS2Kit/Core/Services.hpp>
@@ -11,6 +10,7 @@
 #include <CS2Kit/Sdk/RecipientFilter.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Log.hpp>
+#include <bit>
 #include <engine/igameeventsystem.h>
 #include <networksystem/inetworkmessages.h>
 #include <networksystem/netmessage.h>
