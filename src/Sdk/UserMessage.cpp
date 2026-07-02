@@ -1,11 +1,13 @@
 #include "Sdk/SigScanner.hpp"
 
+#include <bit>
 #include <igameevents.h>
 
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Core/Slot.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
+#include <CS2Kit/Sdk/MemoryAccess.hpp>
 #include <CS2Kit/Sdk/RecipientFilter.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Log.hpp>
@@ -49,8 +51,7 @@ bool MessageSystem::InitGameEventManager()
     void* eventManagerAddr = gameData.ResolveSignature("GameEventManager");
     if (eventManagerAddr)
     {
-        interfaces.GameEventManager =
-            *reinterpret_cast<IGameEventManager2**>(reinterpret_cast<uintptr_t>(eventManagerAddr));
+        interfaces.GameEventManager = ReadAt<IGameEventManager2*>(eventManagerAddr, 0);
 
         if (interfaces.GameEventManager)
         {
@@ -70,7 +71,7 @@ bool MessageSystem::InitGameEventManager()
     void* legacyListenerAddr = gameData.FindSignature("LegacyGameEventListener");
     if (legacyListenerAddr)
     {
-        _getLegacyListener = reinterpret_cast<GetLegacyGameEventListenerFn>(legacyListenerAddr);
+        _getLegacyListener = std::bit_cast<GetLegacyGameEventListenerFn>(legacyListenerAddr);
         Log::Info("LegacyGameEventListener resolved.");
     }
     else

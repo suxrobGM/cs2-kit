@@ -26,6 +26,7 @@ mkdir -p "$OutDir"
 # Test cases + the harness main.
 TestSources=(
     "$ScriptDir/MicroTestMain.cpp"
+    "$ScriptDir/MemoryAccessTests.cpp"
     "$ScriptDir/ParseDurationTests.cpp"
     "$ScriptDir/StringUtilsTests.cpp"
     "$ScriptDir/SteamIdTests.cpp"

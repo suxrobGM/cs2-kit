@@ -79,6 +79,7 @@ endif()
 if(BUILD_TESTING)
     add_executable(cs2kit-utils-tests
         tests/MicroTestMain.cpp
+        tests/MemoryAccessTests.cpp
         tests/ParseDurationTests.cpp
         tests/StringUtilsTests.cpp
         tests/SteamIdTests.cpp

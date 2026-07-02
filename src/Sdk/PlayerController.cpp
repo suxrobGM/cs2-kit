@@ -6,6 +6,7 @@
 #include <CS2Kit/Sdk/EntityRender.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
+#include <CS2Kit/Sdk/MemoryAccess.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <cstring>
@@ -49,14 +50,14 @@ void* ResolveSceneNode(CEntityInstance* pawn)
     int bodyOffset = Engine().Schema().GetOffset("CBaseEntity", "m_CBodyComponent");
     if (bodyOffset < 0)
         return nullptr;
-    auto* body = *reinterpret_cast<uint8_t**>(reinterpret_cast<uint8_t*>(pawn) + bodyOffset);
+    auto* body = ReadAt<uint8_t*>(pawn, bodyOffset);
     if (!body)
         return nullptr;
 
     int nodeOffset = Engine().Schema().GetOffset("CBodyComponent", "m_pSceneNode");
     if (nodeOffset < 0)
         return nullptr;
-    return *reinterpret_cast<void**>(body + nodeOffset);
+    return ReadAt<void*>(body, nodeOffset);
 }
 
 template <typename T>
@@ -69,7 +70,7 @@ T GetSceneNodeField(CEntityInstance* pawn, const char* fieldName)
     int offset = Engine().Schema().GetOffset("CGameSceneNode", fieldName);
     if (offset < 0)
         return T{0.0f, 0.0f, 0.0f};
-    return *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(node) + offset);
+    return ReadAt<T>(node, offset);
 }
 }  // namespace
 
@@ -97,7 +98,7 @@ CEntityInstance* PlayerController::GetPawn() const
     if (offset < 0)
         return nullptr;
 
-    auto hPawn = *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(_controller) + offset);
+    auto hPawn = ReadAt<uint32_t>(_controller, offset);
     return Engine().Entities.ResolveEntityHandle(hPawn);
 }
 
@@ -269,7 +270,7 @@ std::string PlayerController::GetPlayerName() const
     if (offset < 0)
         return {};
 
-    auto* p = reinterpret_cast<const char*>(reinterpret_cast<uint8_t*>(_controller) + offset);
+    auto* p = MemberPtr<const char>(_controller, offset);
     size_t len = 0;
     while (len < PlayerNameBufferSize && p[len] != '\0')
         ++len;
@@ -285,7 +286,7 @@ void PlayerController::SetPlayerName(const std::string& name) const
     if (offset < 0)
         return;
 
-    auto* dst = reinterpret_cast<char*>(reinterpret_cast<uint8_t*>(_controller) + offset);
+    auto* dst = MemberPtr<char>(_controller, offset);
     std::memset(dst, 0, PlayerNameBufferSize);
     size_t copyLen = name.size();
     if (copyLen >= PlayerNameBufferSize)

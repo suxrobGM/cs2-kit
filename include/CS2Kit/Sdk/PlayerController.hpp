@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CS2Kit/Sdk/MemoryAccess.hpp>
 #include <CS2Kit/Sdk/MoveType.hpp>
 #include <CS2Kit/Sdk/ObserverMode.hpp>
 #include <cstdint>
@@ -40,7 +41,7 @@ public:
         int offset = SchemaOffset(className, fieldName);
         if (offset < 0)
             return T{};
-        return *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(_controller) + offset);
+        return ReadAt<T>(_controller, offset);
     }
 
     template <typename T>
@@ -52,7 +53,7 @@ public:
         int offset = SchemaOffset(className, fieldName);
         if (offset < 0)
             return T{};
-        return *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(pawn) + offset);
+        return ReadAt<T>(pawn, offset);
     }
 
     template <typename T>
@@ -63,7 +64,7 @@ public:
         int offset = SchemaOffset(className, fieldName);
         if (offset < 0)
             return;
-        *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(_controller) + offset) = value;
+        WriteAt<T>(_controller, offset, value);
     }
 
     template <typename T>
@@ -75,7 +76,7 @@ public:
         int offset = SchemaOffset(className, fieldName);
         if (offset < 0)
             return;
-        *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(pawn) + offset) = value;
+        WriteAt<T>(pawn, offset, value);
     }
 
     int GetHealth() const;

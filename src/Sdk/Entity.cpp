@@ -4,6 +4,7 @@
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
+#include <CS2Kit/Sdk/MemoryAccess.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <entity2/concreteentitylist.h>
 #include <entity2/entityidentity.h>
@@ -42,8 +43,7 @@ CGameEntitySystem* EntitySystem::ReadEntitySystemPointer()
     if (offsetGameEntitySystem < 0)
         return nullptr;
 
-    return *reinterpret_cast<CGameEntitySystem**>(reinterpret_cast<uintptr_t>(interfaces.GameResourceService) +
-                                                  offsetGameEntitySystem);
+    return ReadAt<CGameEntitySystem*>(interfaces.GameResourceService, offsetGameEntitySystem);
 }
 
 bool EntitySystem::Initialize()
@@ -145,20 +145,16 @@ uint64_t EntitySystem::GetPlayerButtons(int slot)
     if (!pController)
         return 0;
 
-    auto* pCtrlBase = reinterpret_cast<uint8_t*>(pController);
-
-    uint32_t hPawn = *reinterpret_cast<uint32_t*>(pCtrlBase + _offsetPlayerPawn);
+    uint32_t hPawn = ReadAt<uint32_t>(pController, _offsetPlayerPawn);
     CEntityInstance* pPawn = ResolveEntityHandle(hPawn);
     if (!pPawn)
         return 0;
 
-    auto* pPawnBase = reinterpret_cast<uint8_t*>(pPawn);
-
-    auto* pMovementServices = *reinterpret_cast<uint8_t**>(pPawnBase + _offsetMovementServices);
+    auto* pMovementServices = ReadAt<uint8_t*>(pPawn, _offsetMovementServices);
     if (!pMovementServices)
         return 0;
 
-    auto* pButtonStates = reinterpret_cast<uint64_t*>(pMovementServices + _offsetButtons + _offsetButtonStates);
+    auto* pButtonStates = MemberPtr<uint64_t>(pMovementServices, _offsetButtons + _offsetButtonStates);
 
     return pButtonStates[0];  // m_pButtonStates is uint64[3]: [0] held, [1] changed, [2] scroll
 }
