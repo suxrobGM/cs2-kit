@@ -3,6 +3,8 @@
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Chat.hpp>
 #include <CS2Kit/Utils/ChatColors.hpp>
+#include <CS2Kit/Utils/StringUtils.hpp>
+#include <format>
 #include <string>
 
 using CS2Kit::Core::Engine;
@@ -60,6 +62,30 @@ void PrintFiltered(std::string_view message, const std::function<bool(const Play
             continue;
         Engine().Messages.SendChatMessage(p->GetSlot(), rendered);
     }
+}
+
+std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorName, std::string_view phrase)
+{
+    // {PrefixColor}{prefix} {NameColor}{actor}{Default} {PhraseColor}{phrase}
+    return std::format("{}{} {}{}{} {}{}", style.PrefixColor, style.Prefix, style.NameColor, actorName,
+                       ChatColors::Default, style.PhraseColor, phrase);
+}
+
+std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorName, std::string_view phrase,
+                            std::string_view targetName)
+{
+    return std::format("{}{} {}", FormatAdminLine(style, actorName, phrase), ChatColors::Default, targetName);
+}
+
+std::string FormatAdminLine(const AdminLineStyle& style, std::string_view actorName, std::string_view phraseTemplate,
+                            const std::map<std::string, std::string>& nameTokens)
+{
+    // Names sit inside the colored phrase, so wrap each in the name color before substituting.
+    std::map<std::string, std::string> colored;
+    for (const auto& [token, name] : nameTokens)
+        colored.emplace(token, std::format("{}{}{}", style.NameColor, name, style.PhraseColor));
+
+    return FormatAdminLine(style, actorName, StringUtils::SubstituteTokens(std::string(phraseTemplate), colored));
 }
 
 }  // namespace CS2Kit::Utils::Chat
