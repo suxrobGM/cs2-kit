@@ -167,6 +167,41 @@ auto menu = MenuBuilder("Custom Menu")
 
 `CS2Kit::OnGameFrame()` (every tick) and `CS2Kit::OnPlayerDisconnect(slot)` drive this - both are called for you when the plugin derives from @ref CS2Kit::Core::MetamodPluginBase, or wire them yourself otherwise.
 
+## Presets
+
+`<CS2Kit/Menu/MenuPresets.hpp>` ships reusable, content-agnostic builders. Every human-facing
+string is a parameter - the presets carry no localization of their own; the caller supplies
+already-translated text.
+
+```cpp
+using namespace CS2Kit::Menu;
+
+// Paginated list of every connected player; isEnabled (optional) grays out rows.
+auto picker = BuildPlayerPicker(adminSlot, "Select player",
+    [](int viewer, int target) { OpenActionsFor(viewer, target); },
+    "No players available",
+    [self = adminSlot](int target) { return target != self; });
+
+// Duration presets + optional free-text row parsed by Utils::ParseDuration.
+auto duration = BuildDurationPicker(adminSlot, "Ban duration",
+    {{"30 min", 1800}, {"1 day", 86400}, {"Permanent", 0}},
+    [](int viewer, int seconds) { IssueBan(viewer, seconds); },
+    "Custom...", "Type a duration (30s, 5m, 2h, 7d, perm)");
+
+// Confirmation dialog: read-only body rows, then confirm/cancel.
+auto confirm = BuildConfirmDialog({
+    .Title = "Confirm: Ban",
+    .BodyLines = {"Player: Bob", "Duration: 1 day"},
+    .ConfirmLabel = "Confirm",
+    .CancelLabel = "Cancel",
+    .OnConfirm = [](int slot) { IssueAndClose(slot); },
+    // OnCancel defaults to closing the player's menus.
+});
+
+// ChatColors::Palette as ChoiceOption rows for color pickers; grows with the palette.
+auto choices = BuildPaletteChoices([&](std::string_view name) { return LabelFor(name); });
+```
+
 ## Header Layout
 
 ```text

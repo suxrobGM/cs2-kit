@@ -98,3 +98,65 @@ if (player && App().Admins.IsAdmin(player->GetSteamID()))
 ```
 
 This keeps `CS2Kit::Players::Player` reusable across plugins that have nothing to do with admins or punishments.
+
+## Target Resolution
+
+`<CS2Kit/Players/TargetResolver.hpp>` resolves a command's target token to online players. Syntax
+(parsed by `StringUtils::ParseTarget`): `@all`/`@*`, `@me`, `#N` slot index, a SteamID64 /
+`STEAM_...` / `[U:1:...]`, or a case-insensitive name substring.
+
+Targetability policy (immunity, team rules, ...) is injected as a `CanTargetFn` - the kit carries
+no admin model of its own. Each match reports the policy verdict in `Allowed` so the caller can
+say "X is immune":
+
+```cpp
+using namespace CS2Kit::Players;
+
+CanTargetFn canTarget = [](Player& caller, Player& target) {
+    return App().Admins.CanTarget(caller.GetSteamID(), target.GetSteamID());
+};
+
+auto matches = ResolveTargets("@all", caller, canTarget);       // every match + verdict
+
+auto single = ResolveSingleTarget("#3", caller, canTarget);     // narrowed to one allowed player
+switch (single.Error)
+{
+case SingleTargetError::None:      Act(single.Target); break;
+case SingleTargetError::NoMatch:   /* "no player matched" */ break;
+case SingleTargetError::Immune:    /* "target is immune" */ break;
+case SingleTargetError::Ambiguous: /* single.MatchCount matches - narrow the token */ break;
+}
+```
+
+Error text stays with the consumer (translation keys, formatting); the kit returns only the typed
+enum plus `MatchCount` for the ambiguous message.
+
+## ActionDispatcher
+
+`<CS2Kit/Players/ActionDispatcher.hpp>` runs data-defined single-target actions with
+consumer-injected policy: a permission check, a `CanTargetFn`, and a broadcast sink. An action is
+just its permission token, its guards, and its effect - the dispatcher owns the
+`Resolve -> guard -> Broadcast` shape:
+
+```cpp
+using namespace CS2Kit::Players;
+
+// Wire the dispatcher once (e.g. in your Managers struct):
+ActionDispatcher dispatcher{
+    [](Player& caller, const std::string& perm) { return App().Admins.HasAnyPermission(caller.GetSteamID(), perm); },
+    [](Player& caller, Player& target) { return App().Admins.CanTarget(caller.GetSteamID(), target.GetSteamID()); },
+    [](const ActionContext& ctx, const std::string& key) { App().Chat.BroadcastAction(key, ctx.Caller->GetName(), ctx.Target->GetName()); }};
+
+// Define actions as data; the body returns the broadcast key (or nullopt to stay silent):
+const Action Slay{"s", /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
+    ctx.TargetCtrl.Slay();
+    return "broadcast.slain";
+}};
+
+dispatcher.Run(adminSlot, targetSlot, Slay);
+```
+
+`ActionContext` carries the resolved `Caller`/`Target` players plus transient
+`CallerCtrl`/`TargetCtrl` controllers; `ParamAction` adds an integer parameter (health value,
+team id, ...) supplied at the call site. An empty permission string skips the permission check,
+and empty callbacks skip their step entirely.

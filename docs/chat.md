@@ -84,6 +84,30 @@ auto line = std::format("{}{} {}: {}", color, group.Prefix,
 
 `ParseNamed` is case-insensitive and accepts every name in the table above (e.g. `"red"`, `"green"`, `"lightblue"`, `"silver"`, `"orange"`, `"grey"`). Aliases resolve to the same byte as their primary (`"orange"` → `Gold`, `"grey"` → `Gray`, `"magenta"` → `Purple`). Unknown names return `Default`.
 
+## Admin-Action Lines
+
+`Chat::FormatAdminLine` renders the common `{prefix} {actor} {phrase}` broadcast layout so plugins
+don't hand-assemble the color scaffolding. The prefix text and all colors come from an
+@ref CS2Kit::Utils::Chat::AdminLineStyle (defaults: green prefix, default-colored names, olive
+phrase):
+
+```cpp
+Chat::AdminLineStyle style{.Prefix = "[ADMIN]"};
+
+// "{prefix} {actor} {phrase}"
+Chat::PrintAll(Chat::FormatAdminLine(style, adminName, "went stealth"));
+
+// "... {phrase} {target}"
+Chat::PrintAll(Chat::FormatAdminLine(style, adminName, "slapped", targetName));
+
+// Token variant for multi-name phrases; each mapped name is wrapped in the name color:
+Chat::PrintAll(Chat::FormatAdminLine(style, adminName, "swapped {a} and {b}",
+                                     {{"a", nameA}, {"b", nameB}}));
+```
+
+The phrase text itself is caller-supplied (typically a translation lookup), keeping localization
+out of the kit.
+
 ## Stripping Colors for Logs
 
 The engine renders `\x01`-`\x10` as colors, but writing them to a console or log file leaves garbage. Strip before logging:
@@ -104,6 +128,7 @@ Log::Info("{}", ChatColors::Strip(colored));
 | `Print(slot, message)` | Send a colored chat line to one player. |
 | `PrintAll(message)` | Broadcast to every connected human player. Bots/disconnected slots skipped. |
 | `PrintFiltered(message, filter)` | Broadcast only to players where `filter(player)` returns `true`. |
+| `FormatAdminLine(style, actor, phrase[, target \| tokens])` | Render a `{prefix} {actor} {phrase}` action line (plain, single-target, or `{token}` multi-name). |
 
 All accept `std::string_view`.
 

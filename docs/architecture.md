@@ -4,14 +4,16 @@
 
 ## Overview
 
-CS2-Kit is organized into six modules, each in its own namespace under `CS2Kit`:
+CS2-Kit is organized into eight modules, each in its own namespace under `CS2Kit`:
 
 ```
 CS2Kit
 ├── Core        Foundational patterns and services
 ├── Commands    Chat command framework
+├── Database    Optional PostgreSQL client + migrations (CS2KIT_ENABLE_POSTGRES)
+├── Http        Async HTTP client + JSON REST helpers
 ├── Menu        WASD center-HTML menu system
-├── Players     Connected-player tracking
+├── Players     Connected-player tracking, target resolution, action dispatch
 ├── Sdk         HL2SDK abstraction layer
 └── Utils       General-purpose utilities
 ```
@@ -66,7 +68,7 @@ free accessor (admin-system's is `App()`). It does not derive from any base.
 struct Managers {
     Core::ConfigManager Config;
     Admin::AdminManager  Admins;     // declaration order == construction order; destroyed in reverse
-    Admin::Effects::EffectManager Effects;
+    CS2Kit::Core::EffectManager Effects{CS2Kit::Core::Engine().Scheduler};  // kit types work here too
 };
 Managers& App();                     // returns the live struct; valid only between OnLoad and unload
 
@@ -95,6 +97,10 @@ Core ──────────────────┐        │
 - **Commands**, **Menu**, **Players**, and **Sdk** depend on Core
 - **Players** and **Sdk** additionally depend on Utils (for SteamID, string helpers)
 - **Commands**, **Menu**, and **Players** are independent of each other
+- **Database** depends only on Utils (logging) plus libpqxx; the whole module compiles only when
+  `CS2KIT_ENABLE_POSTGRES` is ON
+- **Http** wraps CPR; `HttpClient` lives in `Services` and its completions dispatch from the
+  `OnGameFrame` pump
 
 ## Callback Conventions
 
@@ -113,6 +119,9 @@ CS2-Kit uses `std::function` callbacks throughout:
 | Chat input capture | `bool(int slot, string_view text)` | ChatInputCapture (`BeginCapture`) |
 | Scheduler task | `void()` | Scheduler |
 | Permission check | `bool(int slot, const string& flags)` | CommandManager |
+| Target policy (`CanTargetFn`) | `bool(Player& caller, Player& target)` | TargetResolver, ActionDispatcher |
+| Action body | `OptKey(const ActionContext&)` | ActionDispatcher (`Action`, `ParamAction`) |
+| HTTP completion | `void(const HttpResult&)` | HttpClient (`Post`) |
 
 ## Interface Contracts
 

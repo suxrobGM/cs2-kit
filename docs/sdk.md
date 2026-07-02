@@ -127,6 +127,49 @@ player.SetPlayerName("");        // hide on scoreboard
 player.SetPlayerName(saved);
 ```
 
+## PawnOps
+
+Common pawn manipulations composed from `PlayerController` primitives - the operations most
+gameplay plugins end up writing by hand. Free functions in `CS2Kit::Sdk::PawnOps`
+(`<CS2Kit/Sdk/PawnOps.hpp>`), plus the engine team constants `TeamNone` / `TeamSpectator` /
+`TeamT` / `TeamCT`:
+
+```cpp
+using namespace CS2Kit::Sdk;
+PlayerController target(slot);
+
+PawnOps::ToggleNoclip(target);              // noclip <-> walk; returns the new on-state
+PawnOps::ToggleFreeze(target);              // MoveType None <-> walk
+PawnOps::ToggleGodmode(target);             // FL_GODMODE flip (the working CS2 invincibility path)
+PawnOps::ShiftZ(target, -15.0f);            // bury; +15 to unbury
+PawnOps::Slap(target);                      // upward punt + timed fall protection
+PawnOps::ChangeTeamSafe(target, TeamCT);    // bounds-checked ChangeTeam
+
+// Teleports: a destination cleared past the anchor's hull, and an exact-origin swap.
+Vector dest = PawnOps::ClearedDestination(anchor);   // 48u ahead of anchor's eye yaw
+PawnOps::SwapOrigins(a, b);                          // both spots vacate in the same frame
+```
+
+Two CS2 workarounds are baked in: `Slap` writes velocity via `m_vecAbsVelocity` because
+`Teleport(nullptr, ...)` crashes the server, and godmode uses the `FL_GODMODE` flag because the
+legacy `m_takedamage` write is a no-op.
+
+## PersistentCenterHtml
+
+CS2 drops center-HTML almost immediately (death, team switch, HUD updates), so a sticky panel must
+be re-sent continuously. @ref CS2Kit::Sdk::PersistentCenterHtml owns that re-send loop; deadline or
+expiry policy stays with the caller's own timer:
+
+```cpp
+CS2Kit::Sdk::PersistentCenterHtml panel;
+
+panel.Show(slot, /*refreshMs=*/100, [](int s) {
+    return std::format("<b>Time left: {}s</b>", RemainingSeconds(s));  // re-rendered every refresh
+});
+// ...
+panel.Stop(slot);   // cancel + clear the panel
+```
+
 ## EntityRender
 
 Mutate `m_nRenderMode` and `m_clrRender` on any `CBaseModelEntity`. Used internally by `PlayerController::SetVisible`, but exposed so plugins can hide/recolor any entity (props, dropped weapons, world objects).
@@ -154,24 +197,20 @@ int32_t offset = schema.GetOffset("CCSPlayerPawn", "m_iHealth");
 int health = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(pawn) + offset);
 ```
 
-## SigScanner
+## Signature scanning
 
-Low-level byte-pattern scanning for finding functions in memory:
+The low-level byte-pattern scanner is **internal** (`src/Sdk/SigScanner.hpp`, free functions
+`FindPattern(moduleName, pattern)` / `ResolveRelativeAddress(addr, ripOffset, ripSize)`); it is not
+part of the public include tree. Consumers scan through @ref CS2Kit::Sdk::GameData instead, which
+adds per-platform patterns, named lookups, and caching:
 
 ```cpp
-using namespace CS2Kit::Sdk;
-
-// Find a pattern in a module
-void* addr = SigScanner::FindPattern(
-    moduleBase, moduleSize,
-    "48 89 5C 24 ?? 57 48 83 EC 30"
-);
-
-// Resolve a RIP-relative address
-void* target = SigScanner::ResolveRelativeAddress(addr, 3, 7);
+auto& gd = Engine().GameData;
+void* addr = gd.FindSignature("CCSPlayerController_Kick");     // raw match
+void* resolved = gd.ResolveSignature("SomeFunction");          // + RIP-relative resolve
 ```
 
-Wildcard bytes are represented as `??` in pattern strings.
+Wildcard bytes are written as `?` or `??` in pattern strings (see the signatures.jsonc format above).
 
 ## ConVarService
 

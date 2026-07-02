@@ -13,10 +13,12 @@ CS2Kit handles the boilerplate of a CS2 plugin - engine setup, hooks, player tra
 
 - **Plugin base** - subclass one class and your plugin lifecycle, hooks, and player tracking are wired up for you.
 - **Chat commands** - register `!commands` with aliases, argument checks, and permission gating.
-- **Menus** - WASD-navigated in-game menus with buttons, toggles, sliders, choices, and submenus.
-- **Players** - fast lookup of connected players by slot or SteamID.
-- **Engine SDK** - friendly wrappers over entities, ConVars, game events, and messages.
-- **Utilities** - JSON config, SteamID conversions, colored chat, translations, and timers.
+- **Menus** - WASD-navigated in-game menus with buttons, toggles, sliders, choices, submenus, and ready-made presets (player picker, duration picker, confirm dialog).
+- **Players** - fast lookup of connected players by slot or SteamID, target-token resolution (`@all`, `#slot`, SteamID, name), and a policy-injected action dispatcher.
+- **Engine SDK** - friendly wrappers over entities, ConVars, game events, messages, common pawn operations (teleport, freeze, godmode, slap), and persistent center-HTML panels.
+- **HTTP** - async requests with game-thread completions, plus config-driven JSON endpoint helpers.
+- **PostgreSQL** (optional) - connection + prepared-statement client and a migration runner, gated behind `CS2KIT_ENABLE_POSTGRES`.
+- **Utilities** - JSON config, SteamID conversions, colored chat, token-substituting translations, per-slot effect registry, and timers.
 
 ## Quick start
 
@@ -60,7 +62,7 @@ Full guides and API reference: **[suxrobgm.github.io/cs2-kit](https://suxrobgm.g
 
 - **Getting Started** - install, build setup, and your first plugin
 - **Plugin Base** - lifecycle, callbacks, and custom hooks
-- **Commands, Menus, Players, SDK, Chat** - per-feature guides
+- **Commands, Menus, Players, SDK, Chat, Database, HTTP** - per-feature guides
 
 ## Contributing
 

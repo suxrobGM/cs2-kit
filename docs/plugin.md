@@ -34,8 +34,8 @@ protected:
 
     bool OnLoad(bool late) override
     {
-        Defer([] { Database::Close(); });   // teardown registered next to its setup
-        return Database::Open();            // false rejects the load
+        Defer([] { App().Db.CloseConnection(); });   // teardown registered next to its setup
+        return App().Db.Initialize(dbConfig);        // false rejects the load
     }
 };
 ```

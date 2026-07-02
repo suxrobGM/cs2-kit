@@ -8,12 +8,14 @@
 
 | Module | Namespace | Description |
 |--------|-----------|-------------|
-| **Core** | `CS2Kit::Core` | Plugin base (`MetamodPluginBase`), singleton base, scheduler, logging (built-in ConsoleLogger), path resolution |
+| **Core** | `CS2Kit::Core` | Plugin base (`MetamodPluginBase`), service container, scheduler, per-slot effect registry (`EffectManager`), logging (built-in ConsoleLogger), path resolution |
 | **Commands** | `CS2Kit::Commands` | Chat command system with fluent builder, permissions, and dispatch |
-| **Menu** | `CS2Kit::Menu` | WASD-navigated center-HTML menu framework with builder pattern |
-| **Players** | `CS2Kit::Players` | Connected-player tracking with slot and SteamID lookup |
-| **Sdk** | `CS2Kit::Sdk` | Engine SDK wrappers: entities, schema, signatures, convars, events, messages |
-| **Utils** | `CS2Kit::Utils` | JSON serializer (`Json::Serialize`/`Deserialize`), SteamID conversions, string utilities, time formatting, translations, colored chat output |
+| **Database** | `CS2Kit::Database` | Optional PostgreSQL client (`PostgresDatabase`), forward-only migration runner, `DbResult` error helpers; gated behind `CS2KIT_ENABLE_POSTGRES` |
+| **Http** | `CS2Kit::Http` | Async `HttpClient` (game-thread completions via the frame pump) and config-driven JSON POST helpers (`RestJsonApi`) |
+| **Menu** | `CS2Kit::Menu` | WASD-navigated center-HTML menu framework with builder pattern and presets (player/duration pickers, confirm dialog, palette choices) |
+| **Players** | `CS2Kit::Players` | Connected-player tracking, target-token resolution (`ResolveTargets`), and the policy-injected `ActionDispatcher` |
+| **Sdk** | `CS2Kit::Sdk` | Engine SDK wrappers: entities, schema, signatures, convars, events, messages, pawn operations (`PawnOps`), persistent center-HTML panels |
+| **Utils** | `CS2Kit::Utils` | JSON serializer, SteamID conversions, string utilities (HTML escaping, UTF-8-safe truncation), time/duration formatting, token-substituting translations, colored chat output, per-slot throttling |
 
 <h2>Guides</h2>
 
@@ -22,9 +24,11 @@
 - @subpage plugin_guide - Building a plugin with MetamodPluginBase
 - @subpage commands_guide - Command system usage
 - @subpage menus_guide - Menu system usage
-- @subpage players_guide - Player tracking and lookup
+- @subpage players_guide - Player tracking, target resolution, and actions
 - @subpage chat_guide - Colored chat output
 - @subpage sdk_guide - SDK wrappers guide
+- @subpage database_guide - PostgreSQL client and migrations
+- @subpage http_guide - Async HTTP and JSON REST helpers
 
 <h2>License</h2>
 
