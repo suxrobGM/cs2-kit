@@ -2,6 +2,7 @@
 
 #include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
+#include <CS2Kit/Http/HttpClient.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/ChatInputCapture.hpp>
@@ -53,6 +54,8 @@ public:
     Players::PlayerManager Players;
     Commands::CommandManager Commands;
     Menu::MenuManager Menus;
+    /** Completions dispatch on the game thread from the OnGameFrame pump; Shutdown stops it. */
+    Http::HttpClient Http;
 
     /** Internal schema-offset service (forward-declared type). */
     Sdk::SchemaService& Schema() { return *_schema; }

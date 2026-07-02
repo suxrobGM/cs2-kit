@@ -122,6 +122,7 @@ bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, Core::Services& servi
 void Shutdown(Core::Services& services)
 {
     services.Events.RemoveAllListeners();
+    services.Http.Stop();  // drains in-flight requests before their completion targets go away
     services.Scheduler.CancelAll();
 }
 
@@ -129,6 +130,7 @@ void OnGameFrame(Core::Services& services)
 {
     services.Scheduler.OnGameFrame();
     services.Menus.OnGameFrame();
+    services.Http.DispatchCompletions();
 }
 
 void OnPlayerDisconnect(Core::Services& services, int slot)
