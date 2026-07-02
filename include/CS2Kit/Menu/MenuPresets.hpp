@@ -1,9 +1,11 @@
 #pragma once
 
 #include <CS2Kit/Menu/Menu.hpp>
+#include <CS2Kit/Menu/Options/ChoiceOption.hpp>
 #include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -39,5 +41,27 @@ std::shared_ptr<Menu> BuildDurationPicker(int viewerSlot, const std::string& tit
                                           std::function<void(int viewerSlot, int seconds)> onPick,
                                           const std::string& customLabel = "", const std::string& customPrompt = "",
                                           int maxInputLen = 32);
+
+/** Confirmation dialog content; every human-facing string is caller-supplied. */
+struct ConfirmDialogSpec
+{
+    std::string Title;
+    std::vector<std::string> BodyLines; /**< Read-only summary rows shown above the buttons. */
+    std::string ConfirmLabel;
+    std::string CancelLabel;
+    std::function<void(int slot)> OnConfirm;
+    std::function<void(int slot)> OnCancel; /**< Empty = close all of the player's menus. */
+};
+
+/** Build a confirmation dialog: body text rows followed by confirm/cancel buttons. */
+std::shared_ptr<Menu> BuildConfirmDialog(ConfirmDialogSpec spec);
+
+/**
+ * Render @ref Utils::ChatColors::Palette as ChoiceOption choices (value = canonical color name),
+ * so color pickers grow automatically as the palette does. @p labelFor supplies the localized
+ * label for each canonical name; return "" to fall back to the name itself.
+ */
+std::vector<ChoiceOption<std::string>::Choice> BuildPaletteChoices(
+    const std::function<std::string(std::string_view canonicalName)>& labelFor);
 
 }  // namespace CS2Kit::Menu

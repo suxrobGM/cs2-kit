@@ -1,7 +1,9 @@
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
+#include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Menu/MenuPresets.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Utils/ChatColors.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
 #include <string_view>
 #include <utility>
@@ -69,6 +71,43 @@ std::shared_ptr<Menu> BuildDurationPicker(int viewerSlot, const std::string& tit
     }
 
     return builder.Build();
+}
+
+std::shared_ptr<Menu> BuildConfirmDialog(ConfirmDialogSpec spec)
+{
+    MenuBuilder builder(spec.Title);
+
+    for (auto& line : spec.BodyLines)
+        builder.AddText(std::move(line));
+
+    builder.AddButton(spec.ConfirmLabel, [onConfirm = std::move(spec.OnConfirm)](int slot) {
+        if (onConfirm)
+            onConfirm(slot);
+    });
+    builder.AddButton(spec.CancelLabel, [onCancel = std::move(spec.OnCancel)](int slot) {
+        if (onCancel)
+            onCancel(slot);
+        else
+            Engine().Menus.CloseAllMenus(slot);
+    });
+
+    return builder.Build();
+}
+
+std::vector<ChoiceOption<std::string>::Choice> BuildPaletteChoices(
+    const std::function<std::string(std::string_view canonicalName)>& labelFor)
+{
+    std::vector<ChoiceOption<std::string>::Choice> choices;
+    choices.reserve(Utils::ChatColors::Palette.size());
+
+    for (const auto& entry : Utils::ChatColors::Palette)
+    {
+        std::string label = labelFor ? labelFor(entry.Name) : std::string{};
+        if (label.empty())
+            label = std::string(entry.Name);
+        choices.push_back({std::move(label), std::string(entry.Name)});
+    }
+    return choices;
 }
 
 }  // namespace CS2Kit::Menu
