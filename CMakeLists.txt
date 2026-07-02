@@ -91,6 +91,7 @@ endif()
 if(BUILD_TESTING)
     add_executable(cs2kit-utils-tests
         tests/MicroTestMain.cpp
+        tests/EffectManagerTests.cpp
         tests/MemoryAccessTests.cpp
         tests/MigratorTests.cpp
         tests/ParseDurationTests.cpp
@@ -98,6 +99,8 @@ if(BUILD_TESTING)
         tests/StringUtilsTests.cpp
         tests/SteamIdTests.cpp
         tests/TimeUtilsTests.cpp
+        src/Core/EffectManager.cpp
+        src/Core/Scheduler.cpp
         src/Utils/StringUtils.cpp
         src/Utils/SteamId.cpp
         src/Utils/TimeUtils.cpp
