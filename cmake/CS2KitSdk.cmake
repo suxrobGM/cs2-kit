@@ -6,12 +6,14 @@ set(CS2KIT_HL2SDK_DIR "${CS2KIT_ROOT_DIR}/vendor/hl2sdk-cs2" CACHE PATH "HL2SDK 
 set(CS2KIT_MMSOURCE_DIR "${CS2KIT_ROOT_DIR}/vendor/mmsource-2.0" CACHE PATH "Metamod:Source path")
 set(CS2KIT_GAMEDATA_DIR "${CS2KIT_ROOT_DIR}/gamedata" CACHE PATH "CS2Kit shared gamedata path")
 
+# Fail configure with a submodule-init hint when `path` does not exist.
 function(cs2kit_require_path path description)
     if(NOT EXISTS "${path}")
         message(FATAL_ERROR "${description} not found at ${path}. Run git submodule update --init --recursive.")
     endif()
 endfunction()
 
+# Set `out_var` to the `<os>-<arch>` folder name used for plugin output dirs.
 function(cs2kit_platform_arch out_var)
     if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
         message(FATAL_ERROR "Only x86_64 builds are supported.")
@@ -26,6 +28,8 @@ function(cs2kit_platform_arch out_var)
     endif()
 endfunction()
 
+# Define the CS2Kit::Metamod and CS2Kit::HL2SDK interface targets carrying the
+# SDK includes, defines, compile flags, and prebuilt libs.
 function(cs2kit_configure_sdk)
     cs2kit_require_path("${CS2KIT_HL2SDK_DIR}" "HL2SDK CS2")
     cs2kit_require_path("${CS2KIT_MMSOURCE_DIR}" "Metamod:Source")
@@ -148,6 +152,8 @@ function(cs2kit_configure_sdk)
     endif()
 endfunction()
 
+# Generate .pb.cc/.pb.h from the SDK protos with the SDK's bundled protoc;
+# returns the generated sources and their include dirs via the out args.
 function(cs2kit_generate_sdk_protobuf out_sources out_includes)
     if(WIN32)
         set(protoc_path "${CS2KIT_HL2SDK_DIR}/devtools/bin/protoc.exe")
