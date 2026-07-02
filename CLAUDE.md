@@ -17,11 +17,13 @@ Metamod:Source 2.0.
 include/CS2Kit/        Public API headers
 src/                   Implementation
 gamedata/              Engine signatures and offsets
+tests/                 SDK-free utils unit tests (ctest)
 docs/                  Doxygen pages and guides
 vendor/                SDK submodules
 CMakeLists.txt         Standalone CMake build
 CMakePresets.json      Windows/Linux presets
 conanfile.py           Third-party deps
+conan/profiles/        Conan profiles (canonical; consuming repos reuse them)
 ```
 
 ## Build Commands
@@ -31,6 +33,8 @@ uv run poe build
 uv run poe build windows-msvc-release
 uv run poe build-linux
 ```
+
+`poe build` runs the full workflow preset (configure, build, ctest).
 
 Consuming projects should use:
 
