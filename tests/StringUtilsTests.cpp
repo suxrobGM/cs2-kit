@@ -1,0 +1,133 @@
+#include "MicroTest.hpp"
+
+#include <CS2Kit/Utils/StringUtils.hpp>
+
+#include <string>
+#include <vector>
+
+using CS2Kit::Utils::StringUtils;
+using TargetType = CS2Kit::Utils::StringUtils::TargetType;
+
+TEST_CASE("StringUtils::ToLower")
+{
+    CHECK_EQ(StringUtils::ToLower("HeLLo"), std::string("hello"));
+    CHECK_EQ(StringUtils::ToLower("ABC123"), std::string("abc123"));
+    CHECK_EQ(StringUtils::ToLower(""), std::string(""));
+}
+
+TEST_CASE("StringUtils::Trim")
+{
+    CHECK_EQ(StringUtils::Trim("  hi  "), std::string("hi"));
+    CHECK_EQ(StringUtils::Trim("\t\n hi \r\n"), std::string("hi"));
+    CHECK_EQ(StringUtils::Trim("nopad"), std::string("nopad"));
+    CHECK_EQ(StringUtils::Trim("   "), std::string(""));
+    CHECK_EQ(StringUtils::Trim(""), std::string(""));
+    CHECK_EQ(StringUtils::TrimLeft("  x  "), std::string("x  "));
+    CHECK_EQ(StringUtils::TrimRight("  x  "), std::string("  x"));
+}
+
+TEST_CASE("StringUtils::Split")
+{
+    auto parts = StringUtils::Split("a,b,c", ',');
+    CHECK_EQ(parts.size(), static_cast<size_t>(3));
+    CHECK_EQ(parts[0], std::string("a"));
+    CHECK_EQ(parts[1], std::string("b"));
+    CHECK_EQ(parts[2], std::string("c"));
+
+    auto single = StringUtils::Split("noseparator", ',');
+    CHECK_EQ(single.size(), static_cast<size_t>(1));
+    CHECK_EQ(single[0], std::string("noseparator"));
+
+    auto empty = StringUtils::Split("", ',');
+    CHECK_EQ(empty.size(), static_cast<size_t>(0));
+}
+
+TEST_CASE("StringUtils::Join")
+{
+    std::vector<std::string> parts = {"a", "b", "c"};
+    CHECK_EQ(StringUtils::Join(parts, ","), std::string("a,b,c"));
+    CHECK_EQ(StringUtils::Join(parts, " - "), std::string("a - b - c"));
+
+    std::vector<std::string> one = {"solo"};
+    CHECK_EQ(StringUtils::Join(one, ","), std::string("solo"));
+
+    std::vector<std::string> none;
+    CHECK_EQ(StringUtils::Join(none, ","), std::string(""));
+}
+
+TEST_CASE("StringUtils::Split and Join round-trip")
+{
+    auto parts = StringUtils::Split("x|y|z", '|');
+    CHECK_EQ(StringUtils::Join(parts, "|"), std::string("x|y|z"));
+}
+
+TEST_CASE("StringUtils::IsNumeric")
+{
+    CHECK(StringUtils::IsNumeric("12345"));
+    CHECK(StringUtils::IsNumeric("0"));
+    CHECK(!StringUtils::IsNumeric(""));
+    CHECK(!StringUtils::IsNumeric("12a"));
+    CHECK(!StringUtils::IsNumeric("-5"));
+    CHECK(!StringUtils::IsNumeric("1.5"));
+    CHECK(!StringUtils::IsNumeric(" 5"));
+}
+
+TEST_CASE("StringUtils::StartsWith")
+{
+    CHECK(StringUtils::StartsWith("hello world", "hello"));
+    CHECK(StringUtils::StartsWith("abc", "abc"));
+    CHECK(StringUtils::StartsWith("abc", ""));
+    CHECK(!StringUtils::StartsWith("abc", "abcd"));
+    CHECK(!StringUtils::StartsWith("abc", "xyz"));
+}
+
+TEST_CASE("StringUtils::EndsWith")
+{
+    CHECK(StringUtils::EndsWith("hello world", "world"));
+    CHECK(StringUtils::EndsWith("abc", "abc"));
+    CHECK(StringUtils::EndsWith("abc", ""));
+    CHECK(!StringUtils::EndsWith("abc", "dabc"));
+    CHECK(!StringUtils::EndsWith("abc", "xyz"));
+}
+
+TEST_CASE("StringUtils::ParseTarget special tokens")
+{
+    CHECK(StringUtils::ParseTarget("@all").Type == TargetType::All);
+    CHECK(StringUtils::ParseTarget("@*").Type == TargetType::All);
+    CHECK(StringUtils::ParseTarget("@me").Type == TargetType::Me);
+    CHECK(StringUtils::ParseTarget("").Type == TargetType::Name);
+}
+
+TEST_CASE("StringUtils::ParseTarget index form")
+{
+    auto idx = StringUtils::ParseTarget("#3");
+    CHECK(idx.Type == TargetType::Index);
+    CHECK_EQ(idx.Value, std::string("3"));
+
+    // '#' with non-numeric body falls back to a name.
+    CHECK(StringUtils::ParseTarget("#abc").Type == TargetType::Name);
+}
+
+TEST_CASE("StringUtils::ParseTarget name fallback")
+{
+    auto name = StringUtils::ParseTarget("PlayerName");
+    CHECK(name.Type == TargetType::Name);
+    CHECK_EQ(name.Value, std::string("PlayerName"));
+}
+
+TEST_CASE("StringUtils::ParseTarget SteamID forms")
+{
+    // 64-bit SteamID (>= 15 digits, valid range).
+    auto id64 = StringUtils::ParseTarget("76561197960287930");
+    CHECK(id64.Type == TargetType::SteamId);
+
+    // SteamID3 normalized to 64-bit value.
+    auto id3 = StringUtils::ParseTarget("[U:1:22202]");
+    CHECK(id3.Type == TargetType::SteamId);
+    CHECK_EQ(id3.Value, std::string("76561197960287930"));
+
+    // SteamID2 normalized to 64-bit value.
+    auto id2 = StringUtils::ParseTarget("STEAM_0:0:11101");
+    CHECK(id2.Type == TargetType::SteamId);
+    CHECK_EQ(id2.Value, std::string("76561197960287930"));
+}

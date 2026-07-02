@@ -17,12 +17,17 @@ project(cs2-kit VERSION 1.0.0 LANGUAGES CXX)
 
 option(CS2KIT_BUILD_STANDALONE "Build CS2Kit as a standalone project" ${PROJECT_IS_TOP_LEVEL})
 
+# Conan imported targets are directory-scoped; make them visible to sibling
+# plugin directories when cs2-kit is vendored into a monorepo.
+set(CMAKE_FIND_PACKAGE_TARGETS_GLOBAL ON)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-include(CS2KitThirdParty)
 include(CS2KitSdk)
 
-cs2kit_configure_third_party()
+find_package(cpr CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+
 cs2kit_configure_sdk()
 cs2kit_generate_sdk_protobuf(CS2KIT_PROTO_SOURCES CS2KIT_PROTO_INCLUDE_DIRS)
 
@@ -57,10 +62,37 @@ target_link_libraries(cs2-kit
     PUBLIC
         CS2Kit::Metamod
         CS2Kit::HL2SDK
-        thirdparty::cpr
-        thirdparty::nlohmann_json
+        cpr::cpr
+        nlohmann_json::nlohmann_json
 )
 
 if(WIN32)
     target_link_libraries(cs2-kit PUBLIC psapi)
+endif()
+
+if(CS2KIT_BUILD_STANDALONE)
+    include(CTest)
+endif()
+
+# SDK-free utils tests: recompile the pure-logic sources instead of linking
+# cs2-kit, so the test binary needs no HL2SDK/Metamod link inputs.
+if(BUILD_TESTING)
+    add_executable(cs2kit-utils-tests
+        tests/MicroTestMain.cpp
+        tests/ParseDurationTests.cpp
+        tests/StringUtilsTests.cpp
+        tests/SteamIdTests.cpp
+        tests/TimeUtilsTests.cpp
+        src/Utils/StringUtils.cpp
+        src/Utils/SteamId.cpp
+        src/Utils/TimeUtils.cpp
+    )
+
+    target_compile_features(cs2kit-utils-tests PRIVATE cxx_std_23)
+    target_include_directories(cs2kit-utils-tests PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    )
+
+    add_test(NAME cs2kit-utils COMMAND cs2kit-utils-tests)
 endif()

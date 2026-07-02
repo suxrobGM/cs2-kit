@@ -1,69 +1,119 @@
 {
-  "version": 4,
+  "$schema": "https://raw.githubusercontent.com/Kitware/CMake/master/Help/manual/presets/schema.json",
+  "version": 8,
   "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "toolchainFile": "${sourceDir}/build/${presetName}/generators/conan_toolchain.cmake",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "linux-base",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "windows-base",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
     {
       "name": "linux-steamrt-release",
       "displayName": "Linux Steam Runtime Release",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/linux-steamrt-release",
+      "inherits": "linux-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/linux-steamrt-release/generators/conan_toolchain.cmake",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
       "name": "linux-steamrt-debug",
       "displayName": "Linux Steam Runtime Debug",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/linux-steamrt-debug",
+      "inherits": "linux-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/linux-steamrt-debug/generators/conan_toolchain.cmake",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
       "name": "windows-msvc-release",
       "displayName": "Windows MSVC Release",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/windows-msvc-release",
+      "inherits": "windows-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/windows-msvc-release/generators/conan_toolchain.cmake",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
       "name": "windows-msvc-debug",
       "displayName": "Windows MSVC Debug",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/windows-msvc-debug",
+      "inherits": "windows-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/windows-msvc-debug/generators/conan_toolchain.cmake",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDebug"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     }
   ],
   "buildPresets": [
+    { "name": "linux-steamrt-release", "configurePreset": "linux-steamrt-release" },
+    { "name": "linux-steamrt-debug", "configurePreset": "linux-steamrt-debug" },
+    { "name": "windows-msvc-release", "configurePreset": "windows-msvc-release" },
+    { "name": "windows-msvc-debug", "configurePreset": "windows-msvc-debug" }
+  ],
+  "testPresets": [
+    {
+      "name": "test-base",
+      "hidden": true,
+      "output": { "outputOnFailure": true }
+    },
+    { "name": "linux-steamrt-release", "inherits": "test-base", "configurePreset": "linux-steamrt-release" },
+    { "name": "linux-steamrt-debug", "inherits": "test-base", "configurePreset": "linux-steamrt-debug" },
+    { "name": "windows-msvc-release", "inherits": "test-base", "configurePreset": "windows-msvc-release" },
+    { "name": "windows-msvc-debug", "inherits": "test-base", "configurePreset": "windows-msvc-debug" }
+  ],
+  "workflowPresets": [
     {
       "name": "linux-steamrt-release",
-      "configurePreset": "linux-steamrt-release"
+      "steps": [
+        { "type": "configure", "name": "linux-steamrt-release" },
+        { "type": "build", "name": "linux-steamrt-release" },
+        { "type": "test", "name": "linux-steamrt-release" }
+      ]
     },
     {
       "name": "linux-steamrt-debug",
-      "configurePreset": "linux-steamrt-debug"
+      "steps": [
+        { "type": "configure", "name": "linux-steamrt-debug" },
+        { "type": "build", "name": "linux-steamrt-debug" },
+        { "type": "test", "name": "linux-steamrt-debug" }
+      ]
     },
     {
       "name": "windows-msvc-release",
-      "configurePreset": "windows-msvc-release"
+      "steps": [
+        { "type": "configure", "name": "windows-msvc-release" },
+        { "type": "build", "name": "windows-msvc-release" },
+        { "type": "test", "name": "windows-msvc-release" }
+      ]
     },
     {
       "name": "windows-msvc-debug",
-      "configurePreset": "windows-msvc-debug"
+      "steps": [
+        { "type": "configure", "name": "windows-msvc-debug" },
+        { "type": "build", "name": "windows-msvc-debug" },
+        { "type": "test", "name": "windows-msvc-debug" }
+      ]
     }
   ]
 }

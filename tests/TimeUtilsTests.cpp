@@ -1,0 +1,83 @@
+#include "MicroTest.hpp"
+
+#include <CS2Kit/Utils/TimeUtils.hpp>
+#include <cstdint>
+#include <string>
+
+using CS2Kit::Utils::TimeUtils;
+
+TEST_CASE("TimeUtils::ParseDuration suffixes")
+{
+    CHECK_EQ(TimeUtils::ParseDuration("30s"), static_cast<int64_t>(30));
+    CHECK_EQ(TimeUtils::ParseDuration("5m"), static_cast<int64_t>(300));
+    CHECK_EQ(TimeUtils::ParseDuration("2h"), static_cast<int64_t>(7200));
+    CHECK_EQ(TimeUtils::ParseDuration("7d"), static_cast<int64_t>(604800));
+    CHECK_EQ(TimeUtils::ParseDuration("1w"), static_cast<int64_t>(604800));
+}
+
+TEST_CASE("TimeUtils::ParseDuration case-insensitive and bare seconds")
+{
+    CHECK_EQ(TimeUtils::ParseDuration("5M"), static_cast<int64_t>(300));
+    CHECK_EQ(TimeUtils::ParseDuration("2H"), static_cast<int64_t>(7200));
+    CHECK_EQ(TimeUtils::ParseDuration("3600"), static_cast<int64_t>(3600));
+}
+
+TEST_CASE("TimeUtils::ParseDuration permanent / invalid -> 0")
+{
+    CHECK_EQ(TimeUtils::ParseDuration("0"), static_cast<int64_t>(0));
+    CHECK_EQ(TimeUtils::ParseDuration("perm"), static_cast<int64_t>(0));
+    CHECK_EQ(TimeUtils::ParseDuration("permanent"), static_cast<int64_t>(0));
+    CHECK_EQ(TimeUtils::ParseDuration("PERM"), static_cast<int64_t>(0));
+    CHECK_EQ(TimeUtils::ParseDuration(""), static_cast<int64_t>(0));
+    CHECK_EQ(TimeUtils::ParseDuration("garbage"), static_cast<int64_t>(0));
+}
+
+TEST_CASE("TimeUtils::FormatDuration")
+{
+    CHECK_EQ(TimeUtils::FormatDuration(0), std::string("Permanent"));
+    CHECK_EQ(TimeUtils::FormatDuration(1), std::string("1 second"));
+    CHECK_EQ(TimeUtils::FormatDuration(45), std::string("45 seconds"));
+    CHECK_EQ(TimeUtils::FormatDuration(60), std::string("1 minute"));
+    CHECK_EQ(TimeUtils::FormatDuration(300), std::string("5 minutes"));
+    CHECK_EQ(TimeUtils::FormatDuration(3600), std::string("1 hour"));
+    CHECK_EQ(TimeUtils::FormatDuration(7200), std::string("2 hours"));
+    CHECK_EQ(TimeUtils::FormatDuration(86400), std::string("1 day"));
+    CHECK_EQ(TimeUtils::FormatDuration(604800), std::string("1 week"));
+    CHECK_EQ(TimeUtils::FormatDuration(1209600), std::string("2 weeks"));
+}
+
+TEST_CASE("TimeUtils::FormatDuration prefers largest exact unit")
+{
+    // 90 minutes is not an exact hour, so it falls back to minutes.
+    CHECK_EQ(TimeUtils::FormatDuration(5400), std::string("90 minutes"));
+}
+
+TEST_CASE("TimeUtils::FormatTimestamp zero -> Never")
+{
+    CHECK_EQ(TimeUtils::FormatTimestamp(0), std::string("Never"));
+}
+
+TEST_CASE("TimeUtils::Now is a plausible Unix timestamp")
+{
+    int64_t now = TimeUtils::Now();
+    // After 2025-01-01 and before 2100-01-01 - just a sanity envelope.
+    CHECK(now > 1735689600LL);
+    CHECK(now < 4102444800LL);
+}
+
+TEST_CASE("TimeUtils::IsExpired")
+{
+    CHECK(!TimeUtils::IsExpired(0));  // 0 == permanent, never expires
+    CHECK(TimeUtils::IsExpired(1));   // far in the past
+    CHECK(!TimeUtils::IsExpired(TimeUtils::Now() + 3600));
+}
+
+TEST_CASE("TimeUtils::GetExpirationTime")
+{
+    CHECK_EQ(TimeUtils::GetExpirationTime(0), static_cast<int64_t>(0));
+    int64_t exp = TimeUtils::GetExpirationTime(3600);
+    int64_t now = TimeUtils::Now();
+    // Should be roughly an hour out (allow a small execution window).
+    CHECK(exp - now >= 3599);
+    CHECK(exp - now <= 3601);
+}

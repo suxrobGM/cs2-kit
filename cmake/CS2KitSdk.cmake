@@ -71,27 +71,27 @@ function(cs2kit_configure_sdk)
         PLATFORM_64BITS
     )
 
+    set(gnu_flags
+        -pipe
+        -fno-strict-aliasing
+        -Wall
+        -Wno-sign-compare
+        -Wno-uninitialized
+        -Wno-unused
+        -Wno-switch
+        -msse
+        -fPIC
+        -fvisibility=hidden
+        -fvisibility-inlines-hidden
+        -Wno-non-virtual-dtor
+        -Wno-overloaded-virtual
+        -Wno-register
+        -Wno-invalid-offsetof
+        -Wno-delete-non-virtual-dtor
+    )
     target_compile_options(cs2kit_hl2sdk INTERFACE
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-pipe>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-fno-strict-aliasing>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wall>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-sign-compare>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-uninitialized>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-unused>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-switch>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-msse>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-fPIC>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-fvisibility=hidden>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-fvisibility-inlines-hidden>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-non-virtual-dtor>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-overloaded-virtual>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-register>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-invalid-offsetof>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-delete-non-virtual-dtor>
-        $<$<CXX_COMPILER_ID:MSVC>:/W3>
-        $<$<CXX_COMPILER_ID:MSVC>:/EHsc>
-        $<$<CXX_COMPILER_ID:MSVC>:/TP>
-        $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
+        "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:${gnu_flags}>"
+        "$<$<CXX_COMPILER_ID:MSVC>:/W3;/EHsc;/TP;/utf-8>"
     )
 
     if(WIN32)

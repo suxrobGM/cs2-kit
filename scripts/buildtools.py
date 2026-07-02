@@ -112,7 +112,16 @@ def build(repo_root: Path, preset: str, *, workflow: bool) -> None:
     require_build_tools()
     build_type = "Debug" if "debug" in preset else "Release"
 
+    # Own profiles first (cs2-kit standalone); vendored cs2-kit's otherwise, so
+    # consuming repos don't carry duplicate copies that drift.
     profiles = repo_root / "conan/profiles"
+    if not profiles.is_dir():
+        profiles = repo_root / "vendor/cs2-kit/conan/profiles"
+    if not profiles.is_dir():
+        die(
+            "no Conan profiles at conan/profiles or "
+            f"vendor/cs2-kit/conan/profiles under {repo_root}"
+        )
     settings = ["-s", f"build_type={build_type}"]
     if preset.startswith("linux-"):
         profile = profiles / "linux-steamrt.txt"
