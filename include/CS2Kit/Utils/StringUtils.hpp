@@ -10,9 +10,11 @@ namespace CS2Kit::Utils
 
 /**
  * Parse a human duration string into seconds. Accepts a bare integer (seconds) or an
- * integer with a unit suffix: `s` seconds, `m` minutes, `h` hours, `d` days. The literals
- * `0`, `perm`, and `permanent` mean "permanent" (returns 0). Surrounding whitespace is ignored.
- * Returns -1 on parse failure, 0 for permanent, otherwise the duration in seconds.
+ * integer with a unit suffix: `s` seconds, `m` minutes, `h` hours, `d` days, `w` weeks
+ * (case-insensitive). The literals `0`, `perm`, and `permanent` mean "permanent" (returns 0).
+ * Surrounding whitespace is ignored. This is the single canonical duration grammar;
+ * TimeUtils::ParseDuration delegates here.
+ * Returns -1 on parse failure or int overflow, 0 for permanent, otherwise seconds.
  */
 int ParseDuration(std::string_view text);
 
@@ -34,6 +36,15 @@ public:
 
     /** Replace each `{key}` occurrence in @p text with its mapped value. */
     static std::string SubstituteTokens(std::string text, const std::map<std::string, std::string>& tokens);
+
+    /** Escape `& < > " '` as HTML entities for safe embedding in center-HTML panels. */
+    static std::string EscapeHtml(const std::string& text);
+
+    /**
+     * Truncate to at most `maxBytes` bytes plus `ellipsis`, cutting at a UTF-8 sequence
+     * boundary so multibyte text (e.g. Cyrillic) never renders a split character.
+     */
+    static std::string TruncateUtf8(const std::string& text, std::size_t maxBytes, std::string_view ellipsis = "...");
 
     static bool IsNumeric(const std::string& str);
 

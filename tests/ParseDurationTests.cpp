@@ -35,6 +35,12 @@ TEST_CASE("ParseDuration: days suffix")
     CHECK_EQ(ParseDuration("1d"), 86400);
 }
 
+TEST_CASE("ParseDuration: weeks suffix")
+{
+    CHECK_EQ(ParseDuration("1w"), 604800);
+    CHECK_EQ(ParseDuration("2w"), 1209600);
+}
+
 TEST_CASE("ParseDuration: permanent")
 {
     CHECK_EQ(ParseDuration("0"), 0);
@@ -63,9 +69,15 @@ TEST_CASE("ParseDuration: invalid inputs return -1")
     CHECK_EQ(ParseDuration("5mm"), -1);    // double suffix
 }
 
-TEST_CASE("ParseDuration: case sensitivity of suffix")
+TEST_CASE("ParseDuration: case-insensitive suffixes and literals")
 {
-    // Only lowercase suffixes are handled; uppercase is rejected.
-    CHECK_EQ(ParseDuration("5M"), -1);
-    CHECK_EQ(ParseDuration("PERM"), -1);
+    CHECK_EQ(ParseDuration("5M"), 300);
+    CHECK_EQ(ParseDuration("2H"), 7200);
+    CHECK_EQ(ParseDuration("PERM"), 0);
+    CHECK_EQ(ParseDuration("Permanent"), 0);
+}
+
+TEST_CASE("ParseDuration: int overflow returns -1")
+{
+    CHECK_EQ(ParseDuration("999999999d"), -1);
 }

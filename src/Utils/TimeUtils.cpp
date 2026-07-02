@@ -15,58 +15,7 @@ int64_t TimeUtils::Now()
 
 int64_t TimeUtils::ParseDuration(const std::string& duration)
 {
-    std::string lower = StringUtils::ToLower(duration);
-
-    if (lower.empty() || lower == "0" || lower == "perm" || lower == "permanent")
-        return 0;
-
-    // "<digits><unit>" where unit is one of s/m/h/d/w (was regex `(\d+)([smhdw])`, full match).
-    size_t digits = 0;
-    while (digits < lower.size() && lower[digits] >= '0' && lower[digits] <= '9')
-    {
-        ++digits;
-    }
-
-    if (digits > 0 && digits + 1 == lower.size())
-    {
-        int64_t mult = 0;
-        switch (lower[digits])
-        {
-        case 's':
-            mult = 1;
-            break;
-        case 'm':
-            mult = SecondsPerMinute;
-            break;
-        case 'h':
-            mult = SecondsPerHour;
-            break;
-        case 'd':
-            mult = SecondsPerDay;
-            break;
-        case 'w':
-            mult = SecondsPerWeek;
-            break;
-        default:
-            break;
-        }
-
-        int64_t value = 0;
-        if (mult != 0 && std::from_chars(lower.data(), lower.data() + digits, value).ec == std::errc{})
-        {
-            return value * mult;
-        }
-    }
-
-    // Bare integer (or leading-integer) fallback, mirroring the original std::stoll behavior.
-    try
-    {
-        return std::stoll(duration);
-    }
-    catch (...)
-    {
-        return 0;
-    }
+    return ::CS2Kit::Utils::ParseDuration(duration);
 }
 
 std::string TimeUtils::FormatDuration(int64_t seconds)
@@ -95,6 +44,42 @@ std::string TimeUtils::FormatDuration(int64_t seconds)
         return std::format("{} minute{}", m, m > 1 ? "s" : "");
     }
     return std::format("{} second{}", seconds, seconds > 1 ? "s" : "");
+}
+
+std::string TimeUtils::FormatDurationLabel(int64_t seconds, const DurationUnitLabels& units)
+{
+    if (seconds <= 0)
+        return units.Permanent;
+
+    struct Unit
+    {
+        int64_t Divisor;
+        const std::string* Label;
+    };
+    const Unit unitTable[] = {
+        {SecondsPerDay, &units.Days},
+        {SecondsPerHour, &units.Hours},
+        {SecondsPerMinute, &units.Minutes},
+    };
+    for (const auto& unit : unitTable)
+    {
+        if (seconds % unit.Divisor == 0)
+            return std::format("{} {}", seconds / unit.Divisor, *unit.Label);
+    }
+    return std::format("{} {}", seconds, units.Seconds);
+}
+
+std::string TimeUtils::FormatExpiry(int64_t expiresAt, int64_t nowSec, std::string_view permanentText,
+                                    std::string_view expiresInPrefix)
+{
+    if (expiresAt <= 0)
+        return std::string(permanentText);
+
+    int64_t remaining = expiresAt - nowSec;
+    if (remaining <= 0)
+        return std::string(permanentText);
+
+    return std::format("{} {}", expiresInPrefix, FormatDuration(remaining));
 }
 
 std::string TimeUtils::FormatTimestamp(int64_t timestamp)

@@ -81,6 +81,7 @@ if(BUILD_TESTING)
         tests/MicroTestMain.cpp
         tests/MemoryAccessTests.cpp
         tests/ParseDurationTests.cpp
+        tests/SlotThrottleTests.cpp
         tests/StringUtilsTests.cpp
         tests/SteamIdTests.cpp
         tests/TimeUtilsTests.cpp

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <charconv>
+#include <limits>
 #include <sstream>
 
 namespace CS2Kit::Utils
@@ -17,11 +18,14 @@ int ParseDuration(std::string_view text)
 
     if (text.empty())
         return -1;
-    if (text == "0" || text == "perm" || text == "permanent")
+
+    std::string lower(text);
+    std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return std::tolower(c); });
+    if (lower == "0" || lower == "perm" || lower == "permanent")
         return 0;
 
-    int multiplier = 1;
-    char suffix = text.back();
+    int64_t multiplier = 1;
+    char suffix = lower.back();
     if (!std::isdigit(static_cast<unsigned char>(suffix)))
     {
         switch (suffix)
@@ -38,18 +42,24 @@ int ParseDuration(std::string_view text)
         case 'd':
             multiplier = 86400;
             break;
+        case 'w':
+            multiplier = 604800;
+            break;
         default:
             return -1;
         }
-        text.remove_suffix(1);
+        lower.pop_back();
     }
 
     int value = 0;
-    auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
-    if (ec != std::errc{} || ptr != text.data() + text.size() || value < 0)
+    auto [ptr, ec] = std::from_chars(lower.data(), lower.data() + lower.size(), value);
+    if (ec != std::errc{} || ptr != lower.data() + lower.size() || value < 0)
         return -1;
 
-    return value * multiplier;
+    int64_t total = static_cast<int64_t>(value) * multiplier;
+    if (total > std::numeric_limits<int>::max())
+        return -1;
+    return static_cast<int>(total);
 }
 
 std::string StringUtils::ToLower(const std::string& str)
@@ -139,6 +149,48 @@ std::string StringUtils::SubstituteTokens(std::string text, const std::map<std::
     for (const auto& [key, value] : tokens)
         text = ReplaceAll(text, "{" + key + "}", value);
     return text;
+}
+
+std::string StringUtils::EscapeHtml(const std::string& text)
+{
+    std::string out;
+    out.reserve(text.size());
+    for (char c : text)
+    {
+        switch (c)
+        {
+        case '&':
+            out += "&amp;";
+            break;
+        case '<':
+            out += "&lt;";
+            break;
+        case '>':
+            out += "&gt;";
+            break;
+        case '"':
+            out += "&quot;";
+            break;
+        case '\'':
+            out += "&#39;";
+            break;
+        default:
+            out += c;
+            break;
+        }
+    }
+    return out;
+}
+
+std::string StringUtils::TruncateUtf8(const std::string& text, std::size_t maxBytes, std::string_view ellipsis)
+{
+    if (text.size() <= maxBytes)
+        return text;
+    std::size_t end = maxBytes;
+    // Back up past UTF-8 continuation bytes so the cut never splits a multibyte sequence.
+    while (end > 0 && (static_cast<unsigned char>(text[end]) & 0xC0) == 0x80)
+        --end;
+    return text.substr(0, end).append(ellipsis);
 }
 
 bool StringUtils::IsNumeric(const std::string& str)

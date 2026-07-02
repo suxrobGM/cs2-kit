@@ -1,7 +1,6 @@
 #include "MicroTest.hpp"
 
 #include <CS2Kit/Utils/StringUtils.hpp>
-
 #include <string>
 #include <vector>
 
@@ -130,4 +129,26 @@ TEST_CASE("StringUtils::ParseTarget SteamID forms")
     auto id2 = StringUtils::ParseTarget("STEAM_0:0:11101");
     CHECK(id2.Type == TargetType::SteamId);
     CHECK_EQ(id2.Value, std::string("76561197960287930"));
+}
+
+TEST_CASE("StringUtils::EscapeHtml")
+{
+    CHECK_EQ(StringUtils::EscapeHtml("a & b < c > d \" e ' f"),
+             std::string("a &amp; b &lt; c &gt; d &quot; e &#39; f"));
+    CHECK_EQ(StringUtils::EscapeHtml("plain text"), std::string("plain text"));
+    CHECK_EQ(StringUtils::EscapeHtml(""), std::string(""));
+    CHECK_EQ(StringUtils::EscapeHtml("<script>"), std::string("&lt;script&gt;"));
+}
+
+TEST_CASE("StringUtils::TruncateUtf8")
+{
+    CHECK_EQ(StringUtils::TruncateUtf8("short", 40), std::string("short"));
+    CHECK_EQ(StringUtils::TruncateUtf8("abcdef", 4), std::string("abcd..."));
+    CHECK_EQ(StringUtils::TruncateUtf8("abcdef", 6), std::string("abcdef"));  // exact fit, no ellipsis
+
+    // Cyrillic is 2 bytes per character; a cut at byte 5 would split the third character.
+    std::string cyrillic = "\xD0\xB0\xD0\xB1\xD0\xB2";  // "абв"
+    CHECK_EQ(StringUtils::TruncateUtf8(cyrillic, 5), std::string("\xD0\xB0\xD0\xB1..."));
+
+    CHECK_EQ(StringUtils::TruncateUtf8("abcdef", 4, ""), std::string("abcd"));  // custom ellipsis
 }

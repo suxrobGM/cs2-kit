@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <map>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -30,6 +31,12 @@ public:
 
     /** Look up a key in @p slot's registered language, falling back to the active language then English. */
     std::string Get(const std::string& key, int slot) const;
+
+    /** @ref Get(key, slot), then replace each `{token}` occurrence from @p tokens. */
+    std::string Get(const std::string& key, int slot, const std::map<std::string, std::string>& tokens) const;
+
+    /** Active-language variant of the token-substituting @ref Get. */
+    std::string Get(const std::string& key, const std::map<std::string, std::string>& tokens) const;
 
     /** Language codes that were successfully loaded (one per JSON file). */
     std::vector<std::string> GetAvailableLanguages() const;

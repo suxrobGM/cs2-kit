@@ -1,6 +1,7 @@
 #include <CS2Kit/Core/Paths.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Utils/Log.hpp>
+#include <CS2Kit/Utils/StringUtils.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <filesystem>
 #include <fstream>
@@ -166,6 +167,16 @@ std::string Translations::Get(const std::string& key, int slot) const
         if (const std::string* v = LookupIn("en", key))
             return *v;
     return key;
+}
+
+std::string Translations::Get(const std::string& key, int slot, const std::map<std::string, std::string>& tokens) const
+{
+    return StringUtils::SubstituteTokens(Get(key, slot), tokens);
+}
+
+std::string Translations::Get(const std::string& key, const std::map<std::string, std::string>& tokens) const
+{
+    return Get(key, -1, tokens);
 }
 
 }  // namespace CS2Kit::Utils
