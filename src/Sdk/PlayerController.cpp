@@ -38,6 +38,39 @@ void CallVtableByName(void* target, const char* name, Args... args)
     }
     CallVirtual<void>(index, target, args...);
 }
+
+// Origin/rotation are not schema fields of CBaseEntity in CS2; they live on the
+// pawn's CGameSceneNode, reached via m_CBodyComponent -> m_pSceneNode.
+void* ResolveSceneNode(CEntityInstance* pawn)
+{
+    if (!pawn)
+        return nullptr;
+
+    int bodyOffset = Engine().Schema().GetOffset("CBaseEntity", "m_CBodyComponent");
+    if (bodyOffset < 0)
+        return nullptr;
+    auto* body = *reinterpret_cast<uint8_t**>(reinterpret_cast<uint8_t*>(pawn) + bodyOffset);
+    if (!body)
+        return nullptr;
+
+    int nodeOffset = Engine().Schema().GetOffset("CBodyComponent", "m_pSceneNode");
+    if (nodeOffset < 0)
+        return nullptr;
+    return *reinterpret_cast<void**>(body + nodeOffset);
+}
+
+template <typename T>
+T GetSceneNodeField(CEntityInstance* pawn, const char* fieldName)
+{
+    void* node = ResolveSceneNode(pawn);
+    if (!node)
+        return T{0.0f, 0.0f, 0.0f};
+
+    int offset = Engine().Schema().GetOffset("CGameSceneNode", fieldName);
+    if (offset < 0)
+        return T{0.0f, 0.0f, 0.0f};
+    return *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(node) + offset);
+}
 }  // namespace
 
 PlayerController::PlayerController(int slot) : _slot(slot)
@@ -166,12 +199,12 @@ void PlayerController::SetRender(uint8_t mode, uint32_t color) const
 
 Vector PlayerController::GetAbsOrigin() const
 {
-    return GetPawnField<Vector>("CBaseEntity", "m_vecAbsOrigin");
+    return GetSceneNodeField<Vector>(GetPawn(), "m_vecAbsOrigin");
 }
 
 QAngle PlayerController::GetAbsAngles() const
 {
-    return GetPawnField<QAngle>("CBaseEntity", "m_angRotation");
+    return GetSceneNodeField<QAngle>(GetPawn(), "m_angAbsRotation");
 }
 
 QAngle PlayerController::GetEyeAngles() const
@@ -268,6 +301,7 @@ void PlayerController::SetVisible(bool visible, uint8_t alpha) const
         return;
 
     RenderMode_t mode = visible ? RenderMode_t::Normal : RenderMode_t::TransTexture;
+    // m_clrRender packs alpha in the top byte; the low three bytes stay opaque white.
     uint32_t color = visible ? ColorOpaqueWhite : ((static_cast<uint32_t>(alpha) << 24) | 0x00FFFFFFu);
 
     SetEntityRender(pawn, mode, color);
