@@ -24,15 +24,15 @@ namespace
 // globaltypes.h) - NOT the legacy Source1 struct in the SDK's shareddefs.h.
 struct EmitSoundParams
 {
-    const char* SoundName = nullptr;      // 0x00
-    Vector SoundOrigin{0.0f, 0.0f, 0.0f}; // 0x08
-    float Volume = 1.0f;                  // 0x14
-    float SoundTime = 0.0f;               // 0x18
-    uint8_t Pad1C[0x4]{};                 // 0x1c
-    uint32_t ForceGuid = 0;               // 0x20
-    uint8_t Pad24[0x4]{};                 // 0x24
-    int16_t Pitch = 100;                  // 0x28
-    uint8_t Flags = 0;                    // 0x2a
+    const char* SoundName = nullptr;       // 0x00
+    Vector SoundOrigin{0.0f, 0.0f, 0.0f};  // 0x08
+    float Volume = 1.0f;                   // 0x14
+    float SoundTime = 0.0f;                // 0x18
+    uint8_t Pad1C[0x4]{};                  // 0x1c
+    uint32_t ForceGuid = 0;                // 0x20
+    uint8_t Pad24[0x4]{};                  // 0x24
+    int16_t Pitch = 100;                   // 0x28
+    uint8_t Flags = 0;                     // 0x2a
 };
 // Passed by const reference, so only field offsets matter to the engine ABI.
 static_assert(offsetof(EmitSoundParams, Volume) == 0x14);
@@ -94,8 +94,7 @@ bool EntityOpsService::Initialize()
     {
         *signature.Slot = gameData.FindSignature(signature.Name);
         if (!*signature.Slot)
-            Log::Warn("Entity ops: signature '{}' not resolved; the dependent operation is disabled.",
-                      signature.Name);
+            Log::Warn("Entity ops: signature '{}' not resolved; the dependent operation is disabled.", signature.Name);
     }
 
     return CanSpawn();
@@ -156,8 +155,8 @@ void EntityOpsService::AddIOEvent(CEntityInstance* target, const char* input, fl
         return;
 
     variant_t value("");
-    std::bit_cast<AddEntityIOEventFn>(_addEntityIOEvent)(system, target, input, activator, caller, &value,
-                                                         delaySeconds, 0, nullptr, nullptr);
+    std::bit_cast<AddEntityIOEventFn>(_addEntityIOEvent)(system, target, input, activator, caller, &value, delaySeconds,
+                                                         0, nullptr, nullptr);
 }
 
 void EntityOpsService::Remove(CEntityInstance* entity)
@@ -181,8 +180,7 @@ void EntityOpsService::SetModel(CEntityInstance* entity, const char* modelPath)
     std::bit_cast<SetModelFn>(_setModel)(entity, modelPath);
 }
 
-void EntityOpsService::EmitSound(CEntityInstance* entity, const char* soundEvent, int pitch, float volume,
-                                 float delay)
+void EntityOpsService::EmitSound(CEntityInstance* entity, const char* soundEvent, int pitch, float volume, float delay)
 {
     if (!_emitSoundParams || !entity || !soundEvent)
         return;
@@ -190,8 +188,8 @@ void EntityOpsService::EmitSound(CEntityInstance* entity, const char* soundEvent
     std::bit_cast<EmitSoundParamsFn>(_emitSoundParams)(entity, soundEvent, pitch, volume, delay);
 }
 
-void EntityOpsService::EmitSoundFilter(IRecipientFilter& filter, CEntityInstance* source,
-                                       const char* soundEvent, float volume, int pitch)
+void EntityOpsService::EmitSoundFilter(IRecipientFilter& filter, CEntityInstance* source, const char* soundEvent,
+                                       float volume, int pitch)
 {
     if (!_emitSoundFilter || !source || !soundEvent)
         return;
@@ -205,8 +203,7 @@ void EntityOpsService::EmitSoundFilter(IRecipientFilter& filter, CEntityInstance
     std::bit_cast<EmitSoundFilterFn>(_emitSoundFilter)(filter, sourceIndex, params);
 }
 
-void EntityOpsService::NotifyFieldChanged(CEntityInstance* entity, const char* className,
-                                          const char* fieldName)
+void EntityOpsService::NotifyFieldChanged(CEntityInstance* entity, const char* className, const char* fieldName)
 {
     if (!entity || !className || !fieldName)
         return;

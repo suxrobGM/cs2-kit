@@ -17,10 +17,10 @@
 #include <CS2Kit/Sdk/PrecacheService.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Log.hpp>
-#include <format>
 #include <ISmmAPI.h>
 #include <eiface.h>
 #include <engine/igameeventsystem.h>
+#include <format>
 #include <icvar.h>
 #include <interfaces/interfaces.h>
 #include <networksystem/inetworkmessages.h>

@@ -176,9 +176,9 @@ bool EntitySystem::IsPlayerSlotValid(int slot)
 namespace
 {
 // Prototypes mirror CS2Fixes' src/addresses.h; re-verify there after CS2 updates.
-using FindByClassNameFn = CEntityInstance* (*)(CEntitySystem* system, CEntityInstance* startAfter,
+using FindByClassNameFn = CEntityInstance* (*)(CEntitySystem * system, CEntityInstance* startAfter,
                                                const char* className);
-using FindByNameFn = CEntityInstance* (*)(CEntitySystem* system, CEntityInstance* startAfter, const char* name,
+using FindByNameFn = CEntityInstance* (*)(CEntitySystem * system, CEntityInstance* startAfter, const char* name,
                                           CEntityInstance* searching, CEntityInstance* activator,
                                           CEntityInstance* caller, void* filter);
 }  // namespace

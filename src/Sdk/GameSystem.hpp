@@ -3,10 +3,9 @@
 // igamesystem.h assumes these are already in the TU: CSplitScreenSlot lives in
 // convar.h; entitysystem.h supplies CUtlString/CEntityHandle/SpawnGroupHandle_t.
 #include <entity2/entitysystem.h>
-#include <tier1/convar.h>
-
 #include <igamesystem.h>
 #include <igamesystemfactory.h>
+#include <tier1/convar.h>
 #include <tier1/utlvector.h>
 
 /**

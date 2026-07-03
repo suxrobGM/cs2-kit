@@ -37,8 +37,7 @@ bool PrecacheService::Initialize(std::string systemName)
 
     auto& gameData = Core::Engine().GameData;
 
-    auto* listHead =
-        static_cast<GameSystemFactory**>(gameData.ResolveSignature("IGameSystem_InitAllSystems_pFirst"));
+    auto* listHead = static_cast<GameSystemFactory**>(gameData.ResolveSignature("IGameSystem_InitAllSystems_pFirst"));
     _eventDispatcher = gameData.ResolveSignature("IGameSystem_LoopPostInitAllSystems_pEventDispatcher");
     _gameSystems = gameData.ResolveSignature("IGameSystem_LoopDestroyAllSystems_s_GameSystems");
 

@@ -37,8 +37,7 @@ CEntityInstance* SpawnParticle(const char* effectName, const Vector& origin, flo
     return particle;
 }
 
-CEntityInstance* SpawnBeam(const Vector& from, const Vector& to, const Color& color, float width,
-                           float lifetimeSeconds)
+CEntityInstance* SpawnBeam(const Vector& from, const Vector& to, const Color& color, float width, float lifetimeSeconds)
 {
     auto& ops = Engine().EntityOps;
     if (!ops.CanSpawn())
