@@ -31,6 +31,10 @@ extend-exclude = ["vendor"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP"]
 
+[tool.ruff.lint.isort]
+# Sibling conan/ profiles dir would otherwise make isort treat conan as first-party.
+known-third-party = ["conan"]
+
 [tool.mypy]
 python_version = "3.14"
 warn_return_any = true

@@ -1,4 +1,8 @@
-from conan import ConanFile
+# Conan rebinds class attributes at runtime; ignore the Pyright false positives.
+# pyright: reportAttributeAccessIssue=false, reportCallIssue=false
+
+# Sibling conan/ profiles dir shadows the conan package for mypy's file resolution.
+from conan import ConanFile  # type: ignore[attr-defined]
 from conan.tools.cmake import CMakeDeps, CMakeToolchain
 
 
