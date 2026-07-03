@@ -1,5 +1,5 @@
 #include <CS2Kit/Sdk/EntityKeyValues.hpp>
-#include <color.h>
+#include <Color.h>
 #include <entity2/entitykeyvalues.h>
 #include <mathlib/vector.h>
 
