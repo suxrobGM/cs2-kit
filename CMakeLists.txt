@@ -42,8 +42,18 @@ if(NOT CS2KIT_ENABLE_POSTGRES)
     list(FILTER CS2KIT_SOURCES EXCLUDE REGEX "src/Database/")
 endif()
 
+# CEntityKeyValues/KeyValues3 method bodies live in these SDK sources - they are
+# neither header-inline nor in the prebuilt tier1 libs - so entity spawn keyvalues
+# (EntityKeyValues/EntityOpsService) need them compiled into the kit.
+set(CS2KIT_HL2SDK_SOURCES
+    "${CS2KIT_HL2SDK_DIR}/entity2/entitykeyvalues.cpp"
+    "${CS2KIT_HL2SDK_DIR}/entity2/entitysystem.cpp"
+    "${CS2KIT_HL2SDK_DIR}/tier1/keyvalues3.cpp"
+)
+
 add_library(cs2-kit STATIC
     ${CS2KIT_SOURCES}
+    ${CS2KIT_HL2SDK_SOURCES}
     ${CS2KIT_PROTO_SOURCES}
 )
 add_library(CS2Kit::CS2Kit ALIAS cs2-kit)

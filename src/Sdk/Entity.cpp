@@ -6,12 +6,21 @@
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Sdk/MemoryAccess.hpp>
 #include <CS2Kit/Utils/Log.hpp>
+#include <bit>
 #include <entity2/concreteentitylist.h>
 #include <entity2/entityidentity.h>
 #include <entity2/entityinstance.h>
 #include <entity2/entitysystem.h>
 
 using CS2Kit::Core::Engine;
+
+// The SDK's entity2 sources (entitykeyvalues.cpp) link against this accessor;
+// route it to the kit's resolved entity system so both agree on the pointer.
+CGameEntitySystem* GameEntitySystem()
+{
+    auto* services = CS2Kit::Core::EngineOrNull();
+    return services ? services->Entities.GetEntitySystem() : nullptr;
+}
 
 namespace CS2Kit::Sdk
 {
@@ -162,6 +171,53 @@ uint64_t EntitySystem::GetPlayerButtons(int slot)
 bool EntitySystem::IsPlayerSlotValid(int slot)
 {
     return GetPlayerController(slot) != nullptr;
+}
+
+namespace
+{
+// Prototypes mirror CS2Fixes' src/addresses.h; re-verify there after CS2 updates.
+using FindByClassNameFn = CEntityInstance* (*)(CEntitySystem* system, CEntityInstance* startAfter,
+                                               const char* className);
+using FindByNameFn = CEntityInstance* (*)(CEntitySystem* system, CEntityInstance* startAfter, const char* name,
+                                          CEntityInstance* searching, CEntityInstance* activator,
+                                          CEntityInstance* caller, void* filter);
+}  // namespace
+
+void EntitySystem::ResolveFinderSignatures()
+{
+    if (_findersResolved)
+        return;
+
+    auto& gameData = Engine().GameData;
+    _findByClassName = gameData.FindSignature("CGameEntitySystem_FindEntityByClassName");
+    _findByName = gameData.FindSignature("CGameEntitySystem_FindEntityByName");
+
+    if (!_findByClassName || !_findByName)
+        Log::Warn("Entity finder signature(s) not resolved; FindByClassName/FindByName are disabled.");
+
+    _findersResolved = true;
+}
+
+CEntityInstance* EntitySystem::FindByClassName(CEntityInstance* startAfter, const char* className)
+{
+    ResolveFinderSignatures();
+
+    auto* pSys = GetEntitySystem();
+    if (!_findByClassName || !pSys || !className)
+        return nullptr;
+
+    return std::bit_cast<FindByClassNameFn>(_findByClassName)(pSys, startAfter, className);
+}
+
+CEntityInstance* EntitySystem::FindByName(CEntityInstance* startAfter, const char* name)
+{
+    ResolveFinderSignatures();
+
+    auto* pSys = GetEntitySystem();
+    if (!_findByName || !pSys || !name)
+        return nullptr;
+
+    return std::bit_cast<FindByNameFn>(_findByName)(pSys, startAfter, name, nullptr, nullptr, nullptr, nullptr);
 }
 
 }  // namespace CS2Kit::Sdk

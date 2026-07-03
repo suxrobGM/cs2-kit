@@ -10,11 +10,14 @@
 #include <CS2Kit/Sdk/ChatInputCapture.hpp>
 #include <CS2Kit/Sdk/ConVarService.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
+#include <CS2Kit/Sdk/EntityOps.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/GameEventService.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
+#include <CS2Kit/Sdk/PrecacheService.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Log.hpp>
+#include <format>
 #include <ISmmAPI.h>
 #include <eiface.h>
 #include <engine/igameeventsystem.h>
@@ -103,6 +106,14 @@ bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, Core::Services& servi
     if (!services.Entities.Initialize())
         Utils::Log::Warn("Entity system init failed (menus may not work).");
 
+    Utils::Log::Info("Initializing entity ops...");
+    if (!services.EntityOps.Initialize())
+        Utils::Log::Warn("Entity ops unavailable (spawned effects degrade; see signature warnings above).");
+
+    Utils::Log::Info("Registering precache game system...");
+    if (!services.Precache.Initialize(std::format("{}_CS2KitPrecache", params.LogPrefix)))
+        Utils::Log::Warn("Precache game system not registered (resource precaching unavailable).");
+
     Utils::Log::Info("Resolving game event manager...");
     if (!services.Messages.InitGameEventManager())
         Utils::Log::Warn("Game event manager not resolved (center HTML display will not work).");
@@ -121,6 +132,7 @@ bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, Core::Services& servi
 
 void Shutdown(Core::Services& services)
 {
+    services.Precache.Shutdown();  // first: the engine must stop referencing our vtables
     services.Events.RemoveAllListeners();
     services.Http.Stop();  // drains in-flight requests before their completion targets go away
     services.Scheduler.CancelAll();

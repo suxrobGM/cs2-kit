@@ -8,9 +8,11 @@
 #include <CS2Kit/Sdk/ChatInputCapture.hpp>
 #include <CS2Kit/Sdk/ConVarService.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
+#include <CS2Kit/Sdk/EntityOps.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/GameEventService.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
+#include <CS2Kit/Sdk/PrecacheService.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <memory>
@@ -46,6 +48,8 @@ public:
     Sdk::GameData GameData;
     Sdk::MessageSystem Messages;
     Sdk::EntitySystem Entities;
+    Sdk::EntityOpsService EntityOps;
+    Sdk::PrecacheService Precache;
     Sdk::ConVarService ConVars;
     Sdk::GameEventService Events;
     Core::Scheduler Scheduler;

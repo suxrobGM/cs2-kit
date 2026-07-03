@@ -60,8 +60,17 @@ public:
     uint64_t GetPlayerButtons(int slot);
     bool IsPlayerSlotValid(int slot);
 
+    /** First entity of @p className after @p startAfter (nullptr = list head).
+     *  nullptr when exhausted or the finder signature is unresolved. */
+    CEntityInstance* FindByClassName(CEntityInstance* startAfter, const char* className);
+
+    /** First entity whose targetname is @p name after @p startAfter (nullptr = list head).
+     *  nullptr when exhausted or the finder signature is unresolved. */
+    CEntityInstance* FindByName(CEntityInstance* startAfter, const char* name);
+
 private:
     void ResolveSchemaOffsets();
+    void ResolveFinderSignatures();
     CEntityIdentity* GetEntityIdentityByIndex(CGameEntitySystem* pSys, int index);
 
     /** Read the CGameEntitySystem* out of IGameResourceService at the gamedata offset. nullptr if either is unavailable. */
@@ -72,6 +81,9 @@ private:
     int _offsetButtons = -1;
     int _offsetButtonStates = -1;
     bool _schemaOffsetsResolved = false;
+    void* _findByClassName = nullptr;
+    void* _findByName = nullptr;
+    bool _findersResolved = false;
 };
 
 }  // namespace CS2Kit::Sdk

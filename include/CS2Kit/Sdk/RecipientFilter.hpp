@@ -30,4 +30,28 @@ private:
     CPlayerBitVec _recipients;
 };
 
+/**
+ * @brief Routes a user message or filtered sound to a chosen set of player slots.
+ * Starts empty; callers add each recipient (e.g. every connected slot for a broadcast).
+ */
+class MultiRecipientFilter : public IRecipientFilter
+{
+public:
+    MultiRecipientFilter() = default;
+
+    void AddRecipient(int slot)
+    {
+        if (slot >= 0 && slot < ABSOLUTE_PLAYER_LIMIT)
+            _recipients.Set(slot);
+    }
+
+    NetChannelBufType_t GetNetworkBufType() const override { return BUF_RELIABLE; }
+    bool IsInitMessage() const override { return false; }
+    const CPlayerBitVec& GetRecipients() const override { return _recipients; }
+    CPlayerSlot GetPredictedPlayerSlot() const override { return CPlayerSlot(-1); }
+
+private:
+    CPlayerBitVec _recipients;
+};
+
 }  // namespace CS2Kit::Sdk
