@@ -123,6 +123,9 @@ public:
     /** Read `m_iszPlayerName` from the controller. Empty string if unavailable. */
     std::string GetPlayerName() const;
 
+    /** Current model path of the pawn (scene node's CModelState). Empty string if unavailable. */
+    std::string GetPawnModelName() const;
+
     /**
      * @brief Write `m_iszPlayerName` on the controller (128-byte fixed buffer).
      * Truncates to 127 chars + NUL. Replication to clients piggybacks on the

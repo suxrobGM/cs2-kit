@@ -38,11 +38,6 @@ struct HiddenPlayer
     std::array<int, MaxIndicesPerPlayer> PawnIndices{};  // pawn itself + weapons + wearables
 };
 
-int EntityIndex(CEntityInstance* entity)
-{
-    return (entity && entity->m_pEntity) ? entity->m_pEntity->GetEntityIndex().Get() : -1;
-}
-
 void AddIndex(HiddenPlayer& player, int index)
 {
     if (index > 0 && player.IndexCount < MaxIndicesPerPlayer)
@@ -56,8 +51,9 @@ void AddHandleVector(HiddenPlayer& player, void* base, int offset)
     const auto* view = MemberPtr<const HandleVectorView>(base, offset);
     if (!view->Elements)
         return;
+    auto& entities = Engine().Entities;
     for (int32_t i = 0; i < view->Count && i < MaxIndicesPerPlayer; ++i)
-        AddIndex(player, EntityIndex(Engine().Entities.ResolveEntityHandle(view->Elements[i])));
+        AddIndex(player, entities.GetEntityIndex(entities.ResolveEntityHandle(view->Elements[i])));
 }
 
 CEntityInstance* GetCurrentPawn(int slot)
@@ -104,7 +100,7 @@ void CollectHiddenPlayer(int slot, bool pawnHidden, bool controllerHidden, Hidde
         return;
 
     if (controllerHidden)
-        out.ControllerIndex = EntityIndex(controller);
+        out.ControllerIndex = Engine().Entities.GetEntityIndex(controller);
 
     if (!pawnHidden)
         return;
@@ -117,7 +113,7 @@ void CollectHiddenPlayer(int slot, bool pawnHidden, bool controllerHidden, Hidde
     if (!out.Pawn)
         return;
 
-    AddIndex(out, EntityIndex(out.Pawn));
+    AddIndex(out, Engine().Entities.GetEntityIndex(out.Pawn));
 
     int weaponServicesOffset = schema.GetOffset("CBasePlayerPawn", "m_pWeaponServices");
     if (weaponServicesOffset >= 0)
@@ -169,15 +165,39 @@ bool TransmitFilterService::IsControllerHidden(int slot) const
     return Core::IsValidSlot(slot) && _state[slot].ControllerHidden;
 }
 
+void TransmitFilterService::SetEntityExclusive(int entityIndex, int beneficiarySlot)
+{
+    if (entityIndex <= 0 || !Core::IsValidSlot(beneficiarySlot))
+        return;
+
+    for (auto& entry : _exclusive)
+    {
+        if (entry.EntityIndex == entityIndex)
+        {
+            entry.BeneficiarySlot = beneficiarySlot;
+            return;
+        }
+    }
+    _exclusive.push_back({entityIndex, beneficiarySlot});
+}
+
+void TransmitFilterService::ClearEntityExclusive(int entityIndex)
+{
+    std::erase_if(_exclusive, [entityIndex](const ExclusiveEntity& e) { return e.EntityIndex == entityIndex; });
+}
+
 void TransmitFilterService::OnPlayerDisconnect(int slot)
 {
     SetPawnHidden(slot, false);
     SetControllerHidden(slot, false);
+    // The owning effect normally cleans up first (effect cancel runs before this);
+    // this catches entries whose beneficiary vanished without cleanup.
+    std::erase_if(_exclusive, [slot](const ExclusiveEntity& e) { return e.BeneficiarySlot == slot; });
 }
 
 void TransmitFilterService::OnCheckTransmit(CCheckTransmitInfo** infoList, int infoCount)
 {
-    if (_activeCount == 0 || _slotOffset < 0 || !infoList)
+    if ((_activeCount == 0 && _exclusive.empty()) || _slotOffset < 0 || !infoList)
         return;
 
     // Entity indices are the same for every recipient (only the self/observer
@@ -213,6 +233,12 @@ void TransmitFilterService::OnCheckTransmit(CCheckTransmitInfo** infoList, int i
 
             if (player.ControllerIndex > 0)
                 info->m_pTransmitEntity->Clear(player.ControllerIndex);
+        }
+
+        for (const auto& entry : _exclusive)
+        {
+            if (entry.BeneficiarySlot != recipient)
+                info->m_pTransmitEntity->Clear(entry.EntityIndex);
         }
     }
 }

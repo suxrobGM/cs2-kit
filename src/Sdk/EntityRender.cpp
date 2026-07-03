@@ -30,6 +30,11 @@ void SetEntityRender(CEntityInstance* entity, RenderMode_t mode, uint32_t color)
 
     WriteAt<uint8_t>(entity, modeOffset, static_cast<uint8_t>(mode));
     WriteAt<uint32_t>(entity, colorOffset, color);
+
+    // Raw writes don't dirty the network state, so without these the new values
+    // only replicate when something else touches the entity that tick.
+    entity->NetworkStateChanged(NetworkStateChangedData(static_cast<uint32>(modeOffset)));
+    entity->NetworkStateChanged(NetworkStateChangedData(static_cast<uint32>(colorOffset)));
 }
 
 }  // namespace CS2Kit::Sdk

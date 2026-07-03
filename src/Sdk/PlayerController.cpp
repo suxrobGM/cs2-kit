@@ -277,6 +277,24 @@ std::string PlayerController::GetPlayerName() const
     return std::string(p, len);
 }
 
+std::string PlayerController::GetPawnModelName() const
+{
+    // The pawn's scene node is a CSkeletonInstance; the model path is the
+    // CUtlSymbolLarge inside its embedded CModelState (interned string pointer).
+    void* node = ResolveSceneNode(GetPawn());
+    if (!node)
+        return {};
+
+    auto& schema = Engine().Schema();
+    int stateOffset = schema.GetOffset("CSkeletonInstance", "m_modelState");
+    int nameOffset = schema.GetOffset("CModelState", "m_ModelName");
+    if (stateOffset < 0 || nameOffset < 0)
+        return {};
+
+    const char* name = ReadAt<const char*>(node, stateOffset + nameOffset);
+    return name ? std::string(name) : std::string{};
+}
+
 void PlayerController::SetPlayerName(const std::string& name) const
 {
     if (!_controller)

@@ -1,4 +1,5 @@
 #include <CS2Kit/Sdk/EntityKeyValues.hpp>
+#include <color.h>
 #include <entity2/entitykeyvalues.h>
 #include <mathlib/vector.h>
 
@@ -54,6 +55,13 @@ EntityKeyValues& EntityKeyValues::Set(const char* key, const QAngle& value)
 {
     if (_kv)
         _kv->SetQAngle(key, value);
+    return *this;
+}
+
+EntityKeyValues& EntityKeyValues::Set(const char* key, const Color& value)
+{
+    if (_kv)
+        _kv->SetColor(key, value);
     return *this;
 }
 

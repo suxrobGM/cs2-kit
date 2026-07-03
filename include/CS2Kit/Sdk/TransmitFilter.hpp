@@ -2,6 +2,7 @@
 
 #include <CS2Kit/Core/Slot.hpp>
 #include <array>
+#include <vector>
 
 class CCheckTransmitInfo;
 
@@ -23,6 +24,9 @@ namespace CS2Kit::Sdk
  *   their row from the scoreboard. Side effect: clients cannot attribute chat
  *   or voice from a player whose controller they never received.
  *
+ * Exclusive entities are the inverse: an entity transmits only to its beneficiary
+ * slot, cleared from every other recipient (per-viewer effects like glow clones).
+ *
  * Sounds (footsteps, gunfire) are networked separately and are not affected.
  */
 class TransmitFilterService
@@ -40,6 +44,12 @@ public:
     bool IsPawnHidden(int slot) const;
     bool IsControllerHidden(int slot) const;
 
+    /** Transmit `entityIndex` only to `beneficiarySlot`. Re-registering updates the beneficiary. */
+    void SetEntityExclusive(int entityIndex, int beneficiarySlot);
+
+    /** Stop filtering `entityIndex`; it transmits normally again. Safe on unknown indices. */
+    void ClearEntityExclusive(int entityIndex);
+
     /** Drop all hiding for a slot. Called on disconnect so a reused slot starts clean. */
     void OnPlayerDisconnect(int slot);
 
@@ -53,9 +63,16 @@ private:
         bool ControllerHidden = false;
     };
 
+    struct ExclusiveEntity
+    {
+        int EntityIndex;
+        int BeneficiarySlot;
+    };
+
     void SetFlag(int slot, bool SlotState::* flag, bool value);
 
     std::array<SlotState, Core::MaxPlayers> _state{};
+    std::vector<ExclusiveEntity> _exclusive; /**< Entities transmitted only to their beneficiary. */
     int _activeCount = 0; /**< Slots with any flag set; OnCheckTransmit early-outs at 0. */
     int _slotOffset = -1; /**< Recipient player-slot byte offset inside CCheckTransmitInfo. */
 };

@@ -3,6 +3,7 @@
 class CEntityKeyValues;
 class Vector;
 class QAngle;
+class Color;
 
 namespace CS2Kit::Sdk
 {
@@ -29,6 +30,7 @@ public:
     EntityKeyValues& Set(const char* key, bool value);
     EntityKeyValues& Set(const char* key, const Vector& value);
     EntityKeyValues& Set(const char* key, const QAngle& value);
+    EntityKeyValues& Set(const char* key, const Color& value);
 
     /** The wrapped object; nullptr after Detach(). */
     CEntityKeyValues* Raw() const { return _kv; }

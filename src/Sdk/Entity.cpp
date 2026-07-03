@@ -26,6 +26,17 @@ namespace CS2Kit::Sdk
 {
 using namespace CS2Kit::Utils;
 
+int EntitySystem::GetEntityIndex(CEntityInstance* entity) const
+{
+    return (entity && entity->m_pEntity) ? entity->m_pEntity->GetEntityIndex().Get() : -1;
+}
+
+uint32_t EntitySystem::GetEntityHandle(CEntityInstance* entity) const
+{
+    return (entity && entity->m_pEntity) ? static_cast<uint32_t>(entity->m_pEntity->m_EHandle.ToInt())
+                                         : 0xFFFFFFFFu;
+}
+
 void EntitySystem::ResolveSchemaOffsets()
 {
     if (_schemaOffsetsResolved)
@@ -126,6 +137,12 @@ CEntityInstance* EntitySystem::ResolveEntityHandle(uint32_t handle)
         return nullptr;
 
     return pIdentity->m_pInstance;
+}
+
+CEntityInstance* EntitySystem::ResolveEntityHandleExact(uint32_t handle)
+{
+    auto* entity = ResolveEntityHandle(handle);
+    return (entity && GetEntityHandle(entity) == handle) ? entity : nullptr;
 }
 
 CEntityInstance* EntitySystem::GetPlayerController(int slot)

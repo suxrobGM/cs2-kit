@@ -56,7 +56,26 @@ public:
     bool Initialize();
     CGameEntitySystem* GetEntitySystem();
     CEntityInstance* GetPlayerController(int slot);
+
+    /**
+     * Entity at the handle's index, ignoring the serial bits - a stale handle can
+     * resolve to an unrelated entity that recycled the index. Prefer
+     * ResolveEntityHandleExact when the handle may outlive the entity.
+     */
     CEntityInstance* ResolveEntityHandle(uint32_t handle);
+
+    /**
+     * Like ResolveEntityHandle, but nullptr unless the resolved entity's full
+     * handle (index + serial) matches - rejects recycled indices.
+     */
+    CEntityInstance* ResolveEntityHandleExact(uint32_t handle);
+
+    /** Network entity index of @p entity, or -1 on null/unlinked. */
+    int GetEntityIndex(CEntityInstance* entity) const;
+
+    /** Raw EHandle (index + serial) of @p entity, or 0xFFFFFFFF (invalid) on null/unlinked. */
+    uint32_t GetEntityHandle(CEntityInstance* entity) const;
+
     uint64_t GetPlayerButtons(int slot);
     bool IsPlayerSlotValid(int slot);
 
@@ -73,7 +92,10 @@ private:
     void ResolveFinderSignatures();
     CEntityIdentity* GetEntityIdentityByIndex(CGameEntitySystem* pSys, int index);
 
-    /** Read the CGameEntitySystem* out of IGameResourceService at the gamedata offset. nullptr if either is unavailable. */
+    /**
+     * Read the CGameEntitySystem* out of IGameResourceService at the gamedata offset. nullptr if either is
+     *unavailable.
+     */
     CGameEntitySystem* ReadEntitySystemPointer();
 
     int _offsetPlayerPawn = -1;
