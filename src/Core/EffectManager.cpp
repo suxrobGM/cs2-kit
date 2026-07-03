@@ -1,5 +1,4 @@
 #include <CS2Kit/Core/EffectManager.hpp>
-#include <CS2Kit/Core/Scheduler.hpp>
 #include <utility>
 #include <vector>
 
@@ -18,40 +17,23 @@ bool EffectManager::IsActive(int slot, int effectId) const
 {
     if (!ValidSlot(slot))
         return false;
-    return _effects[slot].contains(effectId);
+    auto it = _effects[slot].find(effectId);
+    // A self-expired effect (DurationMs elapsed) leaves its entry behind until reclaimed; its
+    // ScheduledEffect reports inactive, so treat that as not-active without touching the map.
+    return it != _effects[slot].end() && it->second.Fx.Active();
 }
 
-void EffectManager::Apply(int slot, int effectId, uint64_t timerHandle, std::function<void()> cancelFn,
-                          bool roundScoped, int durationMs)
+void EffectManager::Apply(int slot, int effectId, EffectSpec spec)
 {
     if (!ValidSlot(slot))
         return;
 
-    Cancel(slot, effectId);  // re-toggle semantics: replace any active instance
+    Cancel(slot, effectId);  // re-apply semantics: replace any active instance
 
-    ActiveEffect entry;
-    entry.RoundScoped = roundScoped;
-    entry.TimerHandle = timerHandle;
-    entry.CancelFn = std::move(cancelFn);
-    // Own the auto-expire timer here (not in the effect) so cancelling the effect always cancels it too --
-    // a self-scheduled duration timer would survive an early cancel and later clobber a re-applied effect.
-    entry.DurationHandle =
-        durationMs > 0 ? _scheduler.Delay(durationMs, [this, slot, effectId]() { Cancel(slot, effectId); }) : 0;
-    _effects[slot][effectId] = std::move(entry);
-}
-
-bool EffectManager::Toggle(int slot, int effectId, const std::function<EffectSetup()>& enable)
-{
-    if (!ValidSlot(slot))
-        return false;
-    if (IsActive(slot, effectId))
-    {
-        Cancel(slot, effectId);
-        return false;
-    }
-    EffectSetup setup = enable();
-    Apply(slot, effectId, setup.TimerHandle, std::move(setup.CancelFn), setup.RoundScoped, setup.DurationMs);
-    return true;
+    _effects[slot].insert_or_assign(
+        effectId, ActiveEffect{.RoundScoped = spec.RoundScoped,
+                               .Fx = ScheduledEffect(_scheduler, spec.TickIntervalMs, spec.DurationMs,
+                                                     std::move(spec.OnTick), std::move(spec.OnStop))});
 }
 
 void EffectManager::Cancel(int slot, int effectId)
@@ -62,43 +44,35 @@ void EffectManager::Cancel(int slot, int effectId)
     if (it == _effects[slot].end())
         return;
 
-    // Detach before running CancelFn so a re-entrant Apply/Toggle sees a clean slot.
+    // Detach before stopping so a re-entrant Apply sees a clean slot. Stop() runs onStop once
+    // (a no-op if the effect already self-expired).
     ActiveEffect entry = std::move(it->second);
     _effects[slot].erase(it);
+    entry.Fx.Stop();
+}
 
-    if (entry.CancelFn)
-        entry.CancelFn();
-    if (entry.TimerHandle != 0)
-        _scheduler.Cancel(entry.TimerHandle);
-    if (entry.DurationHandle != 0)
-        _scheduler.Cancel(entry.DurationHandle);
+void EffectManager::CancelWhere(int slot, const std::function<bool(const ActiveEffect&)>& keep)
+{
+    std::vector<int> ids;
+    ids.reserve(_effects[slot].size());
+    for (const auto& [id, entry] : _effects[slot])
+        if (keep(entry))
+            ids.push_back(id);
+    for (int id : ids)
+        Cancel(slot, id);
 }
 
 void EffectManager::CancelAllForSlot(int slot)
 {
     if (!ValidSlot(slot))
         return;
-    std::vector<int> ids;
-    ids.reserve(_effects[slot].size());
-    for (const auto& [id, entry] : _effects[slot])
-        ids.push_back(id);
-    for (int id : ids)
-        Cancel(slot, id);
+    CancelWhere(slot, [](const ActiveEffect&) { return true; });
 }
 
 void EffectManager::CancelRoundScoped()
 {
     for (int slot = 0; slot < MaxSlots; ++slot)
-    {
-        std::vector<int> ids;
-        for (const auto& [id, entry] : _effects[slot])
-        {
-            if (entry.RoundScoped)
-                ids.push_back(id);
-        }
-        for (int id : ids)
-            Cancel(slot, id);
-    }
+        CancelWhere(slot, [](const ActiveEffect& e) { return e.RoundScoped; });
 }
 
 void EffectManager::CancelAll()

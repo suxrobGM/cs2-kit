@@ -4,7 +4,7 @@
 #include <CS2Kit/Core/Scheduler.hpp>
 
 using CS2Kit::Core::EffectManager;
-using CS2Kit::Core::EffectSetup;
+using CS2Kit::Core::EffectSpec;
 using CS2Kit::Core::Scheduler;
 
 namespace
@@ -19,37 +19,36 @@ TEST_CASE("EffectManager: Apply and IsActive")
     EffectManager mgr(scheduler);
 
     CHECK(!mgr.IsActive(3, Disco));
-    mgr.Apply(3, Disco, 0, [] {});
+    mgr.Apply(3, Disco, {.OnStop = [] {}});
     CHECK(mgr.IsActive(3, Disco));
     CHECK(!mgr.IsActive(3, Ghost));
     CHECK(!mgr.IsActive(4, Disco));
 }
 
-TEST_CASE("EffectManager: re-Apply runs the prior cancel first")
+TEST_CASE("EffectManager: re-Apply runs the prior onStop first")
 {
     Scheduler scheduler;
     EffectManager mgr(scheduler);
 
     int cancels = 0;
-    mgr.Apply(3, Disco, 0, [&] { ++cancels; });
-    mgr.Apply(3, Disco, 0, [&] { cancels += 10; });
+    mgr.Apply(3, Disco, {.OnStop = [&] { ++cancels; }});
+    mgr.Apply(3, Disco, {.OnStop = [&] { cancels += 10; }});
     CHECK_EQ(cancels, 1);  // first instance undone, second still active
 
     mgr.Cancel(3, Disco);
     CHECK_EQ(cancels, 11);
 }
 
-TEST_CASE("EffectManager: Toggle returns on-state and cancels on re-toggle")
+TEST_CASE("EffectManager: Cancel clears state and flips IsActive")
 {
     Scheduler scheduler;
     EffectManager mgr(scheduler);
 
     int cancels = 0;
-    auto enable = [&]() -> EffectSetup { return {.CancelFn = [&] { ++cancels; }}; };
-
-    CHECK(mgr.Toggle(3, Disco, enable));
+    mgr.Apply(3, Disco, {.OnStop = [&] { ++cancels; }});
     CHECK(mgr.IsActive(3, Disco));
-    CHECK(!mgr.Toggle(3, Disco, enable));
+
+    mgr.Cancel(3, Disco);
     CHECK(!mgr.IsActive(3, Disco));
     CHECK_EQ(cancels, 1);
 }
@@ -60,8 +59,8 @@ TEST_CASE("EffectManager: Cancel is idempotent and per-id")
     EffectManager mgr(scheduler);
 
     int cancels = 0;
-    mgr.Apply(3, Disco, 0, [&] { ++cancels; });
-    mgr.Apply(3, Ghost, 0, [&] { ++cancels; });
+    mgr.Apply(3, Disco, {.OnStop = [&] { ++cancels; }});
+    mgr.Apply(3, Ghost, {.OnStop = [&] { ++cancels; }});
 
     mgr.Cancel(3, Disco);
     mgr.Cancel(3, Disco);  // no-op: already gone
@@ -74,9 +73,9 @@ TEST_CASE("EffectManager: CancelRoundScoped only touches round-scoped effects")
     Scheduler scheduler;
     EffectManager mgr(scheduler);
 
-    mgr.Apply(3, Disco, 0, [] {}, /*roundScoped*/ true);
-    mgr.Apply(3, Ghost, 0, [] {}, /*roundScoped*/ false);
-    mgr.Apply(5, Disco, 0, [] {}, /*roundScoped*/ true);
+    mgr.Apply(3, Disco, {.RoundScoped = true, .OnStop = [] {}});
+    mgr.Apply(3, Ghost, {.RoundScoped = false, .OnStop = [] {}});
+    mgr.Apply(5, Disco, {.RoundScoped = true, .OnStop = [] {}});
 
     mgr.CancelRoundScoped();
     CHECK(!mgr.IsActive(3, Disco));
@@ -89,9 +88,9 @@ TEST_CASE("EffectManager: CancelAllForSlot and CancelAll")
     Scheduler scheduler;
     EffectManager mgr(scheduler);
 
-    mgr.Apply(3, Disco, 0, [] {});
-    mgr.Apply(3, Ghost, 0, [] {});
-    mgr.Apply(5, Disco, 0, [] {});
+    mgr.Apply(3, Disco, {.OnStop = [] {}});
+    mgr.Apply(3, Ghost, {.OnStop = [] {}});
+    mgr.Apply(5, Disco, {.OnStop = [] {}});
 
     mgr.CancelAllForSlot(3);
     CHECK(!mgr.IsActive(3, Disco));
@@ -107,8 +106,8 @@ TEST_CASE("EffectManager: out-of-range slots are no-ops")
     Scheduler scheduler;
     EffectManager mgr(scheduler);
 
-    mgr.Apply(-1, Disco, 0, [] {});
-    mgr.Apply(EffectManager::MaxSlots, Disco, 0, [] {});
+    mgr.Apply(-1, Disco, {.OnStop = [] {}});
+    mgr.Apply(EffectManager::MaxSlots, Disco, {.OnStop = [] {}});
     CHECK(!mgr.IsActive(-1, Disco));
     CHECK(!mgr.IsActive(EffectManager::MaxSlots, Disco));
     mgr.Cancel(-1, Disco);

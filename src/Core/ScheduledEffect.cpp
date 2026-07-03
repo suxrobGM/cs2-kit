@@ -1,5 +1,5 @@
 #include <CS2Kit/Core/ScheduledEffect.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Core/Scheduler.hpp>
 #include <utility>
 
 namespace CS2Kit::Core
@@ -7,6 +7,7 @@ namespace CS2Kit::Core
 
 struct ScheduledEffect::State
 {
+    Scheduler* scheduler = nullptr;
     uint64_t tickTimer = 0;
     uint64_t stopTimer = 0;
     std::function<void()> onStop;
@@ -18,12 +19,12 @@ struct ScheduledEffect::State
             return;
         stopped = true;
 
-        if (auto* engine = EngineOrNull())
+        if (scheduler)
         {
             if (tickTimer)
-                engine->Scheduler.Cancel(tickTimer);
+                scheduler->Cancel(tickTimer);
             if (stopTimer)
-                engine->Scheduler.Cancel(stopTimer);
+                scheduler->Cancel(stopTimer);
         }
         tickTimer = 0;
         stopTimer = 0;
@@ -37,20 +38,20 @@ struct ScheduledEffect::State
     }
 };
 
-ScheduledEffect::ScheduledEffect(int64_t tickIntervalMs, int64_t durationMs, std::function<void()> onTick,
-                                 std::function<void()> onStop)
+ScheduledEffect::ScheduledEffect(Scheduler& scheduler, int64_t tickIntervalMs, int64_t durationMs,
+                                 std::function<void()> onTick, std::function<void()> onStop)
     : _state(std::make_shared<State>())
 {
+    _state->scheduler = &scheduler;
     _state->onStop = std::move(onStop);
 
-    auto& sched = Engine().Scheduler;
     if (onTick && tickIntervalMs > 0)
-        _state->tickTimer = sched.Repeat(tickIntervalMs, std::move(onTick));
+        _state->tickTimer = scheduler.Repeat(tickIntervalMs, std::move(onTick));
 
     if (durationMs > 0)
     {
         std::weak_ptr<State> weak = _state;
-        _state->stopTimer = sched.Delay(durationMs, [weak]() {
+        _state->stopTimer = scheduler.Delay(durationMs, [weak]() {
             if (auto s = weak.lock())
                 s->Stop();
         });

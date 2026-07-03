@@ -112,6 +112,7 @@ if(BUILD_TESTING)
         tests/SteamIdTests.cpp
         tests/TimeUtilsTests.cpp
         src/Core/EffectManager.cpp
+        src/Core/ScheduledEffect.cpp
         src/Core/Scheduler.cpp
         src/Utils/StringUtils.cpp
         src/Utils/SteamId.cpp
