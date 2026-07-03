@@ -1,3 +1,4 @@
+#include <CS2Kit/Core/Paths.hpp>
 #include <CS2Kit/Database/Migrator.hpp>
 #include <CS2Kit/Database/PostgresDatabase.hpp>
 #include <CS2Kit/Utils/Log.hpp>
@@ -55,15 +56,18 @@ bool RunMigrations(PostgresDatabase& db, const std::string& dir, const Migration
     }
     const std::string& table = options.TableName;
 
+    // Relative paths must resolve against the game dir, not the server process cwd.
+    const fs::path resolvedDir = Core::ResolvePath(dir);
+
     std::error_code ec;
-    if (!fs::exists(dir, ec))
+    if (!fs::exists(resolvedDir, ec))
     {
-        Log::Warn("Migrations directory not found ({}); skipping schema setup.", dir);
+        Log::Warn("Migrations directory not found ({}); skipping schema setup.", resolvedDir.string());
         return true;
     }
 
     std::vector<Migration> migrations;
-    for (const auto& entry : fs::directory_iterator(dir, ec))
+    for (const auto& entry : fs::directory_iterator(resolvedDir, ec))
     {
         if (!entry.is_regular_file())
             continue;
