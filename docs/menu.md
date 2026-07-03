@@ -117,7 +117,7 @@ builder.AddChoice<int>(
     /*maxLength=*/32)
 ```
 
-This relies on @ref CS2Kit::Sdk::ChatInputCapture - the plugin must call `Engine().ChatInput.TryConsume(slot, text)` from its chat-message hook before its own command parsing, suppressing the chat broadcast when the call returns `true`. See the [SDK guide](@ref sdk_guide) for the integration snippet.
+This relies on @ref CS2Kit::Sdk::ChatInputCapture - the plugin must call `Engine().ChatInput.TryConsume(slot, text)` from its chat-message hook before its own command parsing, suppressing the chat broadcast when the call returns `true`. See the [SDK messaging guide](@ref sdk_messaging_guide) for the integration snippet.
 
 ### Submenu - push a built submenu
 
