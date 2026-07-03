@@ -1,37 +1,23 @@
 {
-  // ───────────────────────────────────────────────────────────────────
-  // Gamedata Signatures & Offsets
-  //
-  // Platform-specific byte patterns used by the signature scanner to
-  // locate engine functions and data structures at runtime. These are
-  // fragile and must be updated after every CS2 engine update.
-  //
-  // Pattern syntax:
-  //   - Hex bytes are space-separated (e.g. "48 83 EC")
-  //   - "?" matches any single byte (wildcard)
-  //   - "offset" is the byte distance from the matched address to
-  //     the target pointer (used with RIP-relative resolution)
-  // ───────────────────────────────────────────────────────────────────
+  // Platform-specific byte patterns and offsets, resolved at runtime by the
+  // signature scanner. Fragile: re-verify after every CS2 engine update.
+  // Pattern syntax: space-separated hex, "?" = wildcard byte, "offset" = byte
+  // distance from the match to the rel32 displacement (RIP-relative resolve).
 
   "offsets": {
-    // Offset from IGameResourceService vtable to the CGameEntitySystem pointer.
-    // Retrieved via: GameResourceService + offset → CGameEntitySystem*
+    // Byte offset of the CGameEntitySystem* inside IGameResourceService.
     "GameEntitySystem": {
       "windows": 88,
       "linux": 80
     },
-    // Virtual function indices for player controller/pawn operations.
-    // Must be verified against the current CS2 build.
-    // CBasePlayerPawn::CommitSuicide vtable index. Cross-checked against SwiftlyS2
-    // (windows 390 / linux 390) and cs2-menus (390). The earlier 400/400 was hitting
-    // an unrelated vfunc and causing crashes when Slay was invoked.
+    // CBasePlayerPawn::CommitSuicide vtable index. Cross-checked vs SwiftlyS2
+    // and cs2-menus; the earlier 400/400 hit an unrelated vfunc and crashed.
     "CommitSuicide": {
       "windows": 390,
       "linux": 390
     },
-    // CCSPlayerController::ChangeTeam vtable index. Cross-checked against SwiftlyS2's
-    // gamedata (windows 103, linux 102). Earlier 101/101 was hitting CBaseEntity::ChangeTeam
-    // on the pawn which doesn't switch team server-side.
+    // CCSPlayerController::ChangeTeam vtable index (SwiftlyS2: 103/102).
+    // Earlier 101/101 hit CBaseEntity::ChangeTeam, which doesn't switch team.
     "ChangeTeam": {
       "windows": 103,
       "linux": 102
@@ -40,9 +26,8 @@
       "windows": 42,
       "linux": 42
     },
-    // CBaseEntity::Teleport(const Vector* origin, const QAngle* angles, const Vector* velocity).
-    // Vtable offsets cross-checked against SwiftlyS2 (windows: 163, linux: 162) and cs2-menus
-    // (windows: 162). Bump or split if a CS2 update shifts the layout.
+    // CBaseEntity::Teleport(origin, angles, velocity) vtable index
+    // (SwiftlyS2: 163/162).
     "Teleport": {
       "windows": 163,
       "linux": 162
@@ -50,10 +35,7 @@
   },
 
   "signatures": {
-    // CSource2Server::g_GameEventManager - global pointer to IGameEventManager2.
-    // Used to fire legacy game events (e.g. player_hurt, player_death).
-    // The "offset" field is the RIP-relative displacement to resolve the
-    // actual pointer from the matched instruction.
+    // CSource2Server::g_GameEventManager (IGameEventManager2*), rel32 at "offset".
     "GameEventManager": {
       "library": "server",
       "windows": {
@@ -66,9 +48,7 @@
       }
     },
 
-    // GetLegacyGameEventListener - function pointer used to obtain an
-    // IGameEventListener2 instance for subscribing to legacy game events.
-    // No RIP offset needed; the matched address IS the function pointer.
+    // GetLegacyGameEventListener: IGameEventListener2*(*)(CPlayerSlot); match IS the function.
     "LegacyGameEventListener": {
       "library": "server",
       "windows": {
@@ -80,11 +60,10 @@
     },
 
     // ── Entity ops (EntityOpsService) ─────────────────────────────────
-    // Byte patterns below are copied from CS2Fixes' maintained gamedata
-    // (github.com/Source2ZE/CS2Fixes, gamedata/cs2fixes.jsonc) under the
-    // same entry names, so re-syncing after a CS2 update is mechanical.
+    // Patterns copied from CS2Fixes gamedata (github.com/Source2ZE/CS2Fixes)
+    // under the same entry names - re-sync from there after CS2 updates.
 
-    // CBaseEntity* CreateEntityByName(const char* className, int iForceEdictIndex /* -1 */)
+    // CBaseEntity* (const char* className, int forceEdictIndex /* -1 */)
     "CreateEntityByName": {
       "library": "server",
       "windows": {
@@ -95,7 +74,7 @@
       }
     },
 
-    // void DispatchSpawn(CBaseEntity*, CEntityKeyValues* /* may be null */)
+    // void (CBaseEntity*, CEntityKeyValues* /* may be null */)
     "DispatchSpawn": {
       "library": "server",
       "windows": {
@@ -106,9 +85,8 @@
       }
     },
 
-    // void CEntityInstance::AcceptInput(const char* input, CEntityInstance* activator,
-    //     CEntityInstance* caller, variant_t* value, int outputId, void*)
-    // Not a vtable call in CS2 - must be resolved by signature.
+    // void (CEntityInstance*, const char* input, activator, caller, variant_t*, int outputId, void*).
+    // Not a vtable call in CS2.
     "CEntityInstance_AcceptInput": {
       "library": "server",
       "windows": {
@@ -119,10 +97,8 @@
       }
     },
 
-    // void CEntitySystem::AddEntityIOEvent(CEntityInstance* target, const char* input,
-    //     CEntityInstance* activator, CEntityInstance* caller, variant_t* value,
-    //     float delaySeconds, int outputId, void*, void*)
-    // Deferred entity IO; the sanctioned path for delayed inputs and entity cleanup ("Kill").
+    // Deferred entity IO (delayed inputs, "Kill" cleanup):
+    // void (CEntitySystem*, target, input, activator, caller, variant_t*, float delay, int outputId, void*, void*)
     "CEntitySystem_AddEntityIOEvent": {
       "library": "server",
       "windows": {
@@ -133,7 +109,7 @@
       }
     },
 
-    // void UTIL_Remove(CEntityInstance*) - immediate entity removal.
+    // void (CEntityInstance*) - immediate entity removal.
     "UTIL_Remove": {
       "library": "server",
       "windows": {
@@ -144,9 +120,8 @@
       }
     },
 
-    // void CBaseEntity::EmitSoundParams(const char* soundEvent, int pitch, float volume, float delay)
-    // Sound event name from a .vsndevts, not a file path. CS2Fixes notes this is a
-    // vscript binding that may be removed; EmitSoundFilter is the sturdier path.
+    // void (CBaseEntity*, const char* soundEvent, int pitch, float volume, float delay).
+    // Vscript binding per CS2Fixes - may vanish; EmitSoundFilter is sturdier.
     "CBaseEntity_EmitSoundParams": {
       "library": "server",
       "windows": {
@@ -157,8 +132,7 @@
       }
     },
 
-    // StartSoundEventInfo CBaseEntity_EmitSoundFilter(IRecipientFilter&, CEntityIndex, const EmitSound_t&)
-    // Recipient-filtered sound event emission.
+    // StartSoundEventInfo (IRecipientFilter&, CEntityIndex, const EmitSound_t&)
     "CBaseEntity_EmitSoundFilter": {
       "library": "server",
       "windows": {
@@ -169,7 +143,7 @@
       }
     },
 
-    // void CBaseModelEntity::SetModel(const char* modelPath)
+    // void (CBaseModelEntity*, const char* modelPath)
     "CBaseModelEntity_SetModel": {
       "library": "server",
       "windows": {
@@ -180,7 +154,7 @@
       }
     },
 
-    // CBaseEntity* CGameEntitySystem::FindEntityByClassName(CEntityInstance* startAfter, const char* className)
+    // CBaseEntity* (CEntitySystem*, CEntityInstance* startAfter, const char* className)
     "CGameEntitySystem_FindEntityByClassName": {
       "library": "server",
       "windows": {
@@ -191,8 +165,7 @@
       }
     },
 
-    // CBaseEntity* CGameEntitySystem::FindEntityByName(CEntityInstance* startAfter, const char* name,
-    //     CEntityInstance* searching, CEntityInstance* activator, CEntityInstance* caller, IEntityFindFilter*)
+    // CBaseEntity* (CEntitySystem*, startAfter, name, searching, activator, caller, IEntityFindFilter*)
     "CGameEntitySystem_FindEntityByName": {
       "library": "server",
       "windows": {
@@ -204,14 +177,10 @@
     },
 
     // ── Game-system registration (PrecacheService) ────────────────────
-    // These three resolve DATA pointers, not functions: the "offset" field
-    // points at the rel32 displacement inside the matched instruction
-    // (3 bytes of opcode for the qword movs, 2 for the dword mov), and
-    // GameData::ResolveSignature computes (match + offset) + 4 + disp32.
+    // These resolve DATA pointers: "offset" points at the rel32 inside the
+    // matched mov (3 opcode bytes for qword, 2 for dword).
 
-    // CBaseGameSystemFactory** sm_pFirst - head of the engine's game-system
-    // factory list. Found in IGameSystem::InitAllSystems
-    // ("Game System %s is defined twice!").
+    // CBaseGameSystemFactory** sm_pFirst - head of the engine's factory list.
     "IGameSystem_InitAllSystems_pFirst": {
       "library": "server",
       "windows": {
@@ -224,8 +193,7 @@
       }
     },
 
-    // CGameSystemEventDispatcher** - the live event dispatcher, needed to
-    // detach our listener rows on unload.
+    // CGameSystemEventDispatcher** - live dispatcher, for detach on unload.
     "IGameSystem_LoopPostInitAllSystems_pEventDispatcher": {
       "library": "server",
       "windows": {
@@ -238,9 +206,7 @@
       }
     },
 
-    // CUtlVector<AddedGameSystem_t>* s_GameSystems - the engine's active
-    // game-system vector, needed to remove our entry on unload.
-    // Opcode here is 2 bytes (dword mov), hence offset 2.
+    // CUtlVector<AddedGameSystem_t>* s_GameSystems - active systems, for removal on unload.
     "IGameSystem_LoopDestroyAllSystems_s_GameSystems": {
       "library": "server",
       "windows": {
