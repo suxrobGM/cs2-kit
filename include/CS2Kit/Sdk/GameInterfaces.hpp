@@ -26,6 +26,7 @@ struct GameInterfaces
 
     IServerGameDLL* ServerGameDLL = nullptr;
     IServerGameClients* ServerGameClients = nullptr;
+    ISource2GameEntities* GameEntities = nullptr;
     IVEngineServer2* Engine = nullptr;
     IGameEventSystem* GameEventSystem = nullptr;
     INetworkMessages* NetworkMessages = nullptr;

@@ -124,6 +124,9 @@ protected:
     void Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconnectionReason reason, const char* name, uint64 xuid,
                                const char* networkId);
     void Hook_DispatchConCommand(ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args);
+    void Hook_CheckTransmit(CCheckTransmitInfo** infoList, int infoCount, CBitVec<16384>& unionTransmitEdicts,
+                            CBitVec<16384>& unused, const Entity2Networkable_t** networkables,
+                            const uint16* entityIndices, int entityCount);
 
 private:
     void RegisterStandardHooks();

@@ -13,6 +13,7 @@
 #include <CS2Kit/Sdk/GameEventService.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Sdk/PrecacheService.hpp>
+#include <CS2Kit/Sdk/TransmitFilter.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <memory>
@@ -49,6 +50,7 @@ public:
     Sdk::MessageSystem Messages;
     Sdk::EntitySystem Entities;
     Sdk::EntityOpsService EntityOps;
+    Sdk::TransmitFilterService Transmit;
     Sdk::PrecacheService Precache;
     Sdk::ConVarService ConVars;
     Sdk::GameEventService Events;

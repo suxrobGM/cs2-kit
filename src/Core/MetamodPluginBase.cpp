@@ -28,6 +28,8 @@ SH_DECL_HOOK6_void(IServerGameClients, OnClientConnected, SH_NOATTRIB, 0, CPlaye
 SH_DECL_HOOK5_void(IServerGameClients, ClientDisconnect, SH_NOATTRIB, 0, CPlayerSlot, ENetworkDisconnectionReason,
                    const char*, uint64, const char*);
 SH_DECL_HOOK3_void(ICvar, DispatchConCommand, SH_NOATTRIB, 0, ConCommandRef, const CCommandContext&, const CCommand&);
+SH_DECL_HOOK7_void(ISource2GameEntities, CheckTransmit, SH_NOATTRIB, 0, CCheckTransmitInfo**, int, CBitVec<16384>&,
+                   CBitVec<16384>&, const Entity2Networkable_t**, const uint16*, int);
 
 MetamodPluginBase::MetamodPluginBase() = default;
 MetamodPluginBase::~MetamodPluginBase() = default;
@@ -113,6 +115,9 @@ void MetamodPluginBase::RegisterStandardHooks()
                 SH_MEMBER(this, &MetamodPluginBase::Hook_ClientDisconnect), true);
     SH_ADD_HOOK(ICvar, DispatchConCommand, gi.CVar, SH_MEMBER(this, &MetamodPluginBase::Hook_DispatchConCommand),
                 false);
+    // Post hook: the game has filled the per-client transmit bitvecs; the filter clears bits.
+    SH_ADD_HOOK(ISource2GameEntities, CheckTransmit, gi.GameEntities,
+                SH_MEMBER(this, &MetamodPluginBase::Hook_CheckTransmit), true);
 
     Defer([this] {
         auto& g = Engine().Interfaces;
@@ -124,6 +129,8 @@ void MetamodPluginBase::RegisterStandardHooks()
                        SH_MEMBER(this, &MetamodPluginBase::Hook_ClientDisconnect), true);
         SH_REMOVE_HOOK(ICvar, DispatchConCommand, g.CVar, SH_MEMBER(this, &MetamodPluginBase::Hook_DispatchConCommand),
                        false);
+        SH_REMOVE_HOOK(ISource2GameEntities, CheckTransmit, g.GameEntities,
+                       SH_MEMBER(this, &MetamodPluginBase::Hook_CheckTransmit), true);
     });
 
     Log::Info("Hooks registered.");
@@ -132,6 +139,12 @@ void MetamodPluginBase::RegisterStandardHooks()
 void MetamodPluginBase::Hook_GameFrame(bool simulating, bool firstTick, bool lastTick)
 {
     CS2Kit::OnGameFrame(*_services);
+}
+
+void MetamodPluginBase::Hook_CheckTransmit(CCheckTransmitInfo** infoList, int infoCount, CBitVec<16384>&,
+                                           CBitVec<16384>&, const Entity2Networkable_t**, const uint16*, int)
+{
+    _services->Transmit.OnCheckTransmit(infoList, infoCount);
 }
 
 void MetamodPluginBase::Hook_OnClientConnected(CPlayerSlot slot, const char* name, uint64 xuid, const char* networkId,

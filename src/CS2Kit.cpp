@@ -73,6 +73,7 @@ bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, Core::Services& servi
 
     CS2KIT_RESOLVE(ServerGameDLL, resolveServer, INTERFACEVERSION_SERVERGAMEDLL)
     CS2KIT_RESOLVE(ServerGameClients, resolveServer, INTERFACEVERSION_SERVERGAMECLIENTS)
+    CS2KIT_RESOLVE(GameEntities, resolveServer, INTERFACEVERSION_SERVERGAMEENTS)
     CS2KIT_RESOLVE(Engine, resolveEngine, INTERFACEVERSION_VENGINESERVER)
     CS2KIT_RESOLVE(GameEventSystem, resolveEngine, GAMEEVENTSYSTEM_INTERFACE_VERSION)
     CS2KIT_RESOLVE(NetworkMessages, resolveEngine, NETWORKMESSAGES_INTERFACE_VERSION)
@@ -126,6 +127,10 @@ bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, Core::Services& servi
     if (!services.Events.Initialize())
         Utils::Log::Warn("Game event service init failed.");
 
+    Utils::Log::Info("Initializing transmit filter...");
+    if (!services.Transmit.Initialize())
+        Utils::Log::Warn("Transmit filter inert (CheckTransmitPlayerSlot offset missing from gamedata).");
+
     Utils::Log::Info("CS2Kit initialized.");
     return true;
 }
@@ -149,6 +154,7 @@ void OnPlayerDisconnect(Core::Services& services, int slot)
 {
     services.Menus.OnPlayerDisconnect(slot);
     services.ChatInput.OnPlayerDisconnect(slot);
+    services.Transmit.OnPlayerDisconnect(slot);
 }
 
 }  // namespace CS2Kit

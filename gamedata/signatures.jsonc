@@ -31,6 +31,13 @@
     "Teleport": {
       "windows": 163,
       "linux": 162
+    },
+    // Byte offset of the recipient player slot inside CCheckTransmitInfo
+    // (the SDK declares only the two leading bitvec pointers). Synced from
+    // CS2Fixes gamedata under the same name.
+    "CheckTransmitPlayerSlot": {
+      "windows": 576,
+      "linux": 576
     }
   },
 
