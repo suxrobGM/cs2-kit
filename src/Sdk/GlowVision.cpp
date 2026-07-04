@@ -1,11 +1,9 @@
-#include <CS2Kit/Sdk/GlowVision.hpp>
-
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/EntityKeyValues.hpp>
 #include <CS2Kit/Sdk/EntityOps.hpp>
+#include <CS2Kit/Sdk/GlowVision.hpp>
 #include <CS2Kit/Sdk/PawnOps.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
-
 #include <utility>
 
 using CS2Kit::Core::Engine;
@@ -105,9 +103,8 @@ void GlowVision::Reconcile()
         PlayerController pc(slot);
         int team = pc.GetTeam();
         // Ghosted pawns never transmit to the beneficiary, so a clone would follow nothing.
-        bool desired = slot != _beneficiarySlot && pc.IsValid() && pc.IsAlive() &&
-                       (team == TeamT || team == TeamCT) && !Engine().Transmit.IsPawnHidden(slot) &&
-                       (!_config.Filter || _config.Filter(slot));
+        bool desired = slot != _beneficiarySlot && pc.IsValid() && pc.IsAlive() && (team == TeamT || team == TeamCT) &&
+                       !Engine().Transmit.IsPawnHidden(slot) && (!_config.Filter || _config.Filter(slot));
 
         if (pair.Active())
         {

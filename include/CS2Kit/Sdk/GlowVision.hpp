@@ -2,7 +2,6 @@
 
 #include <CS2Kit/Sdk/Entity.hpp>
 #include <Color.h>
-
 #include <array>
 #include <cstdint>
 #include <functional>
@@ -36,10 +35,7 @@ public:
 
     explicit GlowVision(int beneficiarySlot) : GlowVision(beneficiarySlot, Config{}) {}
 
-    GlowVision(int beneficiarySlot, Config config)
-        : _beneficiarySlot(beneficiarySlot), _config(std::move(config))
-    {
-    }
+    GlowVision(int beneficiarySlot, Config config) : _beneficiarySlot(beneficiarySlot), _config(std::move(config)) {}
 
     /** Create/refresh/destroy glow clone pairs to match the current live players. */
     void Reconcile();
