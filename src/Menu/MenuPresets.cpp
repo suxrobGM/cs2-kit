@@ -13,15 +13,15 @@ using CS2Kit::Core::Engine;
 namespace CS2Kit::Menu
 {
 
-std::shared_ptr<MenuView> BuildPlayerPicker(int viewerSlot, const std::string& title,
-                                        std::function<void(int viewerSlot, int targetSlot)> onPick,
-                                        const std::string& emptyLabel, std::function<bool(int targetSlot)> isEnabled)
+void AppendPlayerRows(MenuBuilder& builder, int viewerSlot,
+                      const std::function<void(int viewerSlot, int targetSlot)>& onPick,
+                      const std::string& emptyLabel, const std::function<bool(int targetSlot)>& isEnabled)
 {
-    MenuBuilder builder(title);
-
     auto players = Engine().Players.GetAllPlayers();
     for (auto* p : players)
     {
+        if (!p)
+            continue;
         int targetSlot = p->GetSlot();
         bool enabled = isEnabled ? isEnabled(targetSlot) : true;
         builder.AddButton(
@@ -35,7 +35,14 @@ std::shared_ptr<MenuView> BuildPlayerPicker(int viewerSlot, const std::string& t
 
     if (players.empty() && !emptyLabel.empty())
         builder.AddButton(emptyLabel, [](int) {}, false);
+}
 
+std::shared_ptr<MenuView> BuildPlayerPicker(int viewerSlot, const std::string& title,
+                                        std::function<void(int viewerSlot, int targetSlot)> onPick,
+                                        const std::string& emptyLabel, std::function<bool(int targetSlot)> isEnabled)
+{
+    MenuBuilder builder(title);
+    AppendPlayerRows(builder, viewerSlot, onPick, emptyLabel, isEnabled);
     return builder.Build();
 }
 

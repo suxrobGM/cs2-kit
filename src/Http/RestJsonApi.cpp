@@ -9,7 +9,19 @@ namespace CS2Kit::Http
 using Utils::Json;
 using Utils::StringUtils;
 
-std::optional<PreparedRequest> BuildJsonPost(const JsonPostSpec& spec, const std::map<std::string, std::string>& tokens)
+namespace
+{
+void AppendAuthHeader(std::vector<std::string>& headers, const std::string& apiKey, const std::string& authHeader,
+                      const std::string& authScheme)
+{
+    if (apiKey.empty())
+        return;
+    const std::string value = authScheme.empty() ? apiKey : authScheme + " " + apiKey;
+    headers.push_back(authHeader + ": " + value);
+}
+}  // namespace
+
+std::optional<HttpRequest> BuildJsonPost(const JsonPostSpec& spec, const std::map<std::string, std::string>& tokens)
 {
     if (spec.Url.empty())
         return std::nullopt;
@@ -18,15 +30,26 @@ std::optional<PreparedRequest> BuildJsonPost(const JsonPostSpec& spec, const std
     Json::SubstituteTokens(body, tokens);
 
     std::vector<std::string> headers = {"Content-Type: application/json"};
-    if (!spec.ApiKey.empty())
-    {
-        const std::string value = spec.AuthScheme.empty() ? spec.ApiKey : spec.AuthScheme + " " + spec.ApiKey;
-        headers.push_back(spec.AuthHeader + ": " + value);
-    }
+    AppendAuthHeader(headers, spec.ApiKey, spec.AuthHeader, spec.AuthScheme);
 
-    return PreparedRequest{
+    return HttpRequest{
         .Url = spec.Url,
         .Body = body.dump(),
+        .Headers = std::move(headers),
+        .TimeoutMs = spec.TimeoutMs,
+    };
+}
+
+std::optional<HttpRequest> BuildJsonGet(const JsonGetSpec& spec, const std::map<std::string, std::string>& tokens)
+{
+    if (spec.UrlTemplate.empty())
+        return std::nullopt;
+
+    std::vector<std::string> headers;
+    AppendAuthHeader(headers, spec.ApiKey, spec.AuthHeader, spec.AuthScheme);
+
+    return HttpRequest{
+        .Url = StringUtils::SubstituteTokens(spec.UrlTemplate, tokens),
         .Headers = std::move(headers),
         .TimeoutMs = spec.TimeoutMs,
     };
@@ -52,10 +75,15 @@ std::string ExtractField(const HttpResult& result, std::string_view dotPath, con
     return valueTemplate.empty() ? raw : StringUtils::SubstituteTokens(valueTemplate, {{"value", raw}});
 }
 
-void Post(HttpClient& client, PreparedRequest request, HttpCompletion onComplete)
+void Post(HttpClient& client, HttpRequest request, HttpCompletion onComplete)
 {
     client.Post(std::move(request.Url), std::move(request.Body), std::move(request.Headers), request.TimeoutMs,
                 std::move(onComplete));
+}
+
+void Get(HttpClient& client, HttpRequest request, HttpCompletion onComplete)
+{
+    client.Get(std::move(request.Url), std::move(request.Headers), request.TimeoutMs, std::move(onComplete));
 }
 
 }  // namespace CS2Kit::Http

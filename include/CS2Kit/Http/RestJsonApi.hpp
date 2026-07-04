@@ -27,8 +27,21 @@ struct JsonPostSpec
     long TimeoutMs = 8000;
 };
 
-/** A ready-to-send POST assembled from a @ref JsonPostSpec. */
-struct PreparedRequest
+/**
+ * @brief Config-driven description of a JSON GET endpoint: a URL template whose `{token}`
+ * placeholders are substituted per call, plus the same optional auth header as @ref JsonPostSpec.
+ */
+struct JsonGetSpec
+{
+    std::string UrlTemplate; /**< `{token}`-substituted per call; "" means not configured. */
+    std::string ApiKey;      /**< "" sends no auth header. */
+    std::string AuthHeader = "Authorization";
+    std::string AuthScheme = "Bearer"; /**< "" sends the key verbatim. */
+    long TimeoutMs = 8000;
+};
+
+/** A ready-to-send request assembled from a @ref JsonPostSpec / @ref JsonGetSpec. */
+struct HttpRequest
 {
     std::string Url;
     std::string Body;
@@ -38,8 +51,11 @@ struct PreparedRequest
 
 /** Assemble the POST from @p spec, substituting @p tokens into the body template and building
  *  the Content-Type/auth headers. Returns nullopt when the spec has no URL configured. */
-std::optional<PreparedRequest> BuildJsonPost(const JsonPostSpec& spec,
-                                             const std::map<std::string, std::string>& tokens);
+std::optional<HttpRequest> BuildJsonPost(const JsonPostSpec& spec, const std::map<std::string, std::string>& tokens);
+
+/** Assemble the GET from @p spec, substituting @p tokens into the URL template and building the
+ *  auth header. Returns nullopt when the spec has no URL configured. */
+std::optional<HttpRequest> BuildJsonGet(const JsonGetSpec& spec, const std::map<std::string, std::string>& tokens);
 
 /** Transport success AND a 2xx status. */
 bool IsSuccess(const HttpResult& result);
@@ -48,7 +64,10 @@ bool IsSuccess(const HttpResult& result);
  *  is non-empty its `{value}` placeholder receives the field. "" on any failure. */
 std::string ExtractField(const HttpResult& result, std::string_view dotPath, const std::string& valueTemplate = "");
 
-/** Enqueue a @ref PreparedRequest on @p client; `onComplete` runs on the game thread. */
-void Post(HttpClient& client, PreparedRequest request, HttpCompletion onComplete);
+/** Enqueue a @ref HttpRequest on @p client; `onComplete` runs on the game thread. */
+void Post(HttpClient& client, HttpRequest request, HttpCompletion onComplete);
+
+/** Enqueue a @ref HttpRequest as a GET on @p client; `onComplete` runs on the game thread. */
+void Get(HttpClient& client, HttpRequest request, HttpCompletion onComplete);
 
 }  // namespace CS2Kit::Http

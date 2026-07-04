@@ -35,6 +35,9 @@ public:
     void Post(std::string url, std::string body, std::vector<std::string> headers, long timeoutMs,
               HttpCompletion onComplete);
 
+    /** Enqueue an async GET. Same threading contract as Post. */
+    void Get(std::string url, std::vector<std::string> headers, long timeoutMs, HttpCompletion onComplete);
+
     /** Invoke all ready completions on the calling (game) thread. */
     void DispatchCompletions();
 

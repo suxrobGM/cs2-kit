@@ -19,12 +19,21 @@ namespace CS2Kit::Menu
  * localization of their own - the caller supplies already-translated text.
  */
 
+// Forward declaration; full definition in MenuBuilder.hpp.
+class MenuBuilder;
+
 /**
- * Build a paginated picker listing every connected player (from the kit PlayerManager).
+ * Append one row per connected player (from the kit PlayerManager) to @p builder — the body of
+ * @ref BuildPlayerPicker, exposed so callers can put their own rows above the player list.
  * Selecting a player invokes @p onPick(viewerSlot, targetSlot). @p isEnabled, when supplied,
  * decides per-row whether a target is selectable. If no players are connected, a single
- * disabled @p emptyLabel row is shown instead.
+ * disabled @p emptyLabel row is appended instead.
  */
+void AppendPlayerRows(MenuBuilder& builder, int viewerSlot,
+                      const std::function<void(int viewerSlot, int targetSlot)>& onPick,
+                      const std::string& emptyLabel = "", const std::function<bool(int targetSlot)>& isEnabled = {});
+
+/** Build a paginated picker menu containing only the @ref AppendPlayerRows player list. */
 std::shared_ptr<MenuView> BuildPlayerPicker(int viewerSlot, const std::string& title,
                                         std::function<void(int viewerSlot, int targetSlot)> onPick,
                                         const std::string& emptyLabel = "",

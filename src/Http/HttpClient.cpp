@@ -7,6 +7,43 @@
 namespace CS2Kit::Http
 {
 
+namespace
+{
+
+cpr::Header ParseHeaderLines(const std::vector<std::string>& headers)
+{
+    cpr::Header header;
+    for (const auto& line : headers)
+    {
+        const size_t colon = line.find(':');
+        if (colon == std::string::npos)
+            continue;
+        size_t valueStart = colon + 1;
+        while (valueStart < line.size() && line[valueStart] == ' ')
+            ++valueStart;
+        header[line.substr(0, colon)] = line.substr(valueStart);
+    }
+    return header;
+}
+
+HttpResult ToHttpResult(cpr::Response&& response)
+{
+    HttpResult result;
+    if (response.error)
+    {
+        result.Error = response.error.message;
+    }
+    else
+    {
+        result.Ok = true;
+        result.StatusCode = static_cast<long>(response.status_code);
+        result.Body = std::move(response.text);
+    }
+    return result;
+}
+
+}  // namespace
+
 struct HttpClient::Impl
 {
     struct Pending
@@ -41,33 +78,18 @@ void HttpClient::Post(std::string url, std::string body, std::vector<std::string
     // game thread in DispatchCompletions().
     auto task = [url = std::move(url), body = std::move(body), headers = std::move(headers),
                  timeoutMs]() -> HttpResult {
-        cpr::Header header;
-        for (const auto& line : headers)
-        {
-            const size_t colon = line.find(':');
-            if (colon == std::string::npos)
-                continue;
-            size_t valueStart = colon + 1;
-            while (valueStart < line.size() && line[valueStart] == ' ')
-                ++valueStart;
-            header[line.substr(0, colon)] = line.substr(valueStart);
-        }
+        return ToHttpResult(cpr::Post(cpr::Url{url}, cpr::Body{body}, ParseHeaderLines(headers),
+                                      cpr::Timeout{std::chrono::milliseconds{timeoutMs}}));
+    };
 
-        cpr::Response response =
-            cpr::Post(cpr::Url{url}, cpr::Body{body}, header, cpr::Timeout{std::chrono::milliseconds{timeoutMs}});
+    _impl->Items.push_back({std::async(std::launch::async, std::move(task)), std::move(onComplete)});
+}
 
-        HttpResult result;
-        if (response.error)
-        {
-            result.Error = response.error.message;
-        }
-        else
-        {
-            result.Ok = true;
-            result.StatusCode = static_cast<long>(response.status_code);
-            result.Body = std::move(response.text);
-        }
-        return result;
+void HttpClient::Get(std::string url, std::vector<std::string> headers, long timeoutMs, HttpCompletion onComplete)
+{
+    auto task = [url = std::move(url), headers = std::move(headers), timeoutMs]() -> HttpResult {
+        return ToHttpResult(
+            cpr::Get(cpr::Url{url}, ParseHeaderLines(headers), cpr::Timeout{std::chrono::milliseconds{timeoutMs}}));
     };
 
     _impl->Items.push_back({std::async(std::launch::async, std::move(task)), std::move(onComplete)});
