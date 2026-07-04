@@ -4,49 +4,60 @@
 
 ## Prerequisites
 
-- C++23 compiler
-- HL2SDK CS2 submodule
-- Metamod:Source 2.0 submodule
-- CMake 4.3.4+
-- Conan 2.29.1+
+- C++23 compiler (MSVC 2022+, or the Steam Runtime toolchain for Linux)
+- CMake 4.3.4+ and Conan 2.29.1+ (both installable via `uv`/pip)
 - Ninja
 
-## Adding CS2Kit To Your Project
+The HL2SDK and Metamod:Source come with the kit as submodules - you don't install them separately.
 
-Add CS2Kit as a submodule:
+## Add the kit to your repo
 
 ```sh
 git submodule add https://github.com/suxrobgm/cs2-kit.git vendor/cs2-kit
+git submodule update --init --recursive
 ```
-
-Then consume the CMake target:
 
 ```cmake
 add_subdirectory(vendor/cs2-kit)
 target_link_libraries(my-plugin PRIVATE CS2Kit::CS2Kit)
 ```
 
-CS2Kit keeps HL2SDK and Metamod as source-tree submodules. Normal third-party
-libraries come from Conan.
+Normal third-party libraries come from Conan; the Conan profiles under `vendor/cs2-kit/conan/profiles/` are canonical, so consuming repos reuse them instead of keeping copies.
 
-## Initialization
+## Scaffold a plugin
 
-The simplest way to start is to derive from
-`CS2Kit::MetamodPluginBase`. It runs `CS2Kit::Initialize()` and
-`CS2Kit::Shutdown()`, owns the standard SourceHook hooks, drives the
-`PlayerManager` lifecycle, and runs a LIFO teardown stack on unload.
+The kit ships a generator that stamps a working plugin - it builds, loads, and answers `!ping` before you write a line of code:
 
-> **Short names.** Public types are reachable as `CS2Kit::Type` (e.g.
-> `CS2Kit::MetamodPluginBase`, `CS2Kit::PlayerController`, `CS2Kit::MenuBuilder`,
-> `CS2Kit::Engine()`) by including `<CS2Kit/Api.hpp>`, which hoists the library's
-> vocabulary out of its internal module namespaces (`Sdk`, `Menu`, `Core`, …).
-> The fully-qualified `CS2Kit::Module::Type` spelling keeps working if you prefer
-> it. Examples below use the short form.
+```sh
+uv run poe new-plugin my-plugin        # from your repo's root
+```
+
+You get `plugins/my-plugin/` with a `PluginBase` skeleton, a self-registering example command, a `settings.jsonc` mapped by @ref CS2Kit::Core::JsonConfig, and translations. The root `CMakeLists.txt` gains its `add_subdirectory` line automatically. Expose the task in your own `pyproject.toml` as:
+
+```toml
+[tool.poe.tasks]
+new-plugin = "python vendor/cs2-kit/scripts/new_plugin.py"
+```
+
+## The skeleton, by hand
+
+If you'd rather see what the generator writes: derive from @ref CS2Kit::Core::PluginBase with your manager struct. The base runs `CS2Kit::Initialize()`/`Shutdown()`, owns the standard SourceHook hooks and the player lifecycle, constructs your managers once the kit services are live, and tears everything down LIFO on unload.
+
+> **Short names.** Including `<CS2Kit/Api.hpp>` hoists the public vocabulary to `CS2Kit::Type`
+> (`CS2Kit::PluginBase`, `CS2Kit::CommandSpec`, `CS2Kit::Engine()`, ...), so you don't spell out
+> the internal module namespaces. The fully-qualified `CS2Kit::Module::Type` forms keep working.
+> Examples in these guides use the short form.
 
 ```cpp
 #include <CS2Kit/Api.hpp>
 
-class MyPlugin : public CS2Kit::MetamodPluginBase
+struct Managers
+{
+    ConfigManager Config;   // your managers, in dependency order
+};
+Managers& App();            // free accessor, forwarded below
+
+class MyPlugin : public CS2Kit::PluginBase<Managers>
 {
 protected:
     CS2Kit::PluginInfo Info() const override
@@ -56,26 +67,23 @@ protected:
 
     bool OnLoad(bool late) override
     {
-        Defer([] { MySystem::Shutdown(); });
-        return MySystem::Init();
+        return App().Config.Load("addons/my-plugin/configs/settings.jsonc");
     }
 };
 
 MyPlugin g_MyPlugin;
 PLUGIN_EXPOSE(MyPlugin, g_MyPlugin);
+
+Managers& App() { return MyPlugin::App(); }
 ```
 
-## Manual Initialization
+## Manual initialization
 
-If you cannot derive from `MetamodPluginBase`, call the lifecycle entry points
-yourself from your own `ISmmPlugin`: `CS2Kit::Initialize()` in `Load()`,
-`CS2Kit::OnGameFrame()` from your frame hook, `CS2Kit::OnPlayerDisconnect()`
-from disconnect handling, and `CS2Kit::Shutdown()` in `Unload()`.
+If you can't derive from the base, call the entry points from your own `ISmmPlugin`: `CS2Kit::Initialize()` in `Load()`, `CS2Kit::OnGameFrame()` from your frame hook, `CS2Kit::OnPlayerDisconnect()` from disconnect handling, and `CS2Kit::Shutdown()` in `Unload()`.
 
-## Next Steps
+## Next steps
 
-- @ref plugin_guide
-- @ref commands_guide
-- @ref menus_guide
-- @ref players_guide
-- @ref sdk_guide
+- @ref plugin_guide - what the base owns and what you override
+- @ref commands_guide - add real commands
+- @ref config_guide - grow the settings file
+- @ref menus_guide - menus and wizards

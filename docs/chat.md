@@ -1,19 +1,34 @@
-# Chat Output {#chat_guide}
+# Messages & Chat Colors {#chat_guide}
 
 [TOC]
 
-## Overview
+All player-facing text leaves the server through one service: `Engine().Messages` (@ref CS2Kit::Sdk::MessageSystem). It sends to the chat box, the center of the screen, the center-HTML panel, or the alert bar - same call, different @ref CS2Kit::Sdk::MessageKind. Colors are plain escape bytes you compose with `std::format` using the `ChatColors` constants.
 
-The chat module (`CS2Kit::Utils::Chat` and `CS2Kit::Utils::ChatColors`) is a thin layer over the engine's `TextMsg / HUD_PRINTTALK` user message (CS2 silently drops `SayText2` from non-player sources after the 2026 update). It gives plugins:
+## Sending
 
-- **ChatColors** - `inline constexpr` constants for the 15 in-line CS2 chat color escapes, plus `ParseNamed` and `Strip` helpers
-- **Chat::Print / PrintAll / PrintFiltered** - one-liners for sending colored chat lines to a slot, all players, or a filtered subset
+```cpp
+#include <CS2Kit/Api.hpp>
 
-Built on top of `CS2Kit::MessageSystem::SendChatMessage`, which `CS2Kit::Initialize` wires up automatically - no extra setup needed.
+auto& msg = CS2Kit::Engine().Messages;
 
-## Color Constants
+msg.Reply(slot, "Done.");                                  // chat, to one player
+msg.Send(slot, "Watch out!", CS2Kit::MessageKind::Center); // plain center print
+msg.Broadcast("Server restarting in 5 minutes.");          // chat, to everyone
+msg.Broadcast("Round of the day!", CS2Kit::MessageKind::Alert);
 
-CS2's chat (`TextMsg / HUD_PRINTTALK`) reads ASCII bytes `0x01`-`0x10` as in-line color toggles. Embed them anywhere in a message; everything until the next escape (or `Default`) renders in that color. Byte values mirror the [SwiftlyS2 mapping](https://github.com/swiftly-solution/swiftlys2) - what CS2 actually renders today.
+// Translate in the player's language, substitute tokens, reply - one call:
+msg.ReplyKey(slot, "cmd.banSuccess", {{"name", targetName}});
+```
+
+`Reply` is `Send(slot, message)` with the chat default - it exists because "reply to the command caller" is the sentence you write most. `Engine().Policy.Reply` typically points straight at it.
+
+Chat sends normalize colors for you: a message that already starts with a color escape keeps it; anything else gets the default color prepended so lines don't inherit the previous line's color. (CS2 routes server-originated chat through `TextMsg` - `SayText2` from non-player sources is silently dropped.)
+
+For a *sticky* center panel that survives the client's aggressive HUD clearing, use @ref CS2Kit::Sdk::PersistentCenterHtml - see @ref sdk_messaging_guide.
+
+## Color constants
+
+CS2's chat reads ASCII bytes `0x01`-`0x10` as in-line color toggles. Embed them anywhere; everything until the next escape renders in that color. All constants are `inline constexpr std::string_view`, so they drop into `std::format`:
 
 | Constant(s) | Byte | Color |
 |---|---|---|
@@ -33,35 +48,13 @@ CS2's chat (`TextMsg / HUD_PRINTTALK`) reads ASCII bytes `0x01`-`0x10` as in-lin
 | `LightRed` | `\x0F` | Light red |
 | `Gold` / `Orange` | `\x10` | Gold / orange |
 
-All are `inline constexpr std::string_view` so they compose cleanly with `std::format`. Names that share a byte (e.g. `Gold` / `Orange`) are aliases - pick whichever reads better at the call site.
+Names sharing a byte are aliases - pick whichever reads better. Byte values mirror what CS2 actually renders today (per the SwiftlyS2 mapping).
 
-## Sending Messages
+## Composing colored text
 
 ```cpp
-#include <CS2Kit/Utils/Chat.hpp>
-#include <CS2Kit/Utils/ChatColors.hpp>
-
 using namespace CS2Kit::Utils;
 
-// One player:
-Chat::Print(slot, "Welcome!");
-
-// Everyone connected:
-Chat::PrintAll("Server restarting in 5 minutes.");
-
-// Subset selected by predicate (App().Admins is the plugin's own manager):
-Chat::PrintFiltered("Admin notice.", [](const Players::Player* p) {
-    return App().Admins.IsAdmin(p->GetSteamID());
-});
-```
-
-Bots and disconnected slots are skipped automatically. If `message` doesn't already start with a color escape, `Print` and the broadcast helpers prepend `ChatColors::Default` so the line renders cleanly regardless of whatever color was active in the previous chat line.
-
-## Composing Colored Text
-
-`std::format` is the natural fit:
-
-```cpp
 auto line = std::format(
     "{}[ADMIN]{} {}{}{} kicked {} for {}{}",
     ChatColors::Red,    ChatColors::Default,
@@ -69,76 +62,26 @@ auto line = std::format(
     targetName,
     ChatColors::Olive, reason);
 
-Chat::PrintAll(line);
+Engine().Messages.Broadcast(line);
 ```
 
-Renders as `[ADMIN]` in red, the admin name in light blue, the reason in olive, and everything else in the default color.
-
-For runtime/config-driven colors, look up the escape by name:
+For runtime/config-driven colors, look the escape up by name - `ParseNamed` is case-insensitive, resolves aliases (`"orange"` → `Gold`), and returns `Default` for unknown names:
 
 ```cpp
 std::string_view color = ChatColors::ParseNamed(group.PrefixColor);
-auto line = std::format("{}{} {}: {}", color, group.Prefix,
-                        ChatColors::Default, message);
+auto line = std::format("{}{} {}: {}", color, group.Prefix, ChatColors::Default, message);
 ```
 
-`ParseNamed` is case-insensitive and accepts every name in the table above (e.g. `"red"`, `"green"`, `"lightblue"`, `"silver"`, `"orange"`, `"grey"`). Aliases resolve to the same byte as their primary (`"orange"` → `Gold`, `"grey"` → `Gray`, `"magenta"` → `Purple`). Unknown names return `Default`.
+Broadcast layouts with a repeated shape ("[PREFIX] actor did-thing target") are a few lines of `std::format` in your own chat service - the kit ships transport and colors, not house style.
 
-## Admin-Action Lines
+## Stripping colors for logs
 
-`Chat::FormatAdminLine` renders the common `{prefix} {actor} {phrase}` broadcast layout so plugins
-don't hand-assemble the color scaffolding. The prefix text and all colors come from an
-@ref CS2Kit::Utils::Chat::AdminLineStyle (defaults: green prefix, default-colored names, olive
-phrase):
+The escape bytes render as colors in-game but are garbage in a console or log file:
 
 ```cpp
-Chat::AdminLineStyle style{.Prefix = "[ADMIN]"};
-
-// "{prefix} {actor} {phrase}"
-Chat::PrintAll(Chat::FormatAdminLine(style, adminName, "went stealth"));
-
-// "... {phrase} {target}"
-Chat::PrintAll(Chat::FormatAdminLine(style, adminName, "slapped", targetName));
-
-// Token variant for multi-name phrases; each mapped name is wrapped in the name color:
-Chat::PrintAll(Chat::FormatAdminLine(style, adminName, "swapped {a} and {b}",
-                                     {{"a", nameA}, {"b", nameB}}));
+Log::Info("{}", ChatColors::Strip(coloredLine));
 ```
-
-The phrase text itself is caller-supplied (typically a translation lookup), keeping localization
-out of the kit.
-
-## Stripping Colors for Logs
-
-The engine renders `\x01`-`\x10` as colors, but writing them to a console or log file leaves garbage. Strip before logging:
-
-```cpp
-auto colored = std::format("{}[ADMIN]{} {}", ChatColors::Red,
-                           ChatColors::Default, msg);
-Chat::PrintAll(colored);
-Log::Info("{}", ChatColors::Strip(colored));
-```
-
-## API Reference
-
-### `Chat::`
-
-| Function | Description |
-|---|---|
-| `Print(slot, message)` | Send a colored chat line to one player. |
-| `PrintAll(message)` | Broadcast to every connected human player. Bots/disconnected slots skipped. |
-| `PrintFiltered(message, filter)` | Broadcast only to players where `filter(player)` returns `true`. |
-| `FormatAdminLine(style, actor, phrase[, target \| tokens])` | Render a `{prefix} {actor} {phrase}` action line (plain, single-target, or `{token}` multi-name). |
-
-All accept `std::string_view`.
-
-### `ChatColors::`
-
-| Function | Returns | Description |
-|---|---|---|
-| `ParseNamed(name)` | `std::string_view` | Map a color name (`"red"`, `"green"`, ...) to its escape sequence. Case-insensitive; unknown names return `Default`. |
-| `Strip(text)` | `std::string` | Remove all `0x01`-`0x10` escape bytes for safe console/log output. |
 
 ## Threading
 
-Like the rest of CS2-Kit, the chat helpers are main-thread-only. Call them from your Metamod hooks, scheduled timers, or command handlers - never from a worker thread.
+Main-thread only, like the rest of the kit. Call from hooks, timers, command handlers, or async completions (database/HTTP callbacks already run on the game thread) - never from a worker thread you spawned yourself.

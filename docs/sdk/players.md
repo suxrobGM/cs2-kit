@@ -30,11 +30,13 @@ below) rather than working with the raw `CEntityInstance*`.
 
 ## PlayerController
 
-Typed wrapper around `CCSPlayerController` providing common operations. Construct it from a player
-slot - it resolves the controller entity internally (check `IsValid()` if the slot may be empty):
+Typed wrapper around `CCSPlayerController` for common operations. Construct it from a player
+slot - it resolves the controller entity internally (check `IsValid()` if the slot may be
+empty). When you already hold a tracked `CS2Kit::Player*`, `player->Controller()` builds the
+same wrapper:
 
 ```cpp
-CS2Kit::PlayerController player(slot);
+CS2Kit::PlayerController player(slot);   // or: trackedPlayer->Controller()
 
 int health = player.GetHealth();
 int team = player.GetTeam();

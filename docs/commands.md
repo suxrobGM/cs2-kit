@@ -1,114 +1,94 @@
-# Command System {#commands_guide}
+# Commands {#commands_guide}
 
 [TOC]
 
-## Overview
+A command is one aggregate - name, metadata, permission, typed arguments, handler - registered at its definition site. The kit resolves and validates every argument *before* your handler runs: targets go through the selector grammar with immunity applied, durations and SteamIDs are parsed, and every failure already replied to the caller in their language. Your handler only sees the happy path.
 
-The command system (`CS2Kit::Commands`) provides a framework for registering and dispatching chat commands. It includes:
-
-- **Command** - Data struct holding command metadata and handler
-- **CommandBuilder** - Fluent builder for constructing commands
-- **CommandManager** - A CS2-Kit service (reached via `Engine().Commands`) that registers commands, parses chat input, and dispatches handlers
-
-Handlers receive a `CS2Kit::Player*` directly - no caller adapter is required.
-
-## Registering Commands
-
-Use `CommandBuilder` to define commands and register them with `CommandManager`:
+## A complete command
 
 ```cpp
-#include <CS2Kit/Commands/Command.hpp>
-#include <CS2Kit/Commands/CommandManager.hpp>
-#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Api.hpp>
 
-using CS2Kit::Core::Engine;
+using namespace CS2Kit::Commands;
 
-auto& cmdMgr = Engine().Commands;
-
-cmdMgr.Register(
-    CS2Kit::Commands::CommandBuilder("kick")
-        .WithAliases({"k"})
-        .WithDescription("Kick a player from the server")
-        .WithUsage("!kick <target> [reason]")
-        .RequirePermission("c")
-        .WithArgs(1, 2)
-        .OnExecute([](CS2Kit::Player* caller,
-                      const std::vector<std::string>& args) -> CS2Kit::CommandResult
-        {
-            // args[0] = target, args[1] = reason (optional)
-            return {.Success = true, .Message = "Player kicked."};
-        })
-        .Build()
-);
+static const bool _registered = CS2Kit::Registry<CommandSpec>::Add({
+    .Name = "ban",
+    .Description = "Ban a player.",
+    .Usage = "!ban <target> <duration> [reason]",
+    .Permission = "b",
+    .Args = {Target(), Duration(), ReasonTail("reason.bannedByAdmin")},
+    .Handler = [](CommandContext& c) {
+        std::string name = c.Target->GetName();      // capture first - a ban can drop the target
+        if (!IssueBan(*c.Caller, *c.Target, c.Reason, c.DurationSec))
+            return c.Fail("cmd.banFailed");
+        return c.Ok("cmd.banSuccess", {{"name", name}});
+    },
+});
 ```
 
-## CommandBuilder API
-
-| Method | Description |
-|--------|-------------|
-| `CommandBuilder(name)` | Constructor - sets the primary command name |
-| `.WithAliases({...})` | Alternative names (e.g., `{"k", "boot"}`) |
-| `.WithDescription(desc)` | Human-readable description |
-| `.WithUsage(usage)` | Usage string shown in help |
-| `.RequirePermission(flags)` | Required admin flag string (e.g., `"c"` for kick) |
-| `.WithArgs(min, max)` | Argument count bounds (default: 0–99) |
-| `.OnExecute(handler)` | The command handler function |
-| `.Build()` | Returns the constructed `Command` |
-
-## Command Prefixes
-
-Commands are triggered by chat messages starting with `!` or `.`:
-
-```
-!kick player1 cheating
-.kick player1 cheating
-```
-
-The `CommandManager` strips the prefix and matches the remaining text against registered command names and aliases.
-
-## Permission Checking
-
-Set a permission callback on `CommandManager` to integrate with your admin system:
+In `OnLoad`, ingest everything that registered itself:
 
 ```cpp
-cmdMgr.SetPermissionCallback(
-    [](int slot, const std::string& requiredFlags) -> bool
-    {
-        // Check if the player in this slot has the required flags
-        return myAdminSystem.HasPermission(slot, requiredFlags);
-    }
-);
+Engine().Commands.RegisterAll(CS2Kit::Registry<CS2Kit::CommandSpec>::Items());
 ```
 
-## Caller
-
-Command handlers receive a `CS2Kit::Player*` (the same pointer returned by `PlayerManager::GetPlayerBySlot`). Use `caller->GetSteamID()` and `caller->GetName()` directly.
-
-Server-console commands are not currently dispatched through `CommandManager` - only chat messages are. If console support is added later, the signature will be revised then.
-
-## CommandResult
-
-Handlers return a `CommandResult`:
+And dispatch from your chat override (commands are triggered by `!` or `.`; `HandleChatMessage` returns `false` for unknown names so they fall through to normal chat):
 
 ```cpp
-struct CommandResult
+bool MyPlugin::OnPlayerChat(Player* p, std::string_view msg, bool team)
 {
-    bool Success = true;
-    std::string Message;
-};
+    if (msg.empty() || (msg.front() != '!' && msg.front() != '.'))
+        return false;
+    return Engine().Commands.HandleChatMessage(p, std::string(msg));
+}
 ```
 
-By default the result is discarded after dispatch. Register a `ResultCallback` on `CommandManager` to forward `Message` somewhere - typically as a chat reply via @ref chat_guide :
+## The pipeline
 
-```cpp
-cmdMgr.SetResultCallback(
-    [](CS2Kit::Player* caller,
-       const CS2Kit::Commands::Command& cmd,
-       const CS2Kit::CommandResult& result)
-    {
-        if (caller && !result.Message.empty())
-            CS2Kit::Utils::Chat::Print(caller->GetSlot(), result.Message);
-    });
+For each chat command: prefix match → `Engine().Policy.HasPermission(callerSteamId, spec.Permission)` → per-argument resolve/validate → your handler → the returned `CommandResult.Message` routed through `Engine().Policy.Reply`. An empty `Permission` skips the gate; a failure at any step replies with a localized message and never reaches the handler.
+
+## Argument kinds
+
+Declare `Args` with the terse factories; each fills a `CommandContext` field:
+
+| Factory | Consumes | Fills |
+|---------|----------|-------|
+| `Target(rules = {})` | one token via the selector grammar | `c.Target` (and `c.Targets` when `rules.AllowMultiple`) |
+| `TargetOrSteamId()` | online player, or a bare SteamID64 for offline targets | `c.Target` + `c.SteamId`, or `c.SteamId` alone |
+| `Duration()` | `30` (minutes), `30s`/`5m`/`2h`/`7d`, `0`/`perm` | `c.DurationSec` (0 = permanent) |
+| `SteamId64(errorKey = {})` | numeric SteamID64 | `c.SteamId` |
+| `Int()` | integer | `c.IntValue` |
+| `Word(required = true)` | one verbatim token | `c.Word` |
+| `ReasonTail(fallbackKey = {})` | all remaining tokens joined | `c.Reason` (the translated fallback when absent) |
+
+`TargetRules` narrows what a Target argument accepts: `{.AllowMultiple = true}` permits `@all`-style selectors, `AllowDead`/`AllowBots` filter the match set.
+
+`CommandContext` also carries `Caller`, `RawArgs`, and the localized result helpers `Ok(key, tokens)` / `Fail(key, tokens)` - both translate in the caller's language.
+
+## Target selectors
+
+The `Target` argument (and @ref CS2Kit::Players::ResolveTargets directly) understands:
+
+```
+@all @*        everyone                @me    yourself        @!me   everyone else
+@t @ct @spec   by team                 @dead  @alive          @bot   @human
+@random        one random player       @randomt  @randomct    one random per team
+#3             slot index              765611...  STEAM_...  [U:1:...]   SteamIDs
+name           exact match, then prefix, then substring (case-insensitive)
 ```
 
-The callback also fires for early dispatch failures (bad arg count, permission denied) with a synthesized `CommandResult` like `{false, "Usage: !ban <target> <minutes>"}` or `{false, "You do not have permission..."}`, so every code path the caller hits produces feedback without each handler having to do it manually.
+Immunity comes from `Engine().Policy.CanTarget` - matches the policy rejects are dropped, and if that empties the set the caller is told the target is immune, not "no match".
+
+## Error replies and reserved keys
+
+Argument failures reply from these translation keys - ship them in your translation files:
+
+`target.noMatch`, `target.immune`, `target.ambiguous` (gets a `{count}` token), `target.dead`, `target.bot`, `cmd.badDuration`, `cmd.badSteamId`, and the command's own `Usage` string for arity errors. Override per-argument with `ArgSpec::ErrorKey` (e.g. `SteamId64("cmd.unbanUsage")`).
+
+## Introspection
+
+`Engine().Commands.GetAllCommands()` returns every registered spec with its `Name`, `Aliases`, `Description`, `Usage`, and `Permission` - enough to build a `!help` command or an admin menu from the same data the dispatcher uses.
+
+## Console callers
+
+Only chat messages are dispatched. Server-console input doesn't go through `CommandManager`; slot `-1` replies are dropped harmlessly by the message layer.

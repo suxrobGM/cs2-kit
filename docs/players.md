@@ -1,162 +1,108 @@
-# Player Management {#players_guide}
+# Players, Targeting & Actions {#players_guide}
 
 [TOC]
 
-## Overview
+`CS2Kit::Players` tracks connected players and turns "who does this act on?" into data: a selector grammar for command targets, and policy-checked `Action`/effect descriptors for the acting itself.
 
-The player module (`CS2Kit::Players`) tracks connected players by slot and SteamID. It is intentionally minimal - only identity and connection metadata. Plugin-specific state (admin flags, punishment cache, stats) belongs in your own managers, keyed off SteamID, not on the `Player` type.
+`Player` is deliberately minimal - identity and connection metadata only. Plugin state (admin flags, punishments, stats) belongs in your own managers, keyed by SteamID.
 
-- **Player** - Identity record: slot, SteamID, name, IP, connect time
-- **PlayerManager** - Two indexed maps (slot, SteamID) for O(1) lookup; a CS2-Kit service reached via `Engine().Players`
+## Tracking
 
-Single-threaded by design. All access happens from game-thread Metamod hooks, so no mutex is needed.
-
-## Wiring Up
-
-If your plugin derives from @ref CS2Kit::Core::MetamodPluginBase, this is automatic: the base calls `AddPlayer` on connect and `RemovePlayer` on disconnect, then hands your `OnPlayerConnect(Player*)` / `OnPlayerDisconnect(Player*)` overrides the live `Player*`. Just override those.
-
-Without the base, drive `PlayerManager` from your own connect/disconnect hooks. Reach the manager
-via the `Engine()` accessor (`#include <CS2Kit/Core/Services.hpp>`, `using CS2Kit::Engine;`):
+With @ref CS2Kit::Core::PluginBase this is automatic: the base adds/removes players around your `OnPlayerConnect(Player*)` / `OnPlayerDisconnect(Player*)` overrides. Look players up through `Engine().Players`:
 
 ```cpp
-// OnClientConnected hook:
-Engine().Players.AddPlayer(slot.Get(), static_cast<int64_t>(xuid),
-                        name ? name : "", address ? address : "");
-
-// ClientDisconnect hook:
-CS2Kit::OnPlayerDisconnect(slot.Get());
-Engine().Players.RemovePlayer(slot.Get());
-
-// Plugin::Unload():
-Engine().Players.Clear();
+auto* p = Engine().Players.GetPlayerBySlot(slot);        // O(1)
+auto* q = Engine().Players.GetPlayerBySteamId(steamId);  // O(1)
+for (auto* each : Engine().Players.GetAllPlayers()) { /* ... */ }
 ```
 
-## Player API
-
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `GetSlot()` | `int` | Player's slot index (0–63) |
-| `GetSteamID()` | `int64_t` | 64-bit SteamID |
-| `GetName()` | `const std::string&` | Display name at connect time (use `SetName` to refresh on rename) |
-| `GetIpAddress()` | `const std::string&` | Connection IP |
-| `GetConnectTime()` | `int64_t` | Unix timestamp when the player joined |
-| `GetPlaytime()` | `int64_t` | Seconds since `GetConnectTime` |
-| `SetName(name)` | `void` | Update the cached name |
-
-## PlayerManager API
-
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `AddPlayer(slot, steamId, name, ip)` | `Player*` | Create or replace the player in this slot. Returned pointer is owned by the manager. |
-| `RemovePlayer(slot)` | `void` | Drop the player from both indexes. |
-| `Clear()` | `void` | Drop all players (call from `Plugin::Unload`). |
-| `GetPlayerBySlot(slot)` | `Player*` or `nullptr` | O(1) slot lookup. |
-| `GetPlayerBySteamId(steamId)` | `Player*` or `nullptr` | O(1) SteamID lookup. |
-| `FindPlayersByName(substring)` | `std::vector<Player*>` | Case-insensitive `contains` match across all players. |
-| `GetAllPlayers()` | `std::vector<Player*>` | Snapshot of every connected player. |
-| `GetPlayerCount()` | `size_t` | Count of currently tracked players. |
-
-## Pointer Lifetime
-
-`Player*` returned by any of the lookup methods is owned by `PlayerManager` and remains valid until:
-
-- `RemovePlayer(slot)` is called for that slot, or
-- `AddPlayer(slot, …)` reassigns that slot (e.g., a new player joins the same slot), or
-- `Clear()` is called.
-
-Do not store `Player*` across the disconnect callback. If you need to remember a player after they leave, copy the SteamID - that is the stable identifier.
-
-## Plugin-Specific State
-
-`Player` deliberately does not carry admin flags, mute/gag flags, or any other plugin concern. Keep
-that state in your own services, keyed by SteamID. A plugin's managers are plain classes (no base) -
-gather them in one struct, construct it in `OnLoad`, drop it on unload, and reach it via a free
-accessor. admin-system calls the struct `Managers` and the accessor `App()`:
+`Player` carries `GetSlot()`, `GetSteamID()`, `GetName()`, `GetIpAddress()`, `GetConnectTime()`, `GetPlaytime()` - and `Controller()`, which returns the @ref CS2Kit::Sdk::PlayerController for typed engine operations:
 
 ```cpp
-class AdminManager
-{
-public:
-    bool IsAdmin(int64_t steamId) const;
-    // ...
-};
-
-// Your plugin's managers, constructed in OnLoad and destroyed on unload:
-struct Managers
-{
-    AdminManager Admins;
-    // ... other plugin managers
-};
-Managers& App();   // returns the live struct; valid only between OnLoad and unload
-
-// Query when you need it (Engine().Players is the CS2-Kit manager; App().Admins is yours):
-auto* player = Engine().Players.GetPlayerBySlot(slot);
-if (player && App().Admins.IsAdmin(player->GetSteamID()))
-{
-    // ...
-}
+player->Controller().Slay();
+int hp = player->Controller().GetHealth();
 ```
 
-This keeps `CS2Kit::Player` reusable across plugins that have nothing to do with admins or punishments.
+**Pointer lifetime:** a `Player*` is owned by the manager and dies on disconnect, slot reuse, or `Clear()`. Never store one across the disconnect callback - store the SteamID.
 
-## Target Resolution
+## Target resolution
 
-`<CS2Kit/Players/TargetResolver.hpp>` resolves a command's target token to online players. Syntax
-(parsed by `StringUtils::ParseTarget`): `@all`/`@*`, `@me`, `#N` slot index, a SteamID64 /
-`STEAM_...` / `[U:1:...]`, or a case-insensitive name substring.
+@ref CS2Kit::Players::ResolveTargets resolves one token to players, applying the immunity policy (`Engine().Policy.CanTarget` unless you pass your own):
 
-Targetability policy (immunity, team rules, ...) is injected as a `CanTargetFn` - the kit carries
-no admin model of its own. Each match reports the policy verdict in `Allowed` so the caller can
-say "X is immune":
+```
+@all @*        everyone                @me    yourself        @!me   everyone else
+@t @ct @spec   by team                 @dead  @alive          @bot   @human
+@random        one random player       @randomt  @randomct    one random per team
+#3             slot index              765611...  STEAM_...  [U:1:...]   SteamIDs
+name           exact match, then prefix, then substring (case-insensitive)
+```
 
 ```cpp
 using namespace CS2Kit::Players;
 
-CanTargetFn canTarget = [](Player& caller, Player& target) {
-    return App().Admins.CanTarget(caller.GetSteamID(), target.GetSteamID());
-};
-
-auto matches = ResolveTargets("@all", caller, canTarget);       // every match + verdict
-
-auto single = ResolveSingleTarget("#3", caller, canTarget);     // narrowed to one allowed player
-switch (single.Error)
+auto result = ResolveTargets(token, caller, {.AllowMultiple = true, .AllowBots = false});
+if (!result)
 {
-case SingleTargetError::None:      Act(single.Target); break;
-case SingleTargetError::NoMatch:   /* "no player matched" */ break;
-case SingleTargetError::Immune:    /* "target is immune" */ break;
-case SingleTargetError::Ambiguous: /* single.MatchCount matches - narrow the token */ break;
+    switch (result.error().Error)
+    {
+    case TargetError::NoMatch:    /* "no player matched" */ break;
+    case TargetError::Immune:     /* matches existed; policy blocked them all */ break;
+    case TargetError::Ambiguous:  /* result.error().Count matches - narrow the token */ break;
+    case TargetError::MultiNotAllowed:
+    case TargetError::DeadNotAllowed:
+    case TargetError::BotNotAllowed: /* rules rejected the match */ break;
+    }
+    return;
 }
+for (Player* target : *result) { /* ... */ }
 ```
 
-Error text stays with the consumer (translation keys, formatting); the kit returns only the typed
-enum plus `MatchCount` for the ambiguous message.
+`TargetRules` says what the call site accepts: `AllowMultiple` permits `@all`-class selectors, `AllowDead`/`AllowBots` filter. A single-target call gets exactly one player or a failure - never a silent first-of-many. Error *text* stays with you (translation keys); the kit returns the typed reason. Command `Target()` arguments run this same resolution and reply from the reserved keys automatically (@ref commands_guide).
 
-## ActionDispatcher
+The grammar core is engine-free (`Targeting.hpp`: `ParseTargetToken` + `FilterRoster` over plain `PlayerView` records), which is what makes it unit-testable - the kit's own tests cover it without a server.
 
-`<CS2Kit/Players/ActionDispatcher.hpp>` runs data-defined single-target actions with
-consumer-injected policy: a permission check, a `CanTargetFn`, and a broadcast sink. An action is
-just its permission token, its guards, and its effect - the dispatcher owns the
-`Resolve -> guard -> Broadcast` shape:
+## Actions
+
+An @ref CS2Kit::Players::Action is a single-target operation as data: permission token, guards, body. The @ref CS2Kit::Players::ActionDispatcher owns the resolve → permission → immunity → run → broadcast pipeline, reading everything from `Engine().Policy` - there is nothing to wire per dispatcher:
 
 ```cpp
 using namespace CS2Kit::Players;
 
-// Wire the dispatcher once (e.g. in your Managers struct):
-ActionDispatcher dispatcher{
-    [](Player& caller, const std::string& perm) { return App().Admins.HasAnyPermission(caller.GetSteamID(), perm); },
-    [](Player& caller, Player& target) { return App().Admins.CanTarget(caller.GetSteamID(), target.GetSteamID()); },
-    [](const ActionContext& ctx, const std::string& key) { App().Chat.BroadcastAction(key, ctx.Caller->GetName(), ctx.Target->GetName()); }};
-
-// Define actions as data; the body returns the broadcast key (or nullopt to stay silent):
-const Action Slay{"s", /*requireAlive*/ true, [](const ActionContext& ctx) -> OptKey {
+const Action Slay{"s", /*RequireAlive=*/true, [](const ActionContext& ctx) -> OptKey {
     ctx.TargetCtrl.Slay();
-    return "broadcast.slain";
+    return "broadcast.slain";     // policy Broadcast sink announces it; nullopt = silent
 }};
 
-dispatcher.Run(adminSlot, targetSlot, Slay);
+ActionDispatcher{}.Run(adminSlot, targetSlot, Slay);
 ```
 
-`ActionContext` carries the resolved `Caller`/`Target` players plus transient
-`CallerCtrl`/`TargetCtrl` controllers; `ParamAction` adds an integer parameter (health value,
-team id, ...) supplied at the call site. An empty permission string skips the permission check,
-and empty callbacks skip their step entirely.
+`ActionContext` carries the resolved `Caller`/`Target` players plus transient `CallerCtrl`/`TargetCtrl` controllers. `ParamAction` adds an int the call site supplies (health value, team id). An empty permission string skips that check.
+
+Actions plug directly into menu context rows (`AddActionRow`, `AddStateToggleRow`, `AddPresetChoiceRow` - see @ref menus_guide), so the same data drives commands, menus, and bespoke call sites.
+
+## Effects
+
+Effects are toggleable/timed per-player states - the fun-command family (ghost, disco, wallhack, custom models). An @ref CS2Kit::Core::EffectDescriptor declares the whole thing: permission, id, label key, broadcast keys, lifetime policy, and a `Setup` body that returns the `OnTick`/`OnStop` closures @ref CS2Kit::Core::EffectManager drives:
+
+```cpp
+using namespace CS2Kit;
+
+inline const EffectDescriptor Ghost{
+    .Permission = "g",
+    .Id = EffectId::Ghost,
+    .NameKey = "effect.ghost",
+    .OnKey = "broadcast.ghosted", .OffKey = "broadcast.unghosted",
+    .Scope = EffectScope::Persistent,      // or Round: auto-cancel on round end
+    .Setup = [](const Players::ActionContext& ctx) -> EffectInstance {
+        int slot = ctx.Target->GetSlot();
+        Engine().Transmit.SetPawnHidden(slot, true);
+        return {.OnStop = [slot] { Engine().Transmit.SetPawnHidden(slot, false); }};
+    },
+};
+
+// Self-register at the definition site (EffectEntry is your own {Order, descriptor*} record);
+// the menu that renders the list ingests Registry<EffectEntry>::Items() sorted by Order:
+static const bool _reg = Registry<EffectEntry>::Add({.Order = 10, .Toggle = &Ghost});
+```
+
+Dispatch through `ToggleEffect` / `ApplyEffect` / `ClearEffect` (they apply `Engine().Policy` first), or drop the descriptor straight into a menu with `AddEffectToggleRow`. `ParamEffectDescriptor` adds a `Choices` list and a parameterized `Setup` for picker-style effects (model selection); `AddEffectPickerRow` renders it. `EffectManager` guarantees `OnStop` runs exactly once however the effect ends - toggle, death, disconnect, round end, or unload.

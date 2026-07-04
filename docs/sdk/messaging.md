@@ -4,16 +4,16 @@
 
 ## MessageSystem
 
-Send chat and center-HTML messages to players:
+One service, every destination - see @ref chat_guide for the full messaging story (colors, `ReplyKey`, broadcast semantics). The raw surface:
 
 ```cpp
 auto& msg = Engine().Messages;
 
-// Send a chat line to a specific player (prefer CS2Kit::Utils::Chat for colored output)
-msg.SendChatMessage(slot, "Hello, player!");
+msg.Reply(slot, "Hello!");                                     // chat line
+msg.Send(slot, "Look up", CS2Kit::MessageKind::Center);        // plain center print
+msg.Send(slot, "<b>Notice</b>", CS2Kit::MessageKind::CenterHtml);
+msg.Broadcast("Map change in 60s", CS2Kit::MessageKind::Alert);
 
-// Send / clear center HTML
-msg.SendCenterHtml(slot, "<b>Important Notice</b>");
 msg.ClearCenterHtml(slot);
 ```
 

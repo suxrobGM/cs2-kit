@@ -4,7 +4,7 @@
 
 ## Overview
 
-The Sdk module (`CS2Kit::Sdk`) provides typed wrappers around HL2SDK interfaces, abstracting away raw pointer manipulation and engine-specific details.
+`CS2Kit::Sdk` is the engine wrapper layer - typed classes over the HL2SDK interfaces so plugin code doesn't juggle raw pointers and reversed offsets.
 
 The guide is split by topic:
 

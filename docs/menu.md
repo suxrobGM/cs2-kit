@@ -1,37 +1,27 @@
-# Menu System {#menus_guide}
+# Menus {#menus_guide}
 
 [TOC]
 
-## Overview
+WASD-navigated center-HTML menus. Each row is a typed @ref CS2Kit::Menu::MenuOption; you build menus fluently with @ref CS2Kit::Menu::MenuBuilder, and for admin panels the context rows and the @ref CS2Kit::Menu::Flow wizard remove nearly all per-row glue.
 
-The menu system (`CS2Kit::Menu`) provides WASD-navigated center-HTML menus for CS2. Each row is a typed @ref CS2Kit::Menu::MenuOption - buttons, toggles, choice cycles, sliders, progress bars, free-text inputs, and submenu links - built fluently with @ref CS2Kit::Menu::MenuBuilder.
-
-Players interact using:
+Players navigate with:
 
 | Key | Action |
 | --- | --- |
-| **W** | Navigate up |
-| **S** | Navigate down |
-| **E** | Activate the highlighted row (button click, toggle flip, choice commit, input prompt, …) |
-| **A** | If the highlighted row is a value option (Toggle / Choice / Selector / Slider): adjust value left. Otherwise: previous page (paginated menus only). |
-| **D** | Same as **A**, in the opposite direction. |
-| **R** | Close menu (root) / go back to parent (submenu). Cancels an active chat-input capture. |
+| **W** / **S** | Move the cursor up / down |
+| **E** | Activate the highlighted row (button, toggle flip, choice commit, input prompt, ...) |
+| **A** / **D** | Adjust a value row (Toggle / Choice / Selector / Slider); otherwise page through a paginated menu |
+| **R** | Close (root) / back (submenu). Cancels an active chat-input capture. |
 
-The `[R]` hint in the footer renders as **Close** on a root menu and **Back** on a submenu.
-
-## Building Menus
-
-Use @ref CS2Kit::Menu::MenuBuilder to construct menus with a fluent API. Pull `MenuBuilder.hpp` - it includes every concrete option type via the aggregate `Options.hpp`:
+## Building a menu
 
 ```cpp
 #include <CS2Kit/Menu/MenuBuilder.hpp>
-#include <CS2Kit/Menu/MenuManager.hpp>
 
 using namespace CS2Kit::Menu;
 
 auto menu = MenuBuilder("Admin Panel")
-    .AddButton("Kick Player", [](int slot) { /* … */ })
-    .AddButton("Ban Player",  [](int slot) { /* … */ })
+    .AddButton("Kick Player", [](int slot) { /* ... */ })
     .AddButton("Disabled",    [](int slot) {}, /*enabled=*/false)
     .OnClose([](int slot) { /* cleanup */ })
     .Build();
@@ -39,144 +29,101 @@ auto menu = MenuBuilder("Admin Panel")
 CS2Kit::Engine().Menus.OpenMenu(playerSlot, menu);
 ```
 
-## Option Types
+## Context rows
 
-Every row is a @ref CS2Kit::Menu::MenuOption subclass. The builder methods construct the right type for you; only reach for `AddOption(std::shared_ptr<MenuOption>)` if you need a custom subclass.
-
-### Text - non-selectable label
-
-`AddText(label)` - heading or divider. Rendered in muted color, skipped by W/S.
-
-### Button - plain action
-
-`AddButton(label, onActivate, enabled = true)` - fires the callback on E. The dynamic-label variant `AddDynamicButton(getLabel, onActivate, enabled = true)` recomputes the label every frame, useful when the row reflects live state but isn't a toggle.
+For rows that act on an admin/target pair, bind a @ref CS2Kit::Menu::MenuContext once. Every context row then derives its label (a translation key in the admin's language), its enabled state (permission + immunity via `Engine().Policy` - no permission, no row), and its dispatch pair from the context:
 
 ```cpp
-.AddButton("Slay", [admin, target](int) { Actions::DoSlay(admin, target); }, hasSlayPerm)
+MenuBuilder(title)
+    .WithContext({.Admin = adminSlot, .Target = targetSlot, .Effects = &App().Effects})
+    .AddActionRow("action.kill", Actions::Kill)                                    // runs an Action
+    .AddStateToggleRow("action.freeze", InMoveType(MoveType::None), Actions::Freeze)  // live on/off state
+    .AddPresetChoiceRow("action.health", "HP", HealthPresets, Actions::SetHealth)  // A/D cycles, E applies
+    .AddEffectToggleRow(Effects::Ghost)          // data-defined effect (EffectDescriptor)
+    .AddEffectPickerRow(Effects::Model)          // submenu over the effect's Choices
+    .Build();
 ```
 
-### Toggle - boolean state
+`AddStateToggleRow` re-reads its predicate every redraw, so the same row shows "Freeze"/"Unfreeze" reality and doubles as the undo control. The pawn predicates (`InMoveType`, `HasPawnFlag`) live in `Sdk/PawnPredicates.hpp`. Effect rows read on/off labels from the reserved keys `effectState.on` / `effectState.off`; the descriptors themselves are covered in @ref players_guide.
 
-`AddToggle(title, onLabel, offLabel, getState, onToggle, enabled = true)` - renders `"<title>: <onLabel|offLabel>"`. Both **E** and **A/D** flip. State lives wherever the caller keeps it (engine field, an `EffectManager`, a config struct); pass getter and toggle callbacks.
+## Flow: multi-step wizards
+
+@ref CS2Kit::Menu::Flow threads a state struct through a sequence of steps - the "pick duration, pick reason, confirm, execute" shape - with validation re-run before every step and before finishing, so "target left" or "permission revoked" abort cleanly instead of half-applying.
 
 ```cpp
-.AddToggle("Beacon", "ON", "OFF",
-    [slot](int) { return App().Effects.IsActive(slot, EffectId::Beacon); },  // plugin-owned manager
-    [slot](int) { Effects::ToggleBeacon(slot); })
+CS2Kit::Flow<PendingPunishment>::Create(std::move(pending))
+    ->OnValidate([](int slot, const PendingPunishment& s) -> std::optional<std::string> {
+        return StillPunishable(s) ? std::nullopt : std::optional<std::string>("cmd.targetLost");
+    })
+    ->AddDurationStep(TitleFn, DurationPresetsFn,
+                      [](PendingPunishment& s, int sec) { s.DurationSec = sec; },
+                      CustomLabelFn, CustomPromptFn,
+                      [](const PendingPunishment& s) { return IsTimed(s.Type); })   // skipped for kicks
+    ->AddOptionsStep(ReasonTitleFn, ReasonPresetsFn,
+                     [](PendingPunishment& s, std::string r) { s.Reason = std::move(r); },
+                     CustomLabelFn, CustomPromptFn)
+    ->WithConfirm(ConfirmTitleFn, SummaryRowsFn, ConfirmLabelFn, CancelLabelFn)
+    ->OnFinish([](int slot, PendingPunishment& s) { Issue(slot, s); })
+    ->Start(adminSlot);
 ```
 
-### Choice - string-labeled cycle
+Notes:
 
-`AddChoice<T>(title, choices, getIndex, setIndex, onCommit = nullptr, enabled = true)` - A/D walks the list (wrapping), E commits the current value via `onCommit`. Each choice is `{label, value}`; `T` is whatever you want to pass to `onCommit`. State is *index-based* and external - the caller decides where the index lives (a captured `std::shared_ptr<int>` is fine for ephemeral menu state).
+- Text comes from per-slot provider functions, so every step renders in the viewing admin's language; the kit ships no strings of its own.
+- The `OnValidate` result is a translation key - on failure the flow closes the menus and replies through `Engine().Policy.Reply`.
+- A confirm-only flow (skip straight to `WithConfirm`) is the natural shape for "quick" variants of a wizard.
+- Lifetime is automatic: menu rows hold the only owning references, so the flow lives exactly as long as one of its menus is on screen. No manager, no manual cleanup.
+- `AddStep(build, applies)` is the escape hatch for a fully custom step - build any menu, mutate `flow.State()`, call `flow.Advance(slot)`.
 
-When `onCommit` is omitted, **E advances to the next value** (same as D) so the row stays interactive - useful for plain "pick a value, no separate apply" rows where the change is read live by another part of the menu.
+## Option types
+
+Every builder method appends a typed row; `AddOption(std::shared_ptr<MenuOption>)` is the escape hatch for custom subclasses.
+
+- **`AddText(label)`** - non-selectable heading/divider; the cursor skips it.
+- **`AddButton(label, onActivate, enabled = true)`** - plain action row. `AddDynamicButton(getLabel, ...)` recomputes the label every frame.
+- **`AddToggle(title, onLabel, offLabel, getState, onToggle, enabled = true)`** - renders `"title: ON|OFF"`; E and A/D both flip. State lives wherever you keep it - pass a getter.
+- **`AddChoice<T>(title, choices, onCommit, enabled = true, initialIndex = 0)`** - A/D cycles the `{label, value}` list, E commits the current value. The option owns its index, so ephemeral pick-one rows need no external state:
 
 ```cpp
-auto idx = std::make_shared<int>(0);
-builder.AddChoice<int>(
-    "HP", {{"1 HP", 1}, {"100 HP", 100}, {"999 HP", 999}},
-    [idx](int) { return *idx; },
-    [idx](int, int newIdx) { *idx = newIdx; },
+.AddChoice<int>("HP", {{"1 HP", 1}, {"100 HP", 100}, {"999 HP", 999}},
     [admin, target](int slot, const int& hp) {
         Actions::DoSetHealth(admin, target, hp);
         CS2Kit::Engine().Menus.CloseAllMenus(slot);
-    });
+    })
 ```
 
-### Selector - formatted cycle for non-string values
+  The getter/setter overload (`AddChoice<T>(title, choices, getIndex, setIndex, onCommit, enabled)`) remains for state that lives outside the menu. With no `onCommit`, E advances like D - useful for pick-a-value rows another part of the menu reads live.
 
-`AddSelector<T>(title, values, formatter, getIndex, setIndex, onCommit = nullptr, enabled = true)` - like Choice, but you supply a `std::function<std::string(const T&)>` to derive the label. Use it when the value type doesn't carry its own pretty name (e.g. seconds → `"5m"`, an enum → a translated label). Same E-advances-when-no-onCommit fallback as Choice.
-
-### Slider - numeric range
-
-`AddSlider(title, min, max, step, getValue, setValue, enabled = true)` - A/D adjusts in `step` units, clamped to `[min, max]`. Renders `"<title>: [▮▮▮▯▯▯▯▯▯▯] 30/100"`. E does nothing by default.
-
-```cpp
-.AddSlider("Speed", /*min=*/100, /*max=*/500, /*step=*/50,
-    [slot](int)         { return GetSpeed(slot); },
-    [slot](int, int v)  { SetSpeed(slot, v); })
-```
-
-### ProgressBar - read-only
-
-`AddProgressBar(title, getValue, max)` - non-selectable. Renders the same bar shape as Slider but is skipped by the cursor.
-
-### Input - free-text via chat
-
-`AddInput(title, prompt, get, set, maxLength = 64, enabled = true)` - pressing E pauses the menu, shows the prompt overlay, and routes the player's next chat line into the validator. Return `false` from `set` to re-prompt for invalid input; `true` accepts and resumes the menu. **R** during capture cancels.
-
-```cpp
-.AddInput("Custom duration", "Enter duration (e.g. 30s, 5m, 2h, 7d)",
-    [](int) { return std::string{}; },
-    [target](int slot, std::string_view text) -> bool {
-        int seconds = ParseDuration(text);
-        if (seconds < 0) return false;          // re-prompt
-        IssueBan(slot, target, seconds);
-        return true;
-    },
-    /*maxLength=*/32)
-```
-
-This relies on @ref CS2Kit::Sdk::ChatInputCapture - the plugin must call `Engine().ChatInput.TryConsume(slot, text)` from its chat-message hook before its own command parsing, suppressing the chat broadcast when the call returns `true`. See the [SDK messaging guide](@ref sdk_messaging_guide) for the integration snippet.
-
-### Submenu - push a built submenu
-
-`AddSubmenu(label, factory, enabled = true)` - the factory is invoked lazily on E, and the returned menu is pushed onto the player's stack. R pops back to the parent.
-
-```cpp
-.AddSubmenu("Settings", [](int slot) {
-    return MenuBuilder("Settings")
-        .AddButton("Option A", [](int) { /* … */ })
-        .Build();
-})
-```
-
-### AddOption - escape hatch
-
-`AddOption(std::shared_ptr<MenuOption>)` lets you append a custom subclass. Override `GetLabel(slot)`, `OnActivate(slot)`, and optionally `OnHorizontal(slot, direction)` (return `true` to consume A/D, `false` to fall through to page-jump).
+- **`AddSelector<T>(title, values, formatter, ...)`** - Choice for value types without their own label (seconds → `"5m"`, enum → translation).
+- **`AddSlider(title, min, max, step, getValue, setValue, enabled = true)`** - A/D adjusts in steps, clamped; renders a unicode bar.
+- **`AddProgressBar(title, getValue, max)`** - read-only bar, skipped by the cursor.
+- **`AddInput(title, prompt, get, set, maxLength = 64, enabled = true)`** - E pauses the menu and routes the player's next chat line into `set`; return `false` to re-prompt, `true` to accept. R cancels. Backed by @ref CS2Kit::Sdk::ChatInputCapture - your chat hook must call `Engine().ChatInput.TryConsume` first (see @ref sdk_messaging_guide).
+- **`AddSubmenu(label, factory, enabled = true)`** - the factory runs lazily on E and the returned menu pushes onto the stack; R pops back.
 
 ## Pagination
 
-Menus with more than `CS2Kit::Menu::ItemsPerPage` items (5 by default) automatically paginate. The page indicator (e.g. `(2/3)`) appears next to the title. The footer shows the `[A/D] Page` hint only when more than one page exists.
+More than `ItemsPerPage` rows (5 by default) paginates automatically, with a `(2/3)` indicator and an `[A/D] Page` footer hint. A/D is item-aware: on a value row it adjusts the value; highlight a Button/Submenu row to page. Disabled and non-selectable rows are skipped by the cursor.
 
-A/D is **item-aware**: when the highlighted row is a value option (Toggle / Choice / Selector / Slider), A/D adjusts its value and pagination is *not* triggered. Highlight a plain Button or Submenu row to page through.
-
-Disabled rows and non-selectable rows (Text, ProgressBar) are skipped during W/S navigation, so the cursor never lands on a row you can't act on.
-
-## Custom Layout
-
-Override the default header / footer with your own HTML:
+## Custom layout
 
 ```cpp
-auto menu = MenuBuilder("Custom Menu")
+MenuBuilder("Custom")
     .WithHeader([] { return "<b>Server Admin</b><br><i>v1.0</i>"; })
     .WithFooter([] { return "<font color='gray'>WASD to navigate</font>"; })
-    .AddButton("Item 1", [](int) {})
-    .Build();
 ```
 
 ## Lifecycle
 
-@ref CS2Kit::Menu::MenuManager keeps a per-player menu stack and runs entirely on the game thread:
-
-1. `OpenMenu(slot, menu)` pushes the menu and rendering begins.
-2. `OnGameFrame()` reads `IN_FORWARD/IN_BACK/IN_USE/IN_RELOAD/IN_MOVELEFT/IN_MOVERIGHT` each tick and dispatches via the @ref CS2Kit::Menu::MenuOption virtuals.
-3. Submenus push onto the stack; **R** pops back. `CloseAllMenus(slot)` clears the entire stack.
-4. Input is debounced (200ms) to prevent accidental double-presses.
-5. While a chat-input capture is active for the slot, only **R** is honored - every other key is ignored so the cursor doesn't drift while the player types.
-
-`CS2Kit::OnGameFrame()` (every tick) and `CS2Kit::OnPlayerDisconnect(slot)` drive this - both are called for you when the plugin derives from @ref CS2Kit::Core::MetamodPluginBase, or wire them yourself otherwise.
+@ref CS2Kit::Menu::MenuManager keeps a per-player stack, reads button state every frame (via a self-registered scheduler pump), debounces input (200 ms), and clears a player's stack on disconnect. `Engine().Menus.SetFreezePlayer(true)` freezes players while a menu is open so WASD doesn't also move them. During a chat-input capture only R is honored, so the cursor doesn't drift while the player types.
 
 ## Presets
 
-`<CS2Kit/Menu/MenuPresets.hpp>` ships reusable, content-agnostic builders. Every human-facing
-string is a parameter - the presets carry no localization of their own; the caller supplies
-already-translated text.
+`<CS2Kit/Menu/MenuPresets.hpp>` ships content-agnostic building blocks - every human-facing string is a parameter:
 
 ```cpp
 using namespace CS2Kit::Menu;
 
-// Paginated list of every connected player; isEnabled (optional) grays out rows.
+// Paginated list of connected players; the optional predicate grays out rows.
 auto picker = BuildPlayerPicker(adminSlot, "Select player",
     [](int viewer, int target) { OpenActionsFor(viewer, target); },
     "No players available",
@@ -195,33 +142,14 @@ auto confirm = BuildConfirmDialog({
     .ConfirmLabel = "Confirm",
     .CancelLabel = "Cancel",
     .OnConfirm = [](int slot) { IssueAndClose(slot); },
-    // OnCancel defaults to closing the player's menus.
 });
 
-// ChatColors::Palette as ChoiceOption rows for color pickers; grows with the palette.
+// ChatColors::Palette as choice rows for color pickers.
 auto choices = BuildPaletteChoices([&](std::string_view name) { return LabelFor(name); });
 ```
 
-## Header Layout
+`Flow` composes these same presets internally - reach for the raw presets when a single picker is all you need.
 
-```text
-include/CS2Kit/Menu/
-├── Menu.hpp                  Menu / MenuLayout / PlayerMenuState
-├── MenuOption.hpp            Polymorphic base only
-├── MenuBuilder.hpp           Fluent builder (pulls in Options.hpp)
-├── MenuManager.hpp           Stack + tick driver + disconnect hook
-├── Options.hpp               Aggregate include for every concrete option
-└── Options/                  One file per concrete option subclass
-    ├── ButtonOption.hpp
-    ├── ChoiceOption.hpp
-    ├── InputOption.hpp
-    ├── ProgressBarOption.hpp
-    ├── SelectorOption.hpp
-    ├── SliderOption.hpp
-    ├── SubmenuOption.hpp
-    ├── TextOption.hpp
-    ├── ToggleOption.hpp
-    └── Bar.hpp               Shared unicode-bar rendering helper
-```
+## Headers
 
-Most consumers only need `MenuBuilder.hpp` and `MenuManager.hpp`. Pull `Options.hpp` (or an individual `Options/*.hpp`) only when you need to construct an option manually for `AddOption`, or when defining a custom `MenuOption` subclass.
+Most consumers only need `MenuBuilder.hpp` (which pulls in every option type) plus `Flow.hpp` or `MenuPresets.hpp`. The per-option headers under `Menu/Options/` matter only when constructing an option manually for `AddOption` or subclassing `MenuOption` (override `GetLabel`, `OnActivate`, and optionally `OnHorizontal`).

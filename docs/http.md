@@ -2,41 +2,33 @@
 
 [TOC]
 
-## Overview
+`CS2Kit::Http` gives you async requests whose completions run on the game thread:
 
-The HTTP module (`CS2Kit::Http`) provides:
+- **HttpClient** - GET/POST on CPR's worker pool; completions are queued and replayed on the game thread from a self-registered per-frame pump
+- **RestJsonApi** - helpers for the config-driven "call an operator-configured JSON endpoint and pull a field out of the response" shape
 
-- **HttpClient** - async POSTs on CPR's worker pool, with completions queued and replayed on the
-  game thread
-- **RestJsonApi** - helpers for the config-driven "call an operator-configured JSON endpoint and
-  pull a field out of the response" shape
+`HttpClient` is a kit service - reach it via `Engine().Http`. `CS2Kit::Shutdown()` drains in-flight requests, so there is nothing to wire up or tear down.
 
-`HttpClient` is a kit service: reach it via `Engine().Http`. Completions dispatch from the
-`CS2Kit::OnGameFrame()` pump and `CS2Kit::Shutdown()` drains in-flight requests, so there is no
-per-plugin dispatch timer to wire up.
-
-## Posting
+## Requests
 
 ```cpp
-#include <CS2Kit/Core/Services.hpp>
-#include <CS2Kit/Http/HttpClient.hpp>
+#include <CS2Kit/Api.hpp>
 
 Engine().Http.Post(url, body, {"Content-Type: application/json"}, /*timeoutMs=*/8000,
                    [](const CS2Kit::HttpResult& result) {
-                       // Runs on the game thread - safe to touch engine state here.
+                       // Game thread - safe to touch players, menus, managers.
                        if (!result.Ok)
                            Log::Warn("request failed: {}", result.Error);
                    });
+
+Engine().Http.Get(url, {}, 5000, [](const CS2Kit::HttpResult& result) { /* ... */ });
 ```
 
-`HttpResult::Ok` reflects transport success only; check `StatusCode` for the HTTP verdict (or use
-`IsSuccess` below).
+`HttpResult::Ok` reflects transport success only; check `StatusCode` for the HTTP verdict (or use `IsSuccess` from RestJsonApi, which means `Ok && 2xx`).
 
 ## Config-driven JSON endpoints (RestJsonApi)
 
-`JsonPostSpec` describes an endpoint entirely from settings: URL, optional auth header, and a JSON
-body template whose `{token}` placeholders are substituted per call. This lets server operators
-wire a plugin to their own backend without code changes.
+`JsonPostSpec` describes an endpoint entirely from settings - URL, optional auth header, a JSON body template with `{token}` placeholders - so server operators can point a plugin at their own backend without code changes:
 
 ```cpp
 #include <CS2Kit/Http/RestJsonApi.hpp>
@@ -55,17 +47,13 @@ auto request = BuildJsonPost(spec, {{"steamId", std::to_string(steamId)}, {"play
 if (request)
 {
     Post(Engine().Http, std::move(*request), [](const HttpResult& result) {
-        if (!IsSuccess(result))   // Ok && 2xx
+        if (!IsSuccess(result))
             return;
-        // Dot-path field extraction, with an optional {value} template:
-        std::string url = ExtractField(result, "data.room.playerUrl");
+        std::string url = ExtractField(result, "data.room.playerUrl");  // dot-path extraction
     });
 }
 ```
 
-## Threading model
+## Threading
 
-Requests run off-thread; **callbacks never run concurrently with game code**. They are queued and
-invoked from the frame pump, so a completion may touch players, menus, chat, and any other engine
-state without synchronization. Do not block on a request from the game thread - there is no
-synchronous API by design.
+Requests run off-thread; **callbacks never run concurrently with game code**. Do not block on a request from the game thread - there is no synchronous API by design.
