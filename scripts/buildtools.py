@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 WINDOWS = sys.platform == "win32"
+CPP_EXTS = (".cpp", ".hpp")
 
 
 def die(message: str) -> None:
@@ -43,6 +44,30 @@ def run_tool(tool: str, *args: str) -> subprocess.CompletedProcess[bytes]:
         "Ninja, or install uv and run `uv sync`."
     )
     raise AssertionError  # unreachable; satisfies type checkers
+
+
+def format_sources(repo_root: Path, dirs: list[str], *, check: bool) -> None:
+    """Run the pinned clang-format over C++ sources under dirs (relative to repo_root).
+
+    rglob only descends the listed dirs, so nested SDK submodules under vendor/ are
+    never touched. --check leaves files untouched and exits non-zero on any diff.
+    """
+    files = sorted(
+        str(p)
+        for d in dirs
+        if (repo_root / d).is_dir()
+        for ext in CPP_EXTS
+        for p in (repo_root / d).rglob(f"*{ext}")
+    )
+    if not files:
+        print("No C++ sources found.")
+        return
+    args = ["--dry-run", "--Werror"] if check else ["-i"]
+    try:
+        run_tool("clang-format", *args, *files)
+    except subprocess.CalledProcessError as e:
+        raise SystemExit(e.returncode)
+    print(f"clang-format {'checked' if check else 'formatted'} {len(files)} file(s).")
 
 
 def _tool_version(tool: str, prefix: str) -> tuple[int, ...]:

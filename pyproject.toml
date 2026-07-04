@@ -13,6 +13,7 @@ dependencies = [
     "ruff>=0.14.0",
     "mypy>=1.19.0",
     "poethepoet>=0.47.0",
+    "clang-format==22.1.5",
 ]
 
 [tool.uv]
@@ -24,6 +25,8 @@ build-linux = "python scripts/build.py linux-steamrt-release"
 # Stamps plugins/<name>/ in the invoking repo (run from the consuming repo's root).
 new-plugin = "python scripts/new_plugin.py"
 lint = "ruff check ."
+format = "python scripts/format.py"
+format-check = "python scripts/format.py --check"
 
 [tool.ruff]
 line-length = 100
