@@ -200,51 +200,9 @@ bool StringUtils::IsNumeric(const std::string& str)
     return std::all_of(str.begin(), str.end(), [](unsigned char c) { return std::isdigit(c); });
 }
 
-StringUtils::TargetInfo StringUtils::ParseTarget(const std::string& target)
+std::string StringUtils::DisplayNameOr(int64_t id, const std::string& name, std::size_t maxBytes)
 {
-    if (target.empty())
-        return {TargetType::Name, ""};
-
-    if (target == "@all" || target == "@*")
-        return {TargetType::All, target};
-
-    if (target == "@me")
-        return {TargetType::Me, target};
-
-    if (target[0] == '#' && target.length() > 1)
-    {
-        auto indexStr = target.substr(1);
-        if (IsNumeric(indexStr))
-            return {TargetType::Index, indexStr};
-    }
-
-    if (IsNumeric(target) && target.length() >= 15)
-    {
-        try
-        {
-            int64_t steamId64 = std::stoll(target);
-            if (SteamId::IsValid(steamId64))
-                return {TargetType::SteamId, target};
-        }
-        catch (...)
-        {}
-    }
-
-    if (StartsWith(target, "[U:1:"))
-    {
-        auto steamId64 = SteamId::FromSteamId3(target);
-        if (steamId64.has_value())
-            return {TargetType::SteamId, std::to_string(*steamId64)};
-    }
-
-    if (StartsWith(target, "STEAM_"))
-    {
-        auto steamId64 = SteamId::FromSteamId(target);
-        if (steamId64.has_value())
-            return {TargetType::SteamId, std::to_string(*steamId64)};
-    }
-
-    return {TargetType::Name, target};
+    return name.empty() ? std::to_string(id) : TruncateUtf8(name, maxBytes);
 }
 
 }  // namespace CS2Kit::Utils

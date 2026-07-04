@@ -40,8 +40,10 @@ public:
     }
 
     /** Self-contained variant: the option owns its index, no external get/set state needed. */
-    ChoiceOption(std::string title, std::vector<Choice> choices, CommitFn onCommit, bool enabled = true)
-        : _title(std::move(title)), _choices(std::move(choices)), _onCommit(std::move(onCommit))
+    ChoiceOption(std::string title, std::vector<Choice> choices, CommitFn onCommit, bool enabled = true,
+                 int initialIndex = 0)
+        : _title(std::move(title)), _choices(std::move(choices)), _onCommit(std::move(onCommit)),
+          _ownIndex(initialIndex)
     {
         _enabled = enabled;
     }

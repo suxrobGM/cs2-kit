@@ -1,0 +1,131 @@
+#include <CS2Kit/Core/EffectDescriptor.hpp>
+#include <CS2Kit/Core/EffectManager.hpp>
+#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Menu/MenuBuilder.hpp>
+#include <CS2Kit/Menu/MenuManager.hpp>
+#include <CS2Kit/Players/ActionDispatcher.hpp>
+#include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Sdk/PlayerController.hpp>
+#include <format>
+
+namespace CS2Kit::Menu
+{
+
+using Players::ActionDispatcher;
+
+// Context-aware rows. Descriptors are namespace-scope globals in the consumer, so capturing
+// their address in row lambdas is safe for the process lifetime.
+
+MenuBuilder& MenuBuilder::AddActionRow(std::string_view labelKey, const Players::Action& action)
+{
+    const Players::Action* a = &action;
+    return AddButton(
+        _context.Tr(labelKey),
+        [admin = _context.Admin, target = _context.Target, a](int) { ActionDispatcher{}.Run(admin, target, *a); },
+        _context.Allowed(action.Permission));
+}
+
+MenuBuilder& MenuBuilder::AddStateToggleRow(std::string_view labelKey,
+                                            std::function<bool(const Sdk::PlayerController&)> isActive,
+                                            const Players::Action& action)
+{
+    const Players::Action* a = &action;
+    int target = _context.Target;
+    return AddToggle(
+        _context.Tr(labelKey), _context.Tr("effectState.on"), _context.Tr("effectState.off"),
+        [target, isActive = std::move(isActive)](int) {
+            Sdk::PlayerController pc(target);
+            return pc.IsValid() && isActive(pc);
+        },
+        [admin = _context.Admin, target, a](int) { ActionDispatcher{}.Run(admin, target, *a); },
+        _context.Allowed(action.Permission));
+}
+
+MenuBuilder& MenuBuilder::AddPresetChoiceRow(std::string_view labelKey, std::string_view unit,
+                                             std::span<const int> presets, const Players::ParamAction& action)
+{
+    std::vector<ChoiceOption<int>::Choice> choices;
+    choices.reserve(presets.size());
+    for (int value : presets)
+        choices.push_back({std::format("{} {}", value, unit), value});
+
+    const Players::ParamAction* a = &action;
+    return AddChoice<int>(
+        _context.Tr(labelKey), std::move(choices),
+        [admin = _context.Admin, target = _context.Target, a](int slot, const int& value) {
+            ActionDispatcher{}.Run(admin, target, value, *a);
+            Core::Engine().Menus.CloseAllMenus(slot);
+        },
+        _context.Allowed(action.Permission));
+}
+
+MenuBuilder& MenuBuilder::AddEffectToggleRow(const Core::EffectDescriptor& effect)
+{
+    const Core::EffectDescriptor* e = &effect;
+    Core::EffectManager* effects = _context.Effects;
+    int target = _context.Target;
+    return AddToggle(
+        _context.Tr(effect.NameKey), _context.Tr("effectState.on"), _context.Tr("effectState.off"),
+        [effects, target, id = effect.Id](int) { return effects && effects->IsActive(target, id); },
+        [effects, admin = _context.Admin, target, e](int) {
+            if (effects)
+                Core::ToggleEffect(*effects, admin, target, *e);
+        },
+        _context.Allowed(effect.Permission));
+}
+
+namespace
+{
+
+/** Picker submenu for a ParamEffectDescriptor: one button per choice plus an optional reset row. */
+std::shared_ptr<MenuView> BuildEffectPicker(MenuContext ctx, const Core::ParamEffectDescriptor& effect)
+{
+    auto* target = Core::Engine().Players.GetPlayerBySlot(ctx.Target);
+    if (!target)
+        return nullptr;
+
+    bool allowed = ctx.Allowed(effect.Permission);
+    const Core::ParamEffectDescriptor* e = &effect;
+    Core::EffectManager* effects = ctx.Effects;
+    MenuBuilder builder(std::format("{}: {}", ctx.Tr(effect.NameKey), target->GetName()));
+
+    auto choices = effect.Choices ? effect.Choices() : std::vector<Core::EffectChoice>{};
+    for (const auto& choice : choices)
+    {
+        int param = choice.Param;
+        builder.AddButton(
+            choice.Label,
+            [effects, admin = ctx.Admin, targetSlot = ctx.Target, e, param](int slot) {
+                if (effects)
+                    Core::ApplyEffect(*effects, admin, targetSlot, param, *e);
+                Core::Engine().Menus.CloseAllMenus(slot);
+            },
+            allowed);
+    }
+
+    if (!effect.ResetLabelKey.empty())
+    {
+        builder.AddButton(
+            ctx.Tr(effect.ResetLabelKey),
+            [effects, admin = ctx.Admin, targetSlot = ctx.Target, e](int slot) {
+                if (effects)
+                    Core::ClearEffect(*effects, admin, targetSlot, *e);
+                Core::Engine().Menus.CloseAllMenus(slot);
+            },
+            allowed);
+    }
+
+    return builder.Build();
+}
+
+}  // namespace
+
+MenuBuilder& MenuBuilder::AddEffectPickerRow(const Core::ParamEffectDescriptor& effect)
+{
+    const Core::ParamEffectDescriptor* e = &effect;
+    return AddSubmenu(
+        _context.Tr(effect.NameKey), [ctx = _context, e](int) { return BuildEffectPicker(ctx, *e); },
+        _context.Allowed(effect.Permission));
+}
+
+}  // namespace CS2Kit::Menu

@@ -26,12 +26,16 @@
 #include <CS2Kit/Database/Migrator.hpp>
 #include <CS2Kit/Database/PostgresDatabase.hpp>
 #include <CS2Kit/Http/HttpResult.hpp>
+#include <CS2Kit/Core/EffectDescriptor.hpp>
+#include <CS2Kit/Menu/Flow.hpp>
 #include <CS2Kit/Menu/Menu.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
+#include <CS2Kit/Menu/MenuContext.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Menu/MenuOption.hpp>
 #include <CS2Kit/Menu/MenuPresets.hpp>
 #include <CS2Kit/Menu/Options/ChoiceOption.hpp>
+#include <CS2Kit/Sdk/PawnPredicates.hpp>
 #include <CS2Kit/Players/ActionDispatcher.hpp>
 #include <CS2Kit/Players/Player.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
@@ -67,6 +71,14 @@ using Core::JsonConfig;
 using Core::Registry;
 using Core::EffectManager;
 using Core::EffectSpec;
+using Core::EffectDescriptor;
+using Core::ParamEffectDescriptor;
+using Core::EffectInstance;
+using Core::EffectChoice;
+using Core::EffectScope;
+using Core::ToggleEffect;
+using Core::ApplyEffect;
+using Core::ClearEffect;
 
 // Sdk
 using Sdk::PlayerController;
@@ -80,15 +92,19 @@ using Sdk::EntitySystem;
 using Sdk::EntityOpsService;
 using Sdk::ConVarService;
 using Sdk::GameEventService;
+using Sdk::InMoveType;
+using Sdk::HasPawnFlag;
 namespace PawnOps = Sdk::PawnOps;
 namespace Events = Sdk::Events;
 
 // Menu  (the built-menu data model is Menu::MenuView; `Menu` is the namespace)
 using Menu::MenuView;
 using Menu::MenuBuilder;
+using Menu::MenuContext;
 using Menu::MenuOption;
 using Menu::MenuManager;
 using Menu::ChoiceOption;
+using Menu::Flow;
 using Menu::ConfirmDialogSpec;
 using Menu::BuildConfirmDialog;
 using Menu::BuildPlayerPicker;

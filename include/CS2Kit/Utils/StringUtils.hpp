@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <string>
 #include <string_view>
@@ -48,24 +49,8 @@ public:
 
     static bool IsNumeric(const std::string& str);
 
-    /** How a command target string (e.g. "@all", "#3", "player name", SteamID) was parsed. */
-    enum class TargetType
-    {
-        All,
-        Me,
-        Index,
-        Name,
-        SteamId
-    };
-
-    /** Result of parsing a target string into type + value. */
-    struct TargetInfo
-    {
-        TargetType Type;
-        std::string Value;
-    };
-
-    static TargetInfo ParseTarget(const std::string& target);
+    /** Row display text: the (UTF-8-safely truncated) name, or @p id as text when unnamed. */
+    static std::string DisplayNameOr(int64_t id, const std::string& name, std::size_t maxBytes = 20);
 };
 
 }  // namespace CS2Kit::Utils

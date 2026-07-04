@@ -1,11 +1,31 @@
 #pragma once
 
 #include <CS2Kit/Menu/Menu.hpp>
+#include <CS2Kit/Menu/MenuContext.hpp>
 #include <CS2Kit/Menu/Options.hpp>
 #include <memory>
+#include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
+
+namespace CS2Kit::Core
+{
+struct EffectDescriptor;
+struct ParamEffectDescriptor;
+}
+
+namespace CS2Kit::Players
+{
+struct Action;
+struct ParamAction;
+}
+
+namespace CS2Kit::Sdk
+{
+class PlayerController;
+}
 
 namespace CS2Kit::Menu
 {
@@ -48,32 +68,51 @@ public:
     }
 
     /**
-     * Bind a (primary, secondary) slot context for context-aware rows added afterwards.
-     * Lets call sites drop the repeated `[a, b, fn](int){ fn(a, b); }` capture on every row -
-     * e.g. an admin menu binds (adminSlot, targetSlot) once, then adds action rows with @ref
-     * AddContextButton.
+     * Bind an admin/target context for the policy-aware rows below. Each row then derives its
+     * label (admin-language translation of a key), its enabled state (permission + immunity via
+     * Engine().Policy), and its dispatch pair from the context - no per-row captures:
+     *
+     * @code
+     * MenuBuilder(title)
+     *     .WithContext({.Admin = adminSlot, .Target = targetSlot, .Effects = &App().Effects})
+     *     .AddActionRow("action.kill", Actions::Kill)
+     *     .AddStateToggleRow("action.freeze", InMoveType(MoveType::None), Actions::Freeze)
+     *     .AddPresetChoiceRow("action.health", "HP", HealthPresets, Actions::SetHealth)
+     *     .AddEffectToggleRow(Effects::Ghost)
+     *     .Build();
+     * @endcode
      */
-    MenuBuilder& WithContext(int primarySlot, int secondarySlot)
+    MenuBuilder& WithContext(MenuContext context)
     {
-        _ctxPrimary = primarySlot;
-        _ctxSecondary = secondarySlot;
+        _context = std::move(context);
         return *this;
     }
 
-    /** Like @ref AddButton, but the callback receives the bound @ref WithContext slot pair. */
-    MenuBuilder& AddContextButton(const std::string& label, std::function<void(int primary, int secondary)> onActivate,
-                                  bool enabled = true)
-    {
-        int a = _ctxPrimary;
-        int b = _ctxSecondary;
-        return AddButton(
-            label,
-            [a, b, fn = std::move(onActivate)](int) {
-                if (fn)
-                    fn(a, b);
-            },
-            enabled);
-    }
+    /** A button row that runs a single-target @ref Players::Action against (Admin, Target). */
+    MenuBuilder& AddActionRow(std::string_view labelKey, const Players::Action& action);
+
+    /**
+     * A toggle row whose live on-state is @p isActive against the target's pawn (re-read every
+     * redraw) and whose press runs the toggle action. Because the same action flips the state
+     * back off on a second press, the row doubles as an "undo" control (e.g. unfreeze).
+     * Predicate factories live in `Sdk/PawnPredicates.hpp` (InMoveType, HasPawnFlag).
+     */
+    MenuBuilder& AddStateToggleRow(std::string_view labelKey,
+                                   std::function<bool(const Sdk::PlayerController&)> isActive,
+                                   const Players::Action& action);
+
+    /** An inline choice row: A/D cycles "{value} {unit}" presets, E runs the @ref Players::ParamAction
+     *  with the picked value and closes the player's menus. */
+    MenuBuilder& AddPresetChoiceRow(std::string_view labelKey, std::string_view unit, std::span<const int> presets,
+                                    const Players::ParamAction& action);
+
+    /** A toggle row bound to a data-defined effect (uses the context's EffectManager; the on/off
+     *  state labels come from the reserved keys `effectState.on` / `effectState.off`). */
+    MenuBuilder& AddEffectToggleRow(const Core::EffectDescriptor& effect);
+
+    /** A submenu row opening a picker over the effect's Choices (plus a reset row when
+     *  ResetLabelKey is set). */
+    MenuBuilder& AddEffectPickerRow(const Core::ParamEffectDescriptor& effect);
 
     /** Append an action row with a label that is recomputed every render. */
     MenuBuilder& AddDynamicButton(std::function<std::string()> getLabel, std::function<void(int)> onActivate,
@@ -106,9 +145,10 @@ public:
     /** Self-contained choice cycle: the option owns its index, no external get/set state. */
     template <typename T>
     MenuBuilder& AddChoice(const std::string& title, std::vector<typename ChoiceOption<T>::Choice> choices,
-                           std::function<void(int, const T&)> onCommit, bool enabled = true)
+                           std::function<void(int, const T&)> onCommit, bool enabled = true, int initialIndex = 0)
     {
-        _menu->Items.push_back(std::make_shared<ChoiceOption<T>>(title, std::move(choices), std::move(onCommit), enabled));
+        _menu->Items.push_back(
+            std::make_shared<ChoiceOption<T>>(title, std::move(choices), std::move(onCommit), enabled, initialIndex));
         return *this;
     }
 
@@ -194,8 +234,7 @@ public:
 
 private:
     std::shared_ptr<MenuView> _menu;
-    int _ctxPrimary = -1;
-    int _ctxSecondary = -1;
+    MenuContext _context;
 };
 
 }  // namespace CS2Kit::Menu

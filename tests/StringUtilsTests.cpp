@@ -5,7 +5,6 @@
 #include <vector>
 
 using CS2Kit::Utils::StringUtils;
-using TargetType = CS2Kit::Utils::StringUtils::TargetType;
 
 TEST_CASE("StringUtils::ToLower")
 {
@@ -89,46 +88,11 @@ TEST_CASE("StringUtils::EndsWith")
     CHECK(!StringUtils::EndsWith("abc", "xyz"));
 }
 
-TEST_CASE("StringUtils::ParseTarget special tokens")
+TEST_CASE("StringUtils::DisplayNameOr")
 {
-    CHECK(StringUtils::ParseTarget("@all").Type == TargetType::All);
-    CHECK(StringUtils::ParseTarget("@*").Type == TargetType::All);
-    CHECK(StringUtils::ParseTarget("@me").Type == TargetType::Me);
-    CHECK(StringUtils::ParseTarget("").Type == TargetType::Name);
-}
-
-TEST_CASE("StringUtils::ParseTarget index form")
-{
-    auto idx = StringUtils::ParseTarget("#3");
-    CHECK(idx.Type == TargetType::Index);
-    CHECK_EQ(idx.Value, std::string("3"));
-
-    // '#' with non-numeric body falls back to a name.
-    CHECK(StringUtils::ParseTarget("#abc").Type == TargetType::Name);
-}
-
-TEST_CASE("StringUtils::ParseTarget name fallback")
-{
-    auto name = StringUtils::ParseTarget("PlayerName");
-    CHECK(name.Type == TargetType::Name);
-    CHECK_EQ(name.Value, std::string("PlayerName"));
-}
-
-TEST_CASE("StringUtils::ParseTarget SteamID forms")
-{
-    // 64-bit SteamID (>= 15 digits, valid range).
-    auto id64 = StringUtils::ParseTarget("76561197960287930");
-    CHECK(id64.Type == TargetType::SteamId);
-
-    // SteamID3 normalized to 64-bit value.
-    auto id3 = StringUtils::ParseTarget("[U:1:22202]");
-    CHECK(id3.Type == TargetType::SteamId);
-    CHECK_EQ(id3.Value, std::string("76561197960287930"));
-
-    // SteamID2 normalized to 64-bit value.
-    auto id2 = StringUtils::ParseTarget("STEAM_0:0:11101");
-    CHECK(id2.Type == TargetType::SteamId);
-    CHECK_EQ(id2.Value, std::string("76561197960287930"));
+    CHECK_EQ(StringUtils::DisplayNameOr(76561197960287930, ""), std::string("76561197960287930"));
+    CHECK_EQ(StringUtils::DisplayNameOr(1, "Bob"), std::string("Bob"));
+    CHECK_EQ(StringUtils::DisplayNameOr(1, "abcdef", 4), std::string("abcd..."));
 }
 
 TEST_CASE("StringUtils::EscapeHtml")
