@@ -4,12 +4,15 @@
 
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Core/Slot.hpp>
+#include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Sdk/MemoryAccess.hpp>
 #include <CS2Kit/Sdk/RecipientFilter.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
+#include <CS2Kit/Utils/ChatColors.hpp>
 #include <CS2Kit/Utils/Log.hpp>
+#include <CS2Kit/Utils/Translations.hpp>
 #include <bit>
 #include <engine/igameeventsystem.h>
 #include <networksystem/inetworkmessages.h>
@@ -22,6 +25,37 @@ namespace CS2Kit::Sdk
 {
 
 using namespace CS2Kit::Utils;
+
+namespace
+{
+
+// TextMsg destination ids the client understands.
+constexpr int DestChat = 3;
+constexpr int DestCenter = 4;
+constexpr int DestAlert = 6;
+
+// CS2 strips leading color escapes until a non-color byte. Prepend a space to
+// preserve a leading color, or Default to avoid color carryover from the prior line.
+std::string EnsureColorPrefix(std::string_view message)
+{
+    std::string_view prefix =
+        (!message.empty() && static_cast<unsigned char>(message.front()) <= 0x10)  // 0x01-0x10: color escape bytes
+            ? " "
+            : ChatColors::Default;
+
+    std::string out;
+    out.reserve(prefix.size() + message.size());
+    out.append(prefix);
+    out.append(message);
+    return out;
+}
+
+std::string Render(std::string_view message, MessageKind kind)
+{
+    return kind == MessageKind::Chat ? EnsureColorPrefix(message) : std::string(message);
+}
+
+}  // namespace
 
 bool MessageSystem::Initialize()
 {
@@ -110,7 +144,47 @@ void MessageSystem::SendCenterHtml(int slot, const std::string& html)
     gameEventManager->FireEvent(pEvent);
 }
 
-void MessageSystem::SendChatMessage(int slot, const std::string& message)
+void MessageSystem::Send(int slot, std::string_view message, MessageKind kind)
+{
+    if (kind == MessageKind::CenterHtml)
+    {
+        SendCenterHtml(slot, std::string(message));
+        return;
+    }
+
+    int destination = kind == MessageKind::Center ? DestCenter : kind == MessageKind::Alert ? DestAlert : DestChat;
+    SendTextMsg(slot, destination, Render(message, kind));
+}
+
+void MessageSystem::Broadcast(std::string_view message, MessageKind kind)
+{
+    auto rendered = Render(message, kind);
+    for (auto* p : Engine().Players.GetAllPlayers())
+    {
+        if (!p)
+            continue;
+        if (kind == MessageKind::CenterHtml)
+            SendCenterHtml(p->GetSlot(), rendered);
+        else
+            SendTextMsg(p->GetSlot(),
+                        kind == MessageKind::Center  ? DestCenter
+                        : kind == MessageKind::Alert ? DestAlert
+                                                     : DestChat,
+                        rendered);
+    }
+}
+
+void MessageSystem::Reply(int slot, std::string_view message)
+{
+    Send(slot, message);
+}
+
+void MessageSystem::ReplyKey(int slot, const std::string& key, const std::map<std::string, std::string>& tokens)
+{
+    Reply(slot, Engine().Translations.Get(key, slot, tokens));
+}
+
+void MessageSystem::SendTextMsg(int slot, int destination, const std::string& message)
 {
     auto& interfaces = Engine().Interfaces;
     if (!interfaces.GameEventSystem || !interfaces.NetworkMessages || !Core::IsValidSlot(slot))
@@ -139,7 +213,7 @@ void MessageSystem::SendChatMessage(int slot, const std::string& message)
         interfaces.NetworkMessages->DeallocateNetMessageAbstract(_textMsgInternal, pMsg);
         return;
     }
-    pTextMsg->set_dest(HudPrintTalk);
+    pTextMsg->set_dest(destination);
     pTextMsg->add_param(message.c_str());
 
     SingleRecipientFilter filter(slot);

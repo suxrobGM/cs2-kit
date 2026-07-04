@@ -21,6 +21,8 @@ package = false
 [tool.poe.tasks]
 build = "python scripts/build.py"
 build-linux = "python scripts/build.py linux-steamrt-release"
+# Stamps plugins/<name>/ in the invoking repo (run from the consuming repo's root).
+new-plugin = "python scripts/new_plugin.py"
 lint = "ruff check ."
 
 [tool.ruff]

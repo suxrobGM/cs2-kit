@@ -135,19 +135,17 @@ uint64_t ConVarService::OnChange(ChangeCallback callback)
         }
     }
 
-    uint64_t id = _nextCallbackId++;
-    _changeCallbacks[id] = std::move(callback);
-    return id;
+    return _changeCallbacks.Add(std::move(callback));
 }
 
 void ConVarService::RemoveChangeListener(uint64_t id)
 {
-    _changeCallbacks.erase(id);
+    _changeCallbacks.Remove(id);
 }
 
 void ConVarService::DispatchChange(const char* name, const char* oldValue, const char* newValue)
 {
-    for (auto& [id, callback] : _changeCallbacks)
+    for (const auto& [id, callback] : _changeCallbacks.Items())
     {
         callback(name, oldValue, newValue);
     }

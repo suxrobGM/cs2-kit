@@ -2,11 +2,11 @@
 
 #include <igameevents.h>
 
+#include <CS2Kit/Core/CallbackRegistry.hpp>
 #include <cstdint>
 #include <functional>
 #include <set>
 #include <string>
-#include <unordered_map>
 
 namespace CS2Kit::Sdk
 {
@@ -42,7 +42,8 @@ public:
 
     void RemoveListener(uint64_t id);
 
-    /** @brief Remove all listeners and deregister from the engine. Called by CS2Kit::Shutdown() (avoids double-registration on reload). */
+    /** @brief Remove all listeners and deregister from the engine. Called by CS2Kit::Shutdown() (avoids
+     * double-registration on reload). */
     void RemoveAllListeners();
 
     void FireGameEvent(IGameEvent* event) override;
@@ -54,8 +55,7 @@ private:
         EventCallback Callback;
     };
 
-    std::unordered_map<uint64_t, RegisteredListener> _listeners;
-    uint64_t _nextListenerId = 1;
+    Core::CallbackRegistry<RegisteredListener> _listeners;
     std::set<std::string> _registeredEvents;
 };
 

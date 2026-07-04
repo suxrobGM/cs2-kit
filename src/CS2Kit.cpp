@@ -131,6 +131,12 @@ bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, Core::Services& servi
     if (!services.Transmit.Initialize())
         Utils::Log::Warn("Transmit filter inert (CheckTransmitPlayerSlot offset missing from gamedata).");
 
+    // Per-frame subsystems pump through the scheduler (PostgresDatabase registers its own pump
+    // in Start), so OnGameFrame has exactly one thing to tick. CancelAll in Shutdown unhooks
+    // these; Initialize re-registers them on the next load.
+    services.Scheduler.EveryFrame([&services] { services.Menus.OnGameFrame(); });
+    services.Scheduler.EveryFrame([&services] { services.Http.DispatchCompletions(); });
+
     Utils::Log::Info("CS2Kit initialized.");
     return true;
 }
@@ -146,8 +152,6 @@ void Shutdown(Core::Services& services)
 void OnGameFrame(Core::Services& services)
 {
     services.Scheduler.OnGameFrame();
-    services.Menus.OnGameFrame();
-    services.Http.DispatchCompletions();
 }
 
 void OnPlayerDisconnect(Core::Services& services, int slot)

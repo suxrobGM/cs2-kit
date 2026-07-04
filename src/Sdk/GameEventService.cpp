@@ -59,14 +59,12 @@ uint64_t GameEventService::Listen(const char* eventName, EventCallback callback)
         _registeredEvents.insert(eventName);
     }
 
-    uint64_t id = _nextListenerId++;
-    _listeners[id] = {eventName, std::move(callback)};
-    return id;
+    return _listeners.Add({eventName, std::move(callback)});
 }
 
 void GameEventService::RemoveListener(uint64_t id)
 {
-    _listeners.erase(id);
+    _listeners.Remove(id);
 }
 
 void GameEventService::RemoveAllListeners()
@@ -75,7 +73,7 @@ void GameEventService::RemoveAllListeners()
         mgr->RemoveListener(this);  // detaches this listener from every event in one call
 
     _registeredEvents.clear();
-    _listeners.clear();
+    _listeners.Clear();
 }
 
 void GameEventService::FireGameEvent(IGameEvent* event)
@@ -87,7 +85,7 @@ void GameEventService::FireGameEvent(IGameEvent* event)
     if (!eventName)
         return;
 
-    for (auto& [id, listener] : _listeners)
+    for (const auto& [id, listener] : _listeners.Items())
     {
         if (listener.EventName == eventName && listener.Callback)
         {

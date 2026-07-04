@@ -14,20 +14,21 @@
 
 #include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Commands/CommandSpec.hpp>
+#include <CS2Kit/Core/CallbackRegistry.hpp>
+#include <CS2Kit/Core/EffectDescriptor.hpp>
 #include <CS2Kit/Core/EffectManager.hpp>
 #include <CS2Kit/Core/JsonConfig.hpp>
 #include <CS2Kit/Core/MetamodPluginBase.hpp>
 #include <CS2Kit/Core/PluginBase.hpp>
 #include <CS2Kit/Core/PluginPolicy.hpp>
 #include <CS2Kit/Core/Registry.hpp>
+#include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Core/Services.hpp>
-#include <CS2Kit/Sdk/GameEvents.hpp>
 #include <CS2Kit/Database/DbResult.hpp>
 #include <CS2Kit/Database/Mapping.hpp>
 #include <CS2Kit/Database/Migrator.hpp>
 #include <CS2Kit/Database/PostgresDatabase.hpp>
 #include <CS2Kit/Http/HttpResult.hpp>
-#include <CS2Kit/Core/EffectDescriptor.hpp>
 #include <CS2Kit/Menu/Flow.hpp>
 #include <CS2Kit/Menu/Menu.hpp>
 #include <CS2Kit/Menu/MenuBuilder.hpp>
@@ -36,7 +37,6 @@
 #include <CS2Kit/Menu/MenuOption.hpp>
 #include <CS2Kit/Menu/MenuPresets.hpp>
 #include <CS2Kit/Menu/Options/ChoiceOption.hpp>
-#include <CS2Kit/Sdk/PawnPredicates.hpp>
 #include <CS2Kit/Players/ActionDispatcher.hpp>
 #include <CS2Kit/Players/Player.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
@@ -47,9 +47,11 @@
 #include <CS2Kit/Sdk/EntityKeyValues.hpp>
 #include <CS2Kit/Sdk/EntityOps.hpp>
 #include <CS2Kit/Sdk/GameEventService.hpp>
+#include <CS2Kit/Sdk/GameEvents.hpp>
 #include <CS2Kit/Sdk/GlowVision.hpp>
 #include <CS2Kit/Sdk/MoveType.hpp>
 #include <CS2Kit/Sdk/PawnOps.hpp>
+#include <CS2Kit/Sdk/PawnPredicates.hpp>
 #include <CS2Kit/Sdk/PersistentCenterHtml.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
@@ -57,106 +59,119 @@
 #include <CS2Kit/Utils/StringUtils.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
+#include <CS2Kit/Utils/Validation.hpp>
 
 namespace CS2Kit
 {
 
 // Core
+using Core::ApplyEffect;
+using Core::CallbackRegistry;
+using Core::ClearEffect;
+using Core::EffectChoice;
+using Core::EffectDescriptor;
+using Core::EffectInstance;
+using Core::EffectManager;
+using Core::EffectScope;
+using Core::EffectSpec;
 using Core::Engine;
-using Core::Services;
+using Core::JsonConfig;
 using Core::MetamodPluginBase;
+using Core::ParamEffectDescriptor;
 using Core::PluginBase;
 using Core::PluginInfo;
 using Core::PluginPolicy;
-using Core::JsonConfig;
 using Core::Registry;
-using Core::EffectManager;
-using Core::EffectSpec;
-using Core::EffectDescriptor;
-using Core::ParamEffectDescriptor;
-using Core::EffectInstance;
-using Core::EffectChoice;
-using Core::EffectScope;
+using Core::Scheduler;
+using Core::Services;
 using Core::ToggleEffect;
-using Core::ApplyEffect;
-using Core::ClearEffect;
 
 // Sdk
-using Sdk::PlayerController;
-using Sdk::MoveType;
-using Sdk::MessageSystem;
-using Sdk::GlowVision;
-using Sdk::EntityKeyValues;
-using Sdk::PersistentCenterHtml;
 using Sdk::ChatInputCapture;
-using Sdk::EntitySystem;
-using Sdk::EntityOpsService;
 using Sdk::ConVarService;
+using Sdk::EntityKeyValues;
+using Sdk::EntityOpsService;
+using Sdk::EntitySystem;
 using Sdk::GameEventService;
-using Sdk::InMoveType;
+using Sdk::GlowVision;
 using Sdk::HasPawnFlag;
+using Sdk::InMoveType;
+using Sdk::MessageKind;
+using Sdk::MessageSystem;
+using Sdk::MoveType;
+using Sdk::PersistentCenterHtml;
+using Sdk::PlayerController;
 namespace PawnOps = Sdk::PawnOps;
 namespace Events = Sdk::Events;
 
 // Menu  (the built-menu data model is Menu::MenuView; `Menu` is the namespace)
-using Menu::MenuView;
-using Menu::MenuBuilder;
-using Menu::MenuContext;
-using Menu::MenuOption;
-using Menu::MenuManager;
-using Menu::ChoiceOption;
-using Menu::Flow;
-using Menu::ConfirmDialogSpec;
+using Menu::AppendPlayerRows;
 using Menu::BuildConfirmDialog;
-using Menu::BuildPlayerPicker;
 using Menu::BuildDurationPicker;
 using Menu::BuildPaletteChoices;
-using Menu::AppendPlayerRows;
+using Menu::BuildPlayerPicker;
+using Menu::ChoiceOption;
+using Menu::ConfirmDialogSpec;
+using Menu::Flow;
+using Menu::MenuBuilder;
+using Menu::MenuContext;
+using Menu::MenuManager;
+using Menu::MenuOption;
+using Menu::MenuView;
 
 // Players
-using Players::Player;
-using Players::PlayerManager;
-using Players::ActionContext;
 using Players::Action;
-using Players::ParamAction;
+using Players::ActionContext;
 using Players::ActionDispatcher;
 using Players::CanTargetFn;
+using Players::ParamAction;
+using Players::Player;
+using Players::PlayerManager;
 using Players::ResolveTargets;
-using Players::TargetRules;
 using Players::TargetError;
 using Players::TargetFailure;
+using Players::TargetRules;
 
-// Commands
+// Commands (arg factories keep their terse names: CS2Kit::Target(), CS2Kit::Duration(), ...)
+using Commands::ArgKind;
+using Commands::ArgSpec;
+using Commands::CommandContext;
 using Commands::CommandManager;
 using Commands::CommandResult;
 using Commands::CommandSpec;
-using Commands::CommandContext;
-using Commands::ArgKind;
-using Commands::ArgSpec;
+using Commands::Duration;
+using Commands::Int;
+using Commands::ReasonTail;
+using Commands::SteamId64;
+using Commands::Target;
+using Commands::TargetOrSteamId;
+using Commands::Word;
 
 // Database
-using Database::PostgresDatabase;
-using Database::PostgresConfig;
+using Database::Column;
 using Database::DbResult;
+using Database::FromResult;
+using Database::FromRow;
+using Database::InsertParams;
+using Database::InsertSql;
+using Database::PostgresConfig;
+using Database::PostgresDatabase;
+using Database::RunMigrations;
+using Database::SelectSql;
 using Database::TryDb;
 using Database::TryOr;
-using Database::RunMigrations;
-using Database::Column;
-using Database::FromRow;
-using Database::FromResult;
-using Database::InsertSql;
-using Database::InsertParams;
-using Database::SelectSql;
 
 // Http
+using Http::HttpClient;
 using Http::HttpResult;
 
 // Utils
-using Utils::TimeUtils;
-using Utils::Translations;
-using Utils::Tokens;
-using Utils::StringUtils;
 using Utils::ParseDuration;
 using Utils::SlotThrottle;
+using Utils::StringUtils;
+using Utils::TimeUtils;
+using Utils::Tokens;
+using Utils::Translations;
+namespace Validation = Utils::Validation;
 
 }  // namespace CS2Kit

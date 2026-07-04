@@ -1,10 +1,10 @@
 #pragma once
 
+#include <CS2Kit/Core/CallbackRegistry.hpp>
 #include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
-#include <unordered_map>
 
 namespace CS2Kit::Sdk
 {
@@ -37,8 +37,7 @@ public:
     void DispatchChange(const char* name, const char* oldValue, const char* newValue);
 
 private:
-    std::unordered_map<uint64_t, ChangeCallback> _changeCallbacks;
-    uint64_t _nextCallbackId = 1;
+    Core::CallbackRegistry<ChangeCallback> _changeCallbacks;
     bool _globalCallbackInstalled = false;
 };
 

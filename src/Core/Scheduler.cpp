@@ -1,6 +1,6 @@
 #include <CS2Kit/Core/Scheduler.hpp>
-#include <algorithm>
 #include <chrono>
+#include <vector>
 
 namespace CS2Kit::Core
 {
@@ -13,23 +13,17 @@ int64_t Scheduler::GetCurrentTimeMs() const
 
 uint64_t Scheduler::Delay(int64_t delayMs, std::function<void()> callback)
 {
-    uint64_t id = _nextId++;
-    _timers.push_back({id, GetCurrentTimeMs() + delayMs, 0, std::move(callback)});
-    return id;
+    return _timers.Add({GetCurrentTimeMs() + delayMs, 0, std::move(callback)});
 }
 
 uint64_t Scheduler::Repeat(int64_t intervalMs, std::function<void()> callback)
 {
-    uint64_t id = _nextId++;
-    _timers.push_back({id, GetCurrentTimeMs() + intervalMs, intervalMs, std::move(callback)});
-    return id;
+    return _timers.Add({GetCurrentTimeMs() + intervalMs, intervalMs, std::move(callback)});
 }
 
 uint64_t Scheduler::DelayAndRepeat(int64_t delayMs, int64_t intervalMs, std::function<void()> callback)
 {
-    uint64_t id = _nextId++;
-    _timers.push_back({id, GetCurrentTimeMs() + delayMs, intervalMs, std::move(callback)});
-    return id;
+    return _timers.Add({GetCurrentTimeMs() + delayMs, intervalMs, std::move(callback)});
 }
 
 uint64_t Scheduler::NextTick(std::function<void()> callback)
@@ -41,63 +35,60 @@ uint64_t Scheduler::EveryFrame(std::function<void()> callback)
 {
     // Interval -1 is the every-frame sentinel: OnGameFrame refires it each frame instead of
     // erasing it (interval 0 = one-shot) or waiting an interval (> 0).
-    uint64_t id = _nextId++;
-    _timers.push_back({id, 0, -1, std::move(callback)});
-    return id;
+    return _timers.Add({0, -1, std::move(callback)});
 }
 
 void Scheduler::Cancel(uint64_t id)
 {
-    _timers.erase(std::remove_if(_timers.begin(), _timers.end(), [id](const Timer& t) { return t.Id == id; }),
-                  _timers.end());
+    _timers.Remove(id);
 }
 
 void Scheduler::CancelAll()
 {
-    _timers.clear();
+    _timers.Clear();
 }
 
 void Scheduler::OnGameFrame()
 {
-    if (_timers.empty())
+    if (_timers.Empty())
         return;
 
     int64_t now = GetCurrentTimeMs();
 
-    // Snapshot the IDs to fire instead of indices: callbacks may Cancel() other timers
-    // (or themselves) which erases from _timers and invalidates indices/references.
+    // Snapshot the IDs to fire instead of iterating live: callbacks may Cancel() other timers
+    // (or themselves) or schedule new ones, which mutates the registry mid-loop.
     std::vector<uint64_t> toFire;
-    for (const auto& t : _timers)
+    for (const auto& [id, t] : _timers.Items())
     {
         if (now >= t.NextFireTime)
-            toFire.push_back(t.Id);
+            toFire.push_back(id);
     }
 
     for (uint64_t id : toFire)
     {
         // Re-find by ID - the timer may have been cancelled by an earlier callback in this batch.
-        auto it = std::find_if(_timers.begin(), _timers.end(), [id](const Timer& t) { return t.Id == id; });
-        if (it == _timers.end())
+        Timer* timer = _timers.Find(id);
+        if (!timer)
             continue;
 
-        // Copy out before invoking - the callback can mutate _timers (including reallocating it).
-        int64_t interval = it->Interval;
-        auto callback = it->Callback;
+        // Copy out before invoking - the callback can mutate the registry (invalidating pointers).
+        int64_t interval = timer->Interval;
+        auto callback = timer->Callback;
 
         if (callback)
             callback();
 
         // Re-find again: the callback may have cancelled this timer.
-        it = std::find_if(_timers.begin(), _timers.end(), [id](const Timer& t) { return t.Id == id; });
-        if (it == _timers.end())
+        timer = _timers.Find(id);
+        if (!timer)
             continue;
 
         if (interval > 0)
-            it->NextFireTime = now + interval;
+            timer->NextFireTime = now + interval;
         else if (interval < 0)
-            it->NextFireTime = now;  // every-frame sentinel: due again next frame
+            timer->NextFireTime = now;  // every-frame sentinel: due again next frame
         else
-            _timers.erase(it);
+            _timers.Remove(id);
     }
 }
 

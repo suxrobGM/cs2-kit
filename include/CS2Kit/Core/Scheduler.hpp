@@ -1,8 +1,8 @@
 #pragma once
 
+#include <CS2Kit/Core/CallbackRegistry.hpp>
 #include <cstdint>
 #include <functional>
-#include <vector>
 
 namespace CS2Kit::Core
 {
@@ -44,7 +44,6 @@ public:
 private:
     struct Timer
     {
-        uint64_t Id;
         int64_t NextFireTime;
         int64_t Interval;
         std::function<void()> Callback;
@@ -52,8 +51,7 @@ private:
 
     int64_t GetCurrentTimeMs() const;
 
-    std::vector<Timer> _timers;
-    uint64_t _nextId = 1;
+    CallbackRegistry<Timer> _timers;
 };
 
 }  // namespace CS2Kit::Core
