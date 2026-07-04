@@ -44,8 +44,8 @@ public:
 
     /** Fire an entity input carrying a float parameter (e.g. "SetScale"). Some inputs read the
      *  numeric variant directly and ignore a string param, so this passes a FIELD_FLOAT32 value. */
-    void AcceptInputFloat(CEntityInstance* entity, const char* input, float value,
-                          CEntityInstance* activator = nullptr, CEntityInstance* caller = nullptr);
+    void AcceptInputFloat(CEntityInstance* entity, const char* input, float value, CEntityInstance* activator = nullptr,
+                          CEntityInstance* caller = nullptr);
 
     /** Fire an entity input after a delay via the engine's entity IO queue. */
     void AddIOEvent(CEntityInstance* target, const char* input, float delaySeconds,
@@ -63,12 +63,12 @@ public:
 
     /** Emit a sound event from an entity, audible per normal attenuation.
      *  soundEvent is a .vsndevts event name, not a file path. */
-    void EmitSound(CEntityInstance* entity, const char* soundEvent, int pitch = 100,
-                   float volume = 1.0f, float delay = 0.0f);
+    void EmitSound(CEntityInstance* entity, const char* soundEvent, int pitch = 100, float volume = 1.0f,
+                   float delay = 0.0f);
 
     /** Emit a sound event from an entity to the filtered recipients only. */
-    void EmitSoundFilter(IRecipientFilter& filter, CEntityInstance* source, const char* soundEvent,
-                         float volume = 1.0f, int pitch = 100);
+    void EmitSoundFilter(IRecipientFilter& filter, CEntityInstance* source, const char* soundEvent, float volume = 1.0f,
+                         int pitch = 100);
 
     /** Notify the engine that a schema field written via WriteAt changed, so the
      *  new value replicates immediately instead of riding the next broadcast. */

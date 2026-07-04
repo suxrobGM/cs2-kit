@@ -14,8 +14,8 @@ namespace CS2Kit::Menu
 {
 
 void AppendPlayerRows(MenuBuilder& builder, int viewerSlot,
-                      const std::function<void(int viewerSlot, int targetSlot)>& onPick,
-                      const std::string& emptyLabel, const std::function<bool(int targetSlot)>& isEnabled)
+                      const std::function<void(int viewerSlot, int targetSlot)>& onPick, const std::string& emptyLabel,
+                      const std::function<bool(int targetSlot)>& isEnabled)
 {
     auto players = Engine().Players.GetAllPlayers();
     for (auto* p : players)
@@ -38,8 +38,9 @@ void AppendPlayerRows(MenuBuilder& builder, int viewerSlot,
 }
 
 std::shared_ptr<MenuView> BuildPlayerPicker(int viewerSlot, const std::string& title,
-                                        std::function<void(int viewerSlot, int targetSlot)> onPick,
-                                        const std::string& emptyLabel, std::function<bool(int targetSlot)> isEnabled)
+                                            std::function<void(int viewerSlot, int targetSlot)> onPick,
+                                            const std::string& emptyLabel,
+                                            std::function<bool(int targetSlot)> isEnabled)
 {
     MenuBuilder builder(title);
     AppendPlayerRows(builder, viewerSlot, onPick, emptyLabel, isEnabled);
@@ -47,10 +48,10 @@ std::shared_ptr<MenuView> BuildPlayerPicker(int viewerSlot, const std::string& t
 }
 
 std::shared_ptr<MenuView> BuildDurationPicker(int viewerSlot, const std::string& title,
-                                          const std::vector<std::pair<std::string, int>>& presets,
-                                          std::function<void(int viewerSlot, int seconds)> onPick,
-                                          const std::string& customLabel, const std::string& customPrompt,
-                                          int maxInputLen)
+                                              const std::vector<std::pair<std::string, int>>& presets,
+                                              std::function<void(int viewerSlot, int seconds)> onPick,
+                                              const std::string& customLabel, const std::string& customPrompt,
+                                              int maxInputLen)
 {
     MenuBuilder builder(title);
 
