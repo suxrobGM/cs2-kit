@@ -75,7 +75,7 @@ void JumpPage(const std::vector<std::shared_ptr<MenuOption>>& items, int& idx, i
 
 }  // namespace
 
-void MenuManager::OpenMenu(int slot, std::shared_ptr<Menu> menu)
+void MenuManager::OpenMenu(int slot, std::shared_ptr<MenuView> menu)
 {
     if (!Core::IsValidSlot(slot) || !menu)
         return;

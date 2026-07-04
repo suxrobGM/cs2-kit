@@ -24,10 +24,10 @@ metadata, and implement only the callbacks you care about.
 ```cpp
 #include <CS2Kit/Core/MetamodPluginBase.hpp>
 
-class MyPlugin : public CS2Kit::Core::MetamodPluginBase
+class MyPlugin : public CS2Kit::MetamodPluginBase
 {
 protected:
-    CS2Kit::Core::PluginInfo Info() const override
+    CS2Kit::PluginInfo Info() const override
     {
         return { .Name = "My Plugin", .Author = "me", .Version = "1.0.0", .LogTag = "MINE" };
     }
@@ -61,12 +61,12 @@ SH_DECL_HOOK3(IVEngineServer2, SetClientListening, SH_NOATTRIB, 0, bool, CPlayer
 
 void MyPlugin::OnRegisterHooks()
 {
-    auto& gi = CS2Kit::Core::Engine().Interfaces;
+    auto& gi = CS2Kit::Engine().Interfaces;
     SH_ADD_HOOK(IVEngineServer2, SetClientListening, gi.Engine,
                 SH_MEMBER(this, &MyPlugin::Hook_SetClientListening), false);
 
     Defer([this] {
-        auto& g = CS2Kit::Core::Engine().Interfaces;
+        auto& g = CS2Kit::Engine().Interfaces;
         SH_REMOVE_HOOK(IVEngineServer2, SetClientListening, g.Engine,
                        SH_MEMBER(this, &MyPlugin::Hook_SetClientListening), false);
     });

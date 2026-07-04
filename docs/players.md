@@ -16,7 +16,7 @@ Single-threaded by design. All access happens from game-thread Metamod hooks, so
 If your plugin derives from @ref CS2Kit::Core::MetamodPluginBase, this is automatic: the base calls `AddPlayer` on connect and `RemovePlayer` on disconnect, then hands your `OnPlayerConnect(Player*)` / `OnPlayerDisconnect(Player*)` overrides the live `Player*`. Just override those.
 
 Without the base, drive `PlayerManager` from your own connect/disconnect hooks. Reach the manager
-via the `Engine()` accessor (`#include <CS2Kit/Core/Services.hpp>`, `using CS2Kit::Core::Engine;`):
+via the `Engine()` accessor (`#include <CS2Kit/Core/Services.hpp>`, `using CS2Kit::Engine;`):
 
 ```cpp
 // OnClientConnected hook:
@@ -97,7 +97,7 @@ if (player && App().Admins.IsAdmin(player->GetSteamID()))
 }
 ```
 
-This keeps `CS2Kit::Players::Player` reusable across plugins that have nothing to do with admins or punishments.
+This keeps `CS2Kit::Player` reusable across plugins that have nothing to do with admins or punishments.
 
 ## Target Resolution
 

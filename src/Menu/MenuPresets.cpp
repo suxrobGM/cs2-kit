@@ -13,7 +13,7 @@ using CS2Kit::Core::Engine;
 namespace CS2Kit::Menu
 {
 
-std::shared_ptr<Menu> BuildPlayerPicker(int viewerSlot, const std::string& title,
+std::shared_ptr<MenuView> BuildPlayerPicker(int viewerSlot, const std::string& title,
                                         std::function<void(int viewerSlot, int targetSlot)> onPick,
                                         const std::string& emptyLabel, std::function<bool(int targetSlot)> isEnabled)
 {
@@ -39,7 +39,7 @@ std::shared_ptr<Menu> BuildPlayerPicker(int viewerSlot, const std::string& title
     return builder.Build();
 }
 
-std::shared_ptr<Menu> BuildDurationPicker(int viewerSlot, const std::string& title,
+std::shared_ptr<MenuView> BuildDurationPicker(int viewerSlot, const std::string& title,
                                           const std::vector<std::pair<std::string, int>>& presets,
                                           std::function<void(int viewerSlot, int seconds)> onPick,
                                           const std::string& customLabel, const std::string& customPrompt,
@@ -73,7 +73,7 @@ std::shared_ptr<Menu> BuildDurationPicker(int viewerSlot, const std::string& tit
     return builder.Build();
 }
 
-std::shared_ptr<Menu> BuildConfirmDialog(ConfirmDialogSpec spec)
+std::shared_ptr<MenuView> BuildConfirmDialog(ConfirmDialogSpec spec)
 {
     MenuBuilder builder(spec.Title);
 

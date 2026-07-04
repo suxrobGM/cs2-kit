@@ -24,7 +24,7 @@ be re-sent continuously. @ref CS2Kit::Sdk::PersistentCenterHtml owns that re-sen
 expiry policy stays with the caller's own timer:
 
 ```cpp
-CS2Kit::Sdk::PersistentCenterHtml panel;
+CS2Kit::PersistentCenterHtml panel;
 
 panel.Show(slot, /*refreshMs=*/100, [](int s) {
     return std::format("<b>Time left: {}s</b>", RemainingSeconds(s));  // re-rendered every refresh

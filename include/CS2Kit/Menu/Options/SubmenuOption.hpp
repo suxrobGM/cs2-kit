@@ -10,7 +10,7 @@
 namespace CS2Kit::Menu
 {
 
-struct Menu;
+struct MenuView;
 
 /**
  * Push a built submenu onto the player's menu stack. The factory is invoked lazily on E.
@@ -21,7 +21,7 @@ struct Menu;
 class SubmenuOption : public MenuOption
 {
 public:
-    using FactoryFn = std::function<std::shared_ptr<Menu>(int)>;
+    using FactoryFn = std::function<std::shared_ptr<MenuView>(int)>;
 
     SubmenuOption(std::string label, FactoryFn factory, bool enabled = true)
         : _label(std::move(label)), _factory(std::move(factory))

@@ -36,7 +36,7 @@ mapper in your plugin, inside the `CS2Kit::Database` namespace so ADL finds it).
 ```cpp
 #include <CS2Kit/Database/PostgresDatabase.hpp>
 
-CS2Kit::Database::PostgresDatabase db;
+CS2Kit::PostgresDatabase db;
 if (!db.Initialize(config))          // logs a generic, secret-free error on failure
     return false;
 
@@ -63,7 +63,7 @@ racing on the same database; a missing directory is a logged no-op.
 ```cpp
 #include <CS2Kit/Database/Migrator.hpp>
 
-CS2Kit::Database::RunMigrations(db, "addons/my-plugin/configs/migrations",
+CS2Kit::RunMigrations(db, "addons/my-plugin/configs/migrations",
                                 {.TableName = "schema_migrations", .AdvisoryLockKey = 727274});
 ```
 

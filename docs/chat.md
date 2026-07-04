@@ -9,7 +9,7 @@ The chat module (`CS2Kit::Utils::Chat` and `CS2Kit::Utils::ChatColors`) is a thi
 - **ChatColors** - `inline constexpr` constants for the 15 in-line CS2 chat color escapes, plus `ParseNamed` and `Strip` helpers
 - **Chat::Print / PrintAll / PrintFiltered** - one-liners for sending colored chat lines to a slot, all players, or a filtered subset
 
-Built on top of `CS2Kit::Sdk::MessageSystem::SendChatMessage`, which `CS2Kit::Initialize` wires up automatically - no extra setup needed.
+Built on top of `CS2Kit::MessageSystem::SendChatMessage`, which `CS2Kit::Initialize` wires up automatically - no extra setup needed.
 
 ## Color Constants
 

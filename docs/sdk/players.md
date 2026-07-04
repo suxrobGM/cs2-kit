@@ -34,7 +34,7 @@ Typed wrapper around `CCSPlayerController` providing common operations. Construc
 slot - it resolves the controller entity internally (check `IsValid()` if the slot may be empty):
 
 ```cpp
-CS2Kit::Sdk::PlayerController player(slot);
+CS2Kit::PlayerController player(slot);
 
 int health = player.GetHealth();
 int team = player.GetTeam();

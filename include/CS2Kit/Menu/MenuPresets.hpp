@@ -25,7 +25,7 @@ namespace CS2Kit::Menu
  * decides per-row whether a target is selectable. If no players are connected, a single
  * disabled @p emptyLabel row is shown instead.
  */
-std::shared_ptr<Menu> BuildPlayerPicker(int viewerSlot, const std::string& title,
+std::shared_ptr<MenuView> BuildPlayerPicker(int viewerSlot, const std::string& title,
                                         std::function<void(int viewerSlot, int targetSlot)> onPick,
                                         const std::string& emptyLabel = "",
                                         std::function<bool(int targetSlot)> isEnabled = {});
@@ -36,7 +36,7 @@ std::shared_ptr<Menu> BuildPlayerPicker(int viewerSlot, const std::string& title
  * extra chat-input row is appended: it prompts with @p customPrompt and parses the typed text
  * via @ref CS2Kit::Utils::ParseDuration (rejecting/re-prompting on a negative result).
  */
-std::shared_ptr<Menu> BuildDurationPicker(int viewerSlot, const std::string& title,
+std::shared_ptr<MenuView> BuildDurationPicker(int viewerSlot, const std::string& title,
                                           const std::vector<std::pair<std::string, int>>& presets,
                                           std::function<void(int viewerSlot, int seconds)> onPick,
                                           const std::string& customLabel = "", const std::string& customPrompt = "",
@@ -54,7 +54,7 @@ struct ConfirmDialogSpec
 };
 
 /** Build a confirmation dialog: body text rows followed by confirm/cancel buttons. */
-std::shared_ptr<Menu> BuildConfirmDialog(ConfirmDialogSpec spec);
+std::shared_ptr<MenuView> BuildConfirmDialog(ConfirmDialogSpec spec);
 
 /**
  * Render @ref Utils::ChatColors::Palette as ChoiceOption choices (value = canonical color name),

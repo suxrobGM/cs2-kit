@@ -10,7 +10,7 @@ The command system (`CS2Kit::Commands`) provides a framework for registering and
 - **CommandBuilder** - Fluent builder for constructing commands
 - **CommandManager** - A CS2-Kit service (reached via `Engine().Commands`) that registers commands, parses chat input, and dispatches handlers
 
-Handlers receive a `CS2Kit::Players::Player*` directly - no caller adapter is required.
+Handlers receive a `CS2Kit::Player*` directly - no caller adapter is required.
 
 ## Registering Commands
 
@@ -32,8 +32,8 @@ cmdMgr.Register(
         .WithUsage("!kick <target> [reason]")
         .RequirePermission("c")
         .WithArgs(1, 2)
-        .OnExecute([](CS2Kit::Players::Player* caller,
-                      const std::vector<std::string>& args) -> CS2Kit::Commands::CommandResult
+        .OnExecute([](CS2Kit::Player* caller,
+                      const std::vector<std::string>& args) -> CS2Kit::CommandResult
         {
             // args[0] = target, args[1] = reason (optional)
             return {.Success = true, .Message = "Player kicked."};
@@ -82,7 +82,7 @@ cmdMgr.SetPermissionCallback(
 
 ## Caller
 
-Command handlers receive a `CS2Kit::Players::Player*` (the same pointer returned by `PlayerManager::GetPlayerBySlot`). Use `caller->GetSteamID()` and `caller->GetName()` directly.
+Command handlers receive a `CS2Kit::Player*` (the same pointer returned by `PlayerManager::GetPlayerBySlot`). Use `caller->GetSteamID()` and `caller->GetName()` directly.
 
 Server-console commands are not currently dispatched through `CommandManager` - only chat messages are. If console support is added later, the signature will be revised then.
 
@@ -102,9 +102,9 @@ By default the result is discarded after dispatch. Register a `ResultCallback` o
 
 ```cpp
 cmdMgr.SetResultCallback(
-    [](CS2Kit::Players::Player* caller,
+    [](CS2Kit::Player* caller,
        const CS2Kit::Commands::Command& cmd,
-       const CS2Kit::Commands::CommandResult& result)
+       const CS2Kit::CommandResult& result)
     {
         if (caller && !result.Message.empty())
             CS2Kit::Utils::Chat::Print(caller->GetSlot(), result.Message);

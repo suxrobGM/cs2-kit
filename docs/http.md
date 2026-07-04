@@ -22,7 +22,7 @@ per-plugin dispatch timer to wire up.
 #include <CS2Kit/Http/HttpClient.hpp>
 
 Engine().Http.Post(url, body, {"Content-Type: application/json"}, /*timeoutMs=*/8000,
-                   [](const CS2Kit::Http::HttpResult& result) {
+                   [](const CS2Kit::HttpResult& result) {
                        // Runs on the game thread - safe to touch engine state here.
                        if (!result.Ok)
                            Log::Warn("request failed: {}", result.Error);

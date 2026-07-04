@@ -21,13 +21,13 @@ CS2Kit
 ## Design Principles
 
 - **Single-threaded** - All code runs on the game thread. No mutexes needed. Metamod hooks are always called from the main thread.
-- **Service container** - CS2-Kit's services live in one `CS2Kit::Core::Services` instance, constructed on Load and destroyed on Unload, reached via the `Engine()` accessor. No process-lifetime singletons - state cannot leak across `meta unload` / `meta reload`.
+- **Service container** - CS2-Kit's services live in one `CS2Kit::Services` instance, constructed on Load and destroyed on Unload, reached via the `Engine()` accessor. No process-lifetime singletons - state cannot leak across `meta unload` / `meta reload`.
 - **Builder pattern** - Complex objects (commands, menus) are constructed via fluent builders.
 - **Minimal boilerplate** - `CS2Kit::Initialize(ismm, error, maxlen)` handles all SDK interface resolution, gamedata loading, and subsystem init. Deriving from `MetamodPluginBase` removes the rest: the ISmmPlugin getters, the Load/Unload skeleton, the standard hooks, and the player lifecycle. `ILogger` has a built-in default.
 
 ## Plugin lifecycle (MetamodPluginBase)
 
-`CS2Kit::Core::MetamodPluginBase` is the recommended entry point. It implements `ISmmPlugin`,
+`CS2Kit::MetamodPluginBase` is the recommended entry point. It implements `ISmmPlugin`,
 owns the four standard SourceHook hooks (GameFrame, client connect/disconnect, chat dispatch),
 drives `PlayerManager::AddPlayer`/`RemovePlayer`, and exposes virtual callbacks (`OnLoad`,
 `OnPlayerConnect`, `OnPlayerDisconnect`, `OnPlayerChat`, `OnRegisterHooks`) for plugin logic.
@@ -43,7 +43,7 @@ drives `PlayerManager::AddPlayer`/`RemovePlayer`, and exposes virtual callbacks 
 ## Service container (`Engine()`)
 
 CS2-Kit's own services - `PlayerManager`, `CommandManager`, `MenuManager`, the SDK wrappers,
-`Translations`, and the rest - are members of a single `CS2Kit::Core::Services` instance. The base
+`Translations`, and the rest - are members of a single `CS2Kit::Services` instance. The base
 constructs one `Services` on Load and destroys it on Unload (members are built in dependency order
 and torn down in reverse, RAII), so service state cannot leak across `meta unload` / `meta reload`.
 There are no process-lifetime singletons and no `::Instance()` accessors.
@@ -68,7 +68,7 @@ free accessor (admin-system's is `App()`). It does not derive from any base.
 struct Managers {
     Core::ConfigManager Config;
     Admin::AdminManager  Admins;     // declaration order == construction order; destroyed in reverse
-    CS2Kit::Core::EffectManager Effects{CS2Kit::Core::Engine().Scheduler};  // kit types work here too
+    CS2Kit::EffectManager Effects{CS2Kit::Engine().Scheduler};  // kit types work here too
 };
 Managers& App();                     // returns the live struct; valid only between OnLoad and unload
 
@@ -115,7 +115,7 @@ CS2-Kit uses `std::function` callbacks throughout:
 | Menu slider get / set | `int(int) / void(int, int)` | MenuBuilder (`AddSlider`) |
 | Menu input get / validate | `string(int) / bool(int, string_view)` | MenuBuilder (`AddInput`) |
 | Menu close | `void(int slot)` | MenuBuilder |
-| Submenu factory | `shared_ptr<Menu>(int slot)` | MenuBuilder (`AddSubmenu`) |
+| Submenu factory | `shared_ptr<MenuView>(int slot)` | MenuBuilder (`AddSubmenu`) |
 | Chat input capture | `bool(int slot, string_view text)` | ChatInputCapture (`BeginCapture`) |
 | Scheduler task | `void()` | Scheduler |
 | Permission check | `bool(int slot, const string& flags)` | CommandManager |

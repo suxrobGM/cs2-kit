@@ -18,7 +18,7 @@ public:
     MenuManager() = default;
 
     /** Push @p menu onto the player's stack and start rendering it. */
-    void OpenMenu(int slot, std::shared_ptr<Menu> menu);
+    void OpenMenu(int slot, std::shared_ptr<MenuView> menu);
 
     /** Pop the top menu (firing its OnClose); falls back to the parent if one exists. */
     void CloseMenu(int slot);

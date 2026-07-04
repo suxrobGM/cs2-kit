@@ -26,7 +26,7 @@ struct MenuLayout
 };
 
 /** A WASD-navigable menu rendered as center-HTML. Build with MenuBuilder. */
-struct Menu
+struct MenuView
 {
     std::string Title;
     std::vector<std::shared_ptr<MenuOption>> Items;
@@ -42,7 +42,7 @@ struct Menu
 struct PlayerMenuState
 {
     /** The stack of menus currently open for the player. */
-    std::stack<std::shared_ptr<Menu>> MenuStack;
+    std::stack<std::shared_ptr<MenuView>> MenuStack;
     int SelectedIndex = 0;
     int64_t LastInputTime = 0;
     uint64_t PrevButtons = 0;
@@ -55,7 +55,7 @@ struct PlayerMenuState
     /** True if the player has any menu currently open. */
     bool HasMenu() const { return !MenuStack.empty(); }
     /** Top of the stack, or nullptr if no menu is open. */
-    Menu* GetCurrentMenu() { return MenuStack.empty() ? nullptr : MenuStack.top().get(); }
+    MenuView* GetCurrentMenu() { return MenuStack.empty() ? nullptr : MenuStack.top().get(); }
 
     /** Clears the entire menu stack and resets selection/input state. */
     void Reset()

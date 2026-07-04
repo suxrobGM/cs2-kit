@@ -36,7 +36,7 @@ auto menu = MenuBuilder("Admin Panel")
     .OnClose([](int slot) { /* cleanup */ })
     .Build();
 
-CS2Kit::Core::Engine().Menus.OpenMenu(playerSlot, menu);
+CS2Kit::Engine().Menus.OpenMenu(playerSlot, menu);
 ```
 
 ## Option Types
@@ -79,7 +79,7 @@ builder.AddChoice<int>(
     [idx](int, int newIdx) { *idx = newIdx; },
     [admin, target](int slot, const int& hp) {
         Actions::DoSetHealth(admin, target, hp);
-        CS2Kit::Core::Engine().Menus.CloseAllMenus(slot);
+        CS2Kit::Engine().Menus.CloseAllMenus(slot);
     });
 ```
 

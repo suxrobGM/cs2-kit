@@ -90,7 +90,7 @@ std::string DefaultFooter(bool isSubmenu, bool isPaginated, bool usesHorizontal,
     return html.str();
 }
 
-static std::string RenderItems(const Menu* menu, int slot, int selectedIndex, int pageStart, int pageEnd)
+static std::string RenderItems(const MenuView* menu, int slot, int selectedIndex, int pageStart, int pageEnd)
 {
     std::ostringstream html;
 
@@ -128,7 +128,7 @@ static std::string RenderItems(const Menu* menu, int slot, int selectedIndex, in
     return html.str();
 }
 
-std::string RenderMenuHtml(const Menu* menu, int slot, int selectedIndex, bool isSubmenu)
+std::string RenderMenuHtml(const MenuView* menu, int slot, int selectedIndex, bool isSubmenu)
 {
     if (!menu)
     {

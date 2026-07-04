@@ -32,17 +32,24 @@ libraries come from Conan.
 ## Initialization
 
 The simplest way to start is to derive from
-`CS2Kit::Core::MetamodPluginBase`. It runs `CS2Kit::Initialize()` and
+`CS2Kit::MetamodPluginBase`. It runs `CS2Kit::Initialize()` and
 `CS2Kit::Shutdown()`, owns the standard SourceHook hooks, drives the
 `PlayerManager` lifecycle, and runs a LIFO teardown stack on unload.
 
-```cpp
-#include <CS2Kit/Core/MetamodPluginBase.hpp>
+> **Short names.** Public types are reachable as `CS2Kit::Type` (e.g.
+> `CS2Kit::MetamodPluginBase`, `CS2Kit::PlayerController`, `CS2Kit::MenuBuilder`,
+> `CS2Kit::Engine()`) by including `<CS2Kit/Api.hpp>`, which hoists the library's
+> vocabulary out of its internal module namespaces (`Sdk`, `Menu`, `Core`, …).
+> The fully-qualified `CS2Kit::Module::Type` spelling keeps working if you prefer
+> it. Examples below use the short form.
 
-class MyPlugin : public CS2Kit::Core::MetamodPluginBase
+```cpp
+#include <CS2Kit/Api.hpp>
+
+class MyPlugin : public CS2Kit::MetamodPluginBase
 {
 protected:
-    CS2Kit::Core::PluginInfo Info() const override
+    CS2Kit::PluginInfo Info() const override
     {
         return { .Name = "My Plugin", .Author = "me", .Version = "1.0.0", .LogTag = "MINE" };
     }

@@ -31,7 +31,7 @@ namespace CS2Kit::Menu
 class MenuBuilder
 {
 public:
-    explicit MenuBuilder(const std::string& title) : _menu(std::make_shared<Menu>()) { _menu->Title = title; }
+    explicit MenuBuilder(const std::string& title) : _menu(std::make_shared<MenuView>()) { _menu->Title = title; }
 
     /** Append a non-selectable label row (heading or divider). */
     MenuBuilder& AddText(const std::string& label)
@@ -145,7 +145,7 @@ public:
     }
 
     /** Append a submenu link. E builds and pushes the submenu via @p factory. */
-    MenuBuilder& AddSubmenu(const std::string& label, std::function<std::shared_ptr<Menu>(int)> factory,
+    MenuBuilder& AddSubmenu(const std::string& label, std::function<std::shared_ptr<MenuView>(int)> factory,
                             bool enabled = true)
     {
         _menu->Items.push_back(std::make_shared<SubmenuOption>(label, std::move(factory), enabled));
@@ -181,10 +181,10 @@ public:
     }
 
     /** Finalize and return the built menu. The builder must not be reused after this. */
-    std::shared_ptr<Menu> Build() { return std::move(_menu); }
+    std::shared_ptr<MenuView> Build() { return std::move(_menu); }
 
 private:
-    std::shared_ptr<Menu> _menu;
+    std::shared_ptr<MenuView> _menu;
     int _ctxPrimary = -1;
     int _ctxSecondary = -1;
 };

@@ -51,6 +51,9 @@ target_link_libraries(my-plugin PRIVATE CS2Kit::CS2Kit)
 - Service container + `Engine()` accessor; no process-lifetime singletons.
 - Use `std::format`, designated initializers, and `std::function` callbacks.
 - Builder pattern for menus and commands.
+- Public vocabulary is hoisted to `CS2Kit::Type` in `CS2Kit/Api.hpp`; prefer the
+  short names over `CS2Kit::Module::Type`. In `.hpp` never use a namespace-scope
+  using-directive; `using namespace CS2Kit::X;` is `.cpp`-only (TU-local).
 
 ## Design Notes
 

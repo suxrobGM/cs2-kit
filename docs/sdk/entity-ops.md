@@ -13,7 +13,7 @@ gamedata signature failed to resolve; branch on `CanSpawn()` when you want an ex
 ```cpp
 auto& ops = Engine().EntityOps;
 
-CS2Kit::Sdk::EntityKeyValues kv;
+CS2Kit::EntityKeyValues kv;
 kv.Set("origin", pos).Set("spawnflags", 1);
 if (auto* boom = ops.Spawn("env_explosion", kv))
 {
