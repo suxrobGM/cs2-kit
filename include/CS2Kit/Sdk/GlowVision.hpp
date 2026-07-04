@@ -34,7 +34,9 @@ public:
     /** Suggested tick interval for @ref Reconcile. */
     static constexpr int ReconcileIntervalMs = 500;
 
-    explicit GlowVision(int beneficiarySlot, Config config = {})
+    explicit GlowVision(int beneficiarySlot) : GlowVision(beneficiarySlot, Config{}) {}
+
+    GlowVision(int beneficiarySlot, Config config)
         : _beneficiarySlot(beneficiarySlot), _config(std::move(config))
     {
     }
