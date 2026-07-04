@@ -1,0 +1,7 @@
+{
+  // Plugin-wide options.
+  "plugin": {
+    "logLevel": "info",
+    "locale": "en"
+  }
+}

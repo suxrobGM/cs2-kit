@@ -18,6 +18,7 @@ include/CS2Kit/        Public API headers
 src/                   Implementation
 gamedata/              Engine signatures and offsets
 scripts/               Build tooling + new_plugin.py scaffold generator
+templates/plugin/      Scaffold template tree ($name/$ns/... placeholders)
 tests/                 SDK-free unit tests (ctest)
 docs/                  Doxygen pages and guides
 vendor/                SDK submodules
