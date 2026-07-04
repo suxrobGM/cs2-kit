@@ -27,6 +27,19 @@ public:
 
     using EventCallback = std::function<void(IGameEvent*)>;
     uint64_t Listen(const char* eventName, EventCallback callback);
+
+    /** Typed listen: @p TEvent is one of @ref CS2Kit::Sdk::Events (carries Name + From).
+     *  The handler receives the decoded struct; the raw-IGameEvent overload above stays as
+     *  the escape hatch for unmodeled events. */
+    template <class TEvent>
+    uint64_t Listen(std::function<void(const TEvent&)> handler)
+    {
+        return Listen(TEvent::Name, [h = std::move(handler)](IGameEvent* e) {
+            if (e)
+                h(TEvent::From(*e));
+        });
+    }
+
     void RemoveListener(uint64_t id);
 
     /** @brief Remove all listeners and deregister from the engine. Called by CS2Kit::Shutdown() (avoids double-registration on reload). */

@@ -1,4 +1,6 @@
 #include <CS2Kit/Commands/CommandManager.hpp>
+#include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Players/Player.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
 
 namespace CS2Kit::Commands
@@ -47,9 +49,10 @@ bool CommandManager::HandleChatMessage(Players::Player* caller, const std::strin
     if (!cmd)
         return false;
 
+    auto& policy = Core::Engine().Policy;
     auto reportResult = [&](const CommandResult& result) {
-        if (_resultCallback)
-            _resultCallback(caller, *cmd, result);
+        if (policy.Reply && !result.Message.empty())
+            policy.Reply(caller->GetSlot(), result.Message);
     };
 
     if (static_cast<int>(args.size()) < cmd->MinArgs ||
@@ -62,7 +65,7 @@ bool CommandManager::HandleChatMessage(Players::Player* caller, const std::strin
 
     if (!cmd->Permission.empty())
     {
-        if (_permissionCallback && !_permissionCallback(caller->GetSteamID(), cmd->Permission))
+        if (policy.HasPermission && !policy.HasPermission(caller->GetSteamID(), cmd->Permission))
         {
             reportResult({false, "You do not have permission to use this command."});
             return true;

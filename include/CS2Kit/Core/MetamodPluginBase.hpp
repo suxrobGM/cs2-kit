@@ -85,6 +85,14 @@ protected:
     virtual void OnUnload() {}
 
     /**
+     * @brief Construct plugin-owned service instances (your Managers container). Runs during
+     * Load after the kit services are initialized and hooks are registered, right before
+     * OnLoad - so member initializers may call Engine(). Prefer @ref PluginBase, which
+     * overrides this (and OnDestroyInstances) for you.
+     */
+    virtual void OnCreateInstances() {}
+
+    /**
      * @brief Destroy plugin-owned service instances. Runs on unload AFTER the Defer() cleanups
      * (so deferred teardown still sees live instances) and BEFORE the kit's own services are
      * destroyed. Override to `reset()` your Managers container.

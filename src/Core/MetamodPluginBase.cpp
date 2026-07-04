@@ -58,6 +58,8 @@ bool MetamodPluginBase::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     RegisterStandardHooks();
     OnRegisterHooks();
 
+    OnCreateInstances();
+
     if (!OnLoad(late))
     {
         snprintf(error, maxlen, "Plugin initialization failed");

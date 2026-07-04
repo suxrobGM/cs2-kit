@@ -18,12 +18,13 @@ ActionContext ActionDispatcher::Resolve(int callerSlot, int targetSlot, const st
     if (!ctx.Caller || !ctx.Target)
         return ctx;
 
-    if (!permission.empty() && _hasPermission && !_hasPermission(*ctx.Caller, permission))
+    auto& policy = Core::Engine().Policy;
+    if (!permission.empty() && policy.HasPermission && !policy.HasPermission(ctx.Caller->GetSteamID(), permission))
     {
         ctx.Caller = nullptr;
         return ctx;
     }
-    if (_canTarget && !_canTarget(*ctx.Caller, *ctx.Target))
+    if (policy.CanTarget && !policy.CanTarget(*ctx.Caller, *ctx.Target))
     {
         ctx.Caller = nullptr;
         return ctx;
@@ -55,9 +56,10 @@ void ActionDispatcher::Run(int callerSlot, int targetSlot, int param, const Para
 
 void ActionDispatcher::Broadcast(const ActionContext& ctx, const std::string& translationKey) const
 {
-    if (!_broadcast || !ctx.Caller || !ctx.Target)
+    auto& policy = Core::Engine().Policy;
+    if (!policy.Broadcast || !ctx.Caller)
         return;
-    _broadcast(ctx, translationKey);
+    policy.Broadcast(*ctx.Caller, ctx.Target, translationKey);
 }
 
 }  // namespace CS2Kit::Players

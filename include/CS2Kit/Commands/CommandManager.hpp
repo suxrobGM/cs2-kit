@@ -9,26 +9,11 @@ namespace CS2Kit::Commands
 {
 
 /**
- * @brief check callback type.
- *
- * @param steamId  Caller's SteamID (0 for console).
- * @param permission Required permission flags (e.g., "c" for kick, "d" for ban).
- * @return True if the caller has the required permission.
- */
-using PermissionCallback = std::function<bool(int64_t steamId, const std::string& permission)>;
-
-/**
- * @brief Invoked after a command handler returns.
- *
- * Lets the host plugin pipe `CommandResult.Message` (success or error) back to the caller -
- * e.g., as a colored chat reply. Also invoked for early dispatch failures (bad arg count,
- * permission denied) with a synthesized `CommandResult` so the caller still gets feedback.
- */
-using ResultCallback = std::function<void(Players::Player* caller, const Command& cmd, const CommandResult& result)>;
-
-/**
  * @brief Dispatches chat commands (prefixed with ! or .) to registered handlers.
- * Handles prefix matching, argument parsing, and permission enforcement.
+ *
+ * Permission checks go through `Engine().Policy.HasPermission`, and result/error messages
+ * are delivered via `Engine().Policy.Reply` - set the policy once in OnLoad and every
+ * command picks it up. No per-manager callback wiring.
  */
 class CommandManager
 {
@@ -42,16 +27,12 @@ public:
     std::vector<const Command*> GetAllCommands() const;
 
     void SetPrefixes(const std::vector<std::string>& prefixes) { _prefixes = prefixes; }
-    void SetPermissionCallback(PermissionCallback callback) { _permissionCallback = std::move(callback); }
-    void SetResultCallback(ResultCallback callback) { _resultCallback = std::move(callback); }
 
 private:
     std::vector<std::string> ParseArguments(const std::string& text) const;
 
     std::unordered_map<std::string, Command> _commands;
     std::vector<std::string> _prefixes{"!", "."};
-    PermissionCallback _permissionCallback;
-    ResultCallback _resultCallback;
 };
 
 }  // namespace CS2Kit::Commands

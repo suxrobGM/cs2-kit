@@ -15,8 +15,13 @@
 #include <CS2Kit/Commands/Command.hpp>
 #include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Core/EffectManager.hpp>
+#include <CS2Kit/Core/JsonConfig.hpp>
 #include <CS2Kit/Core/MetamodPluginBase.hpp>
+#include <CS2Kit/Core/PluginBase.hpp>
+#include <CS2Kit/Core/PluginPolicy.hpp>
+#include <CS2Kit/Core/Registry.hpp>
 #include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Sdk/GameEvents.hpp>
 #include <CS2Kit/Database/DbResult.hpp>
 #include <CS2Kit/Database/Migrator.hpp>
 #include <CS2Kit/Database/PostgresDatabase.hpp>
@@ -55,7 +60,11 @@ namespace CS2Kit
 using Core::Engine;
 using Core::Services;
 using Core::MetamodPluginBase;
+using Core::PluginBase;
 using Core::PluginInfo;
+using Core::PluginPolicy;
+using Core::JsonConfig;
+using Core::Registry;
 using Core::EffectManager;
 using Core::EffectSpec;
 
@@ -72,6 +81,7 @@ using Sdk::EntityOpsService;
 using Sdk::ConVarService;
 using Sdk::GameEventService;
 namespace PawnOps = Sdk::PawnOps;
+namespace Events = Sdk::Events;
 
 // Menu  (the built-menu data model is Menu::MenuView; `Menu` is the namespace)
 using Menu::MenuView;

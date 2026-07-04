@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CS2Kit/Commands/CommandManager.hpp>
+#include <CS2Kit/Core/PluginPolicy.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
 #include <CS2Kit/Http/HttpClient.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
@@ -45,6 +46,8 @@ public:
     Services& operator=(const Services&) = delete;
 
     // Declaration order == construction order.
+    /** Plugin-supplied policy (permissions, targeting, replies). Set once in OnLoad. */
+    PluginPolicy Policy;
     Sdk::GameInterfaces Interfaces;  // plain interface-pointer holder; populated in CS2Kit::Initialize
     Sdk::GameData GameData;
     Sdk::MessageSystem Messages;

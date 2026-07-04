@@ -48,20 +48,14 @@ struct ParamAction
 };
 
 /**
- * @brief Runs data-defined actions with consumer-injected policy: a permission check, a
- * targetability check (immunity), and a broadcast sink. All three callbacks may be empty,
- * which skips the corresponding step.
+ * @brief Runs data-defined actions under the plugin's policy (`Engine().Policy`): the
+ * permission check, the targetability check (immunity), and the broadcast sink all come
+ * from there - no per-dispatcher wiring. Empty policy members skip the corresponding step.
  */
 class ActionDispatcher
 {
 public:
-    using PermissionFn = std::function<bool(Player& caller, const std::string& permission)>;
-    using BroadcastFn = std::function<void(const ActionContext&, const std::string& translationKey)>;
-
     ActionDispatcher() = default;
-    ActionDispatcher(PermissionFn hasPermission, CanTargetFn canTarget, BroadcastFn broadcast)
-        : _hasPermission(std::move(hasPermission)), _canTarget(std::move(canTarget)), _broadcast(std::move(broadcast))
-    {}
 
     /**
      * Resolve a caller+target slot pair, applying the permission and targetability policies.
@@ -73,13 +67,8 @@ public:
     void Run(int callerSlot, int targetSlot, const Action& action) const;
     void Run(int callerSlot, int targetSlot, int param, const ParamAction& action) const;
 
-    /** Invoke the broadcast sink directly (for bespoke flows like multi-target actions). */
+    /** Invoke the policy broadcast sink directly (for bespoke flows like multi-target actions). */
     void Broadcast(const ActionContext& ctx, const std::string& translationKey) const;
-
-private:
-    PermissionFn _hasPermission;
-    CanTargetFn _canTarget;
-    BroadcastFn _broadcast;
 };
 
 }  // namespace CS2Kit::Players
