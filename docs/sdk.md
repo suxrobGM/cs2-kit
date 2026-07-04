@@ -11,7 +11,7 @@ The guide is split by topic:
 - @subpage sdk_gamedata_guide - signature scanning, named offsets, and runtime schema field resolution
 - @subpage sdk_players_guide - entity lookup, the typed player wrapper, and common pawn operations
 - @subpage sdk_entity_ops_guide - entity creation, entity IO, one-shot world effects, and resource precaching
-- @subpage sdk_visibility_guide - render mode/color tricks and per-recipient transmit filtering
+- @subpage sdk_visibility_guide - render mode/color tricks, per-recipient transmit filtering, and per-viewer glow vision
 - @subpage sdk_messaging_guide - chat/center-HTML messages, sticky panels, and chat input capture
 - @subpage sdk_events_guide - typed ConVar access and game event listeners
 
