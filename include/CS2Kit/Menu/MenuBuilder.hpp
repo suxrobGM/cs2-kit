@@ -103,6 +103,15 @@ public:
         return *this;
     }
 
+    /** Self-contained choice cycle: the option owns its index, no external get/set state. */
+    template <typename T>
+    MenuBuilder& AddChoice(const std::string& title, std::vector<typename ChoiceOption<T>::Choice> choices,
+                           std::function<void(int, const T&)> onCommit, bool enabled = true)
+    {
+        _menu->Items.push_back(std::make_shared<ChoiceOption<T>>(title, std::move(choices), std::move(onCommit), enabled));
+        return *this;
+    }
+
     /** Like @ref AddChoice but uses a formatter to derive labels from arbitrary values. */
     template <typename T>
     MenuBuilder& AddSelector(const std::string& title, std::vector<T> values,

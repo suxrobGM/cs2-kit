@@ -39,6 +39,13 @@ public:
         _enabled = enabled;
     }
 
+    /** Self-contained variant: the option owns its index, no external get/set state needed. */
+    ChoiceOption(std::string title, std::vector<Choice> choices, CommitFn onCommit, bool enabled = true)
+        : _title(std::move(title)), _choices(std::move(choices)), _onCommit(std::move(onCommit))
+    {
+        _enabled = enabled;
+    }
+
     std::string GetLabel(int slot) const override
     {
         if (_choices.empty())
@@ -64,13 +71,16 @@ public:
 
     bool OnHorizontal(int slot, int direction) override
     {
-        if (!_enabled || _choices.empty() || !_setIndex)
+        if (!_enabled || _choices.empty())
             return false;
 
         int n = static_cast<int>(_choices.size());
         int idx = ClampIndex(slot);
         idx = ((idx + direction) % n + n) % n;
-        _setIndex(slot, idx);
+        if (_setIndex)
+            _setIndex(slot, idx);
+        else
+            _ownIndex = idx;
         return true;
     }
 
@@ -80,7 +90,7 @@ private:
     int ClampIndex(int slot) const
     {
         int n = static_cast<int>(_choices.size());
-        int idx = _getIndex ? _getIndex(slot) : 0;
+        int idx = _getIndex ? _getIndex(slot) : _ownIndex;
         return std::clamp(idx, 0, n - 1);
     }
 
@@ -89,6 +99,7 @@ private:
     GetIndexFn _getIndex;
     SetIndexFn _setIndex;
     CommitFn _onCommit;
+    int _ownIndex = 0;  // used when no external get/set state is supplied
 };
 
 }  // namespace CS2Kit::Menu

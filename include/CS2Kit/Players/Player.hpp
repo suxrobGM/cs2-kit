@@ -3,6 +3,11 @@
 #include <cstdint>
 #include <string>
 
+namespace CS2Kit::Sdk
+{
+class PlayerController;
+}
+
 namespace CS2Kit::Players
 {
 
@@ -24,6 +29,9 @@ public:
     const std::string& GetIpAddress() const { return _ipAddress; }
     int64_t GetConnectTime() const { return _connectTime; }
     int64_t GetPlaytime() const;
+
+    /** Controller wrapper for this player's slot. Check IsValid() before pawn access. */
+    Sdk::PlayerController Controller() const;
 
     void SetName(const std::string& name) { _name = name; }
 

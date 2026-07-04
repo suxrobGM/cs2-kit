@@ -9,6 +9,9 @@
 namespace CS2Kit::Utils
 {
 
+/** `{token}` -> replacement map for the token-substituting @ref Translations::Get overloads. */
+using Tokens = std::map<std::string, std::string>;
+
 /**
  * @brief Localization system. Loads one JSON file per language; nested objects flatten into
  * dotted keys (`category.punish`). Use @ref Get(key, slot) for per-player text; use

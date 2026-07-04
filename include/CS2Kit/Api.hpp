@@ -25,14 +25,21 @@
 #include <CS2Kit/Menu/MenuBuilder.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Menu/MenuOption.hpp>
+#include <CS2Kit/Menu/MenuPresets.hpp>
 #include <CS2Kit/Menu/Options/ChoiceOption.hpp>
 #include <CS2Kit/Players/ActionDispatcher.hpp>
 #include <CS2Kit/Players/Player.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
+#include <CS2Kit/Players/TargetResolver.hpp>
 #include <CS2Kit/Sdk/ChatInputCapture.hpp>
+#include <CS2Kit/Sdk/ConVarService.hpp>
+#include <CS2Kit/Sdk/Entity.hpp>
 #include <CS2Kit/Sdk/EntityKeyValues.hpp>
+#include <CS2Kit/Sdk/EntityOps.hpp>
+#include <CS2Kit/Sdk/GameEventService.hpp>
 #include <CS2Kit/Sdk/GlowVision.hpp>
 #include <CS2Kit/Sdk/MoveType.hpp>
+#include <CS2Kit/Sdk/PawnOps.hpp>
 #include <CS2Kit/Sdk/PersistentCenterHtml.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
@@ -60,6 +67,11 @@ using Sdk::GlowVision;
 using Sdk::EntityKeyValues;
 using Sdk::PersistentCenterHtml;
 using Sdk::ChatInputCapture;
+using Sdk::EntitySystem;
+using Sdk::EntityOpsService;
+using Sdk::ConVarService;
+using Sdk::GameEventService;
+namespace PawnOps = Sdk::PawnOps;
 
 // Menu  (the built-menu data model is Menu::MenuView; `Menu` is the namespace)
 using Menu::MenuView;
@@ -67,13 +79,27 @@ using Menu::MenuBuilder;
 using Menu::MenuOption;
 using Menu::MenuManager;
 using Menu::ChoiceOption;
+using Menu::ConfirmDialogSpec;
+using Menu::BuildConfirmDialog;
+using Menu::BuildPlayerPicker;
+using Menu::BuildDurationPicker;
+using Menu::BuildPaletteChoices;
+using Menu::AppendPlayerRows;
 
 // Players
 using Players::Player;
 using Players::PlayerManager;
 using Players::ActionContext;
+using Players::Action;
+using Players::ParamAction;
+using Players::ActionDispatcher;
+using Players::CanTargetFn;
+using Players::ResolveSingleTarget;
+using Players::SingleTargetError;
+using Players::SingleTargetResult;
 
 // Commands
+using Commands::Command;
 using Commands::CommandManager;
 using Commands::CommandResult;
 
@@ -89,6 +115,7 @@ using Http::HttpResult;
 // Utils
 using Utils::TimeUtils;
 using Utils::Translations;
+using Utils::Tokens;
 using Utils::StringUtils;
 using Utils::ParseDuration;
 using Utils::SlotThrottle;
