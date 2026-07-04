@@ -42,6 +42,11 @@ public:
     void AcceptInput(CEntityInstance* entity, const char* input, const char* param = nullptr,
                      CEntityInstance* activator = nullptr, CEntityInstance* caller = nullptr);
 
+    /** Fire an entity input carrying a float parameter (e.g. "SetScale"). Some inputs read the
+     *  numeric variant directly and ignore a string param, so this passes a FIELD_FLOAT32 value. */
+    void AcceptInputFloat(CEntityInstance* entity, const char* input, float value,
+                          CEntityInstance* activator = nullptr, CEntityInstance* caller = nullptr);
+
     /** Fire an entity input after a delay via the engine's entity IO queue. */
     void AddIOEvent(CEntityInstance* target, const char* input, float delaySeconds,
                     CEntityInstance* activator = nullptr, CEntityInstance* caller = nullptr);

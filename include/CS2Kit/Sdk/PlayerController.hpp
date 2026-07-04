@@ -88,6 +88,14 @@ public:
     int GetArmor() const;
     void SetArmor(int armor) const;
 
+    /** Write the pawn's movement-speed multiplier (CCSPlayerPawn::m_flVelocityModifier).
+     *  1.0 is normal speed. Note the game decays this toward 1.0 (e.g. after firing). */
+    void SetSpeedModifier(float multiplier) const;
+
+    /** Scale the pawn's model via the "SetScale" entity input (updates render + collision hull).
+     *  Clamped to a safe range so oversized scales can't destabilize the server. 1.0 is default. */
+    void SetModelScale(float scale) const;
+
     /** CBaseEntity::m_fFlags bitmask (FL_* values in Entity.hpp). */
     uint32_t GetFlags() const;
     void SetFlags(uint32_t flags) const;

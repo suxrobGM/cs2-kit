@@ -3,12 +3,14 @@
 
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/Entity.hpp>
+#include <CS2Kit/Sdk/EntityOps.hpp>
 #include <CS2Kit/Sdk/EntityRender.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
 #include <CS2Kit/Sdk/MemoryAccess.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Utils/Log.hpp>
+#include <algorithm>
 #include <cstring>
 #include <eiface.h>
 #include <entity2/entityinstance.h>
@@ -160,6 +162,22 @@ int PlayerController::GetArmor() const
 void PlayerController::SetArmor(int armor) const
 {
     SetPawnField<int>("CCSPlayerPawn", "m_ArmorValue", armor);
+}
+
+void PlayerController::SetSpeedModifier(float multiplier) const
+{
+    SetPawnField<float>("CCSPlayerPawn", "m_flVelocityModifier", multiplier);
+}
+
+void PlayerController::SetModelScale(float scale) const
+{
+    // Hard clamp: very large model scales blow up the collision hull and can destabilize
+    // or crash the server. This is the crash-safety bound, not a gameplay ceiling; keep every
+    // caller inside it regardless of input.
+    constexpr float MinSafeModelScale = 0.05f;
+    constexpr float MaxSafeModelScale = 3.0f;
+    scale = std::clamp(scale, MinSafeModelScale, MaxSafeModelScale);
+    Engine().EntityOps.AcceptInputFloat(GetPawn(), "SetScale", scale);
 }
 
 uint32_t PlayerController::GetFlags() const

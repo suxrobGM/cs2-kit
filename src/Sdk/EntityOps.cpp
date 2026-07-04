@@ -67,6 +67,16 @@ using EmitSoundParamsFn = void (*)(CEntityInstance* entity, const char* soundEve
 using EmitSoundFilterFn = StartSoundEventInfo (*)(IRecipientFilter& filter, CEntityIndex sourceIndex,
                                                   const EmitSoundParams& params);
 
+// Collapses the guard + dispatch the AcceptInput* wrappers all repeat; each only differs in how it
+// builds the variant_t (kept out of the public header per the EntityOpsService members' note).
+void FireInput(void* acceptInput, CEntityInstance* entity, const char* input, variant_t& value,
+               CEntityInstance* activator, CEntityInstance* caller)
+{
+    if (!acceptInput || !entity || !input)
+        return;
+    std::bit_cast<AcceptInputFn>(acceptInput)(entity, input, activator, caller, &value, 0, nullptr);
+}
+
 }  // namespace
 
 bool EntityOpsService::Initialize()
@@ -137,11 +147,15 @@ CEntityInstance* EntityOpsService::Spawn(const char* className, EntityKeyValues&
 void EntityOpsService::AcceptInput(CEntityInstance* entity, const char* input, const char* param,
                                    CEntityInstance* activator, CEntityInstance* caller)
 {
-    if (!_acceptInput || !entity || !input)
-        return;
-
     variant_t value(param ? param : "");
-    std::bit_cast<AcceptInputFn>(_acceptInput)(entity, input, activator, caller, &value, 0, nullptr);
+    FireInput(_acceptInput, entity, input, value, activator, caller);
+}
+
+void EntityOpsService::AcceptInputFloat(CEntityInstance* entity, const char* input, float value,
+                                        CEntityInstance* activator, CEntityInstance* caller)
+{
+    variant_t variant(value);
+    FireInput(_acceptInput, entity, input, variant, activator, caller);
 }
 
 void EntityOpsService::AddIOEvent(CEntityInstance* target, const char* input, float delaySeconds,
