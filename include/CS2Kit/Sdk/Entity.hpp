@@ -58,17 +58,11 @@ public:
     CEntityInstance* GetPlayerController(int slot);
 
     /**
-     * Entity at the handle's index, ignoring the serial bits - a stale handle can
-     * resolve to an unrelated entity that recycled the index. Prefer
-     * ResolveEntityHandleExact when the handle may outlive the entity.
+     * Entity for a full EHandle (index + serial), or nullptr when the handle is
+     * unset, stale, or its index was recycled by another entity. Validation happens
+     * on the entity identity, so a handle that outlived its entity is always safe.
      */
     CEntityInstance* ResolveEntityHandle(uint32_t handle);
-
-    /**
-     * Like ResolveEntityHandle, but nullptr unless the resolved entity's full
-     * handle (index + serial) matches - rejects recycled indices.
-     */
-    CEntityInstance* ResolveEntityHandleExact(uint32_t handle);
 
     /** Network entity index of @p entity, or -1 on null/unlinked. */
     int GetEntityIndex(CEntityInstance* entity) const;

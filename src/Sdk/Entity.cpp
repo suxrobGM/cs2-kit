@@ -33,8 +33,7 @@ int EntitySystem::GetEntityIndex(CEntityInstance* entity) const
 
 uint32_t EntitySystem::GetEntityHandle(CEntityInstance* entity) const
 {
-    return (entity && entity->m_pEntity) ? static_cast<uint32_t>(entity->m_pEntity->m_EHandle.ToInt())
-                                         : 0xFFFFFFFFu;
+    return (entity && entity->m_pEntity) ? static_cast<uint32_t>(entity->m_pEntity->m_EHandle.ToInt()) : 0xFFFFFFFFu;
 }
 
 void EntitySystem::ResolveSchemaOffsets()
@@ -136,13 +135,13 @@ CEntityInstance* EntitySystem::ResolveEntityHandle(uint32_t handle)
     if (!pIdentity)
         return nullptr;
 
-    return pIdentity->m_pInstance;
-}
+    // Validate index + serial on the identity itself (chunk memory, never freed) before
+    // touching m_pInstance: once the entity is destroyed the identity slot is recycled and
+    // m_pInstance dangles, so dereferencing the instance to validate is a use-after-free.
+    if (static_cast<uint32_t>(pIdentity->GetRefEHandle().ToInt()) != handle)
+        return nullptr;
 
-CEntityInstance* EntitySystem::ResolveEntityHandleExact(uint32_t handle)
-{
-    auto* entity = ResolveEntityHandle(handle);
-    return (entity && GetEntityHandle(entity) == handle) ? entity : nullptr;
+    return pIdentity->m_pInstance;
 }
 
 CEntityInstance* EntitySystem::GetPlayerController(int slot)
