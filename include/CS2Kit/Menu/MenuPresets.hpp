@@ -23,7 +23,7 @@ namespace CS2Kit::Menu
 class MenuBuilder;
 
 /**
- * Append one row per connected player (from the kit PlayerManager) to @p builder — the body of
+ * Append one row per connected player (from the kit PlayerManager) to @p builder - the body of
  * @ref BuildPlayerPicker, exposed so callers can put their own rows above the player list.
  * Selecting a player invokes @p onPick(viewerSlot, targetSlot). @p isEnabled, when supplied,
  * decides per-row whether a target is selectable. If no players are connected, a single
@@ -35,9 +35,9 @@ void AppendPlayerRows(MenuBuilder& builder, int viewerSlot,
 
 /** Build a paginated picker menu containing only the @ref AppendPlayerRows player list. */
 std::shared_ptr<MenuView> BuildPlayerPicker(int viewerSlot, const std::string& title,
-                                        std::function<void(int viewerSlot, int targetSlot)> onPick,
-                                        const std::string& emptyLabel = "",
-                                        std::function<bool(int targetSlot)> isEnabled = {});
+                                            std::function<void(int viewerSlot, int targetSlot)> onPick,
+                                            const std::string& emptyLabel = "",
+                                            std::function<bool(int targetSlot)> isEnabled = {});
 
 /**
  * Build a duration picker. Each @p presets entry is a (label, seconds) pair rendered as a row;
@@ -46,10 +46,10 @@ std::shared_ptr<MenuView> BuildPlayerPicker(int viewerSlot, const std::string& t
  * via @ref CS2Kit::Utils::ParseDuration (rejecting/re-prompting on a negative result).
  */
 std::shared_ptr<MenuView> BuildDurationPicker(int viewerSlot, const std::string& title,
-                                          const std::vector<std::pair<std::string, int>>& presets,
-                                          std::function<void(int viewerSlot, int seconds)> onPick,
-                                          const std::string& customLabel = "", const std::string& customPrompt = "",
-                                          int maxInputLen = 32);
+                                              const std::vector<std::pair<std::string, int>>& presets,
+                                              std::function<void(int viewerSlot, int seconds)> onPick,
+                                              const std::string& customLabel = "", const std::string& customPrompt = "",
+                                              int maxInputLen = 32);
 
 /** Confirmation dialog content; every human-facing string is caller-supplied. */
 struct ConfirmDialogSpec
