@@ -82,9 +82,8 @@ bool RunMigrations(PostgresDatabase& db, const std::string& dir, const Migration
     std::sort(migrations.begin(), migrations.end(),
               [](const Migration& a, const Migration& b) { return a.Version < b.Version; });
 
-    try
-    {
-        return db.WithConnection([&](pqxx::connection& conn) -> bool {
+    // Runs on the database worker via the blocking WithConnection - load-time only.
+    auto outcome = db.WithConnection([&](pqxx::connection& conn) -> bool {
             {
                 pqxx::work txn(conn);
                 txn.exec("CREATE TABLE IF NOT EXISTS " + table +
@@ -140,16 +139,17 @@ bool RunMigrations(PostgresDatabase& db, const std::string& dir, const Migration
                 txn.commit();
             }
 
-            if (applied > 0)
-                Log::Info("Database schema up to date ({} migration(s) applied).", applied);
-            return ok;
-        });
-    }
-    catch (const std::exception& e)
+        if (applied > 0)
+            Log::Info("Database schema up to date ({} migration(s) applied).", applied);
+        return ok;
+    });
+
+    if (!outcome)
     {
-        Log::Error("Migration runner failed: {}", e.what());
+        Log::Error("Migration runner failed: {}", outcome.error());
         return false;
     }
+    return *outcome;
 }
 
 }  // namespace CS2Kit::Database

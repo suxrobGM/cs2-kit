@@ -37,6 +37,15 @@ uint64_t Scheduler::NextTick(std::function<void()> callback)
     return Delay(0, std::move(callback));
 }
 
+uint64_t Scheduler::EveryFrame(std::function<void()> callback)
+{
+    // Interval -1 is the every-frame sentinel: OnGameFrame refires it each frame instead of
+    // erasing it (interval 0 = one-shot) or waiting an interval (> 0).
+    uint64_t id = _nextId++;
+    _timers.push_back({id, 0, -1, std::move(callback)});
+    return id;
+}
+
 void Scheduler::Cancel(uint64_t id)
 {
     _timers.erase(std::remove_if(_timers.begin(), _timers.end(), [id](const Timer& t) { return t.Id == id; }),
@@ -85,6 +94,8 @@ void Scheduler::OnGameFrame()
 
         if (interval > 0)
             it->NextFireTime = now + interval;
+        else if (interval < 0)
+            it->NextFireTime = now;  // every-frame sentinel: due again next frame
         else
             _timers.erase(it);
     }

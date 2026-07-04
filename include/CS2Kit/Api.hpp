@@ -23,6 +23,7 @@
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/GameEvents.hpp>
 #include <CS2Kit/Database/DbResult.hpp>
+#include <CS2Kit/Database/Mapping.hpp>
 #include <CS2Kit/Database/Migrator.hpp>
 #include <CS2Kit/Database/PostgresDatabase.hpp>
 #include <CS2Kit/Http/HttpResult.hpp>
@@ -135,9 +136,17 @@ using Commands::ArgSpec;
 
 // Database
 using Database::PostgresDatabase;
+using Database::PostgresConfig;
 using Database::DbResult;
+using Database::TryDb;
 using Database::TryOr;
 using Database::RunMigrations;
+using Database::Column;
+using Database::FromRow;
+using Database::FromResult;
+using Database::InsertSql;
+using Database::InsertParams;
+using Database::SelectSql;
 
 // Http
 using Http::HttpResult;

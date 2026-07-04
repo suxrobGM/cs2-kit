@@ -29,6 +29,9 @@ public:
     /** Run `callback` on the very next game frame. */
     uint64_t NextTick(std::function<void()> callback);
 
+    /** Run `callback` every game frame until cancelled (e.g. a completion pump). */
+    uint64_t EveryFrame(std::function<void()> callback);
+
     /** Cancel a timer by handle. Safe to call with an unknown id. */
     void Cancel(uint64_t id);
 

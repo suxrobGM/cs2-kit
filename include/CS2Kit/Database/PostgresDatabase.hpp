@@ -1,11 +1,19 @@
 #pragma once
 
+#include <CS2Kit/Database/DbResult.hpp>
+#include <chrono>
+#include <condition_variable>
+#include <cstdint>
+#include <deque>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <pqxx/pqxx>
 #include <string>
+#include <thread>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 namespace CS2Kit::Database
 {
@@ -20,80 +28,110 @@ struct PostgresConfig
     std::string username = "cs2_plugin";
     std::string password;
     std::string sslMode = "prefer";
+    /** Bounds every (re)connect attempt so a dead database can't hang queries or unload. */
+    int connectTimeoutSec = 5;
 
     std::string GetConnectionString() const;
 };
 
 /**
- * PostgreSQL access layer. Holds ONE long-lived connection (opened in Initialize, reused for every
- * query) and prepares each named statement once. Main-thread-only; the mutex is kept so a future
- * off-thread query path stays safe. A connection dropped while idle is reopened lazily on the next
- * query (the failing query surfaces its error; the one after it reconnects).
+ * @brief Async-first PostgreSQL access layer.
+ *
+ * One worker thread owns the ONLY connection (opened lazily, reopened on failure); the game
+ * thread never blocks on the database during play. Jobs run FIFO, so a write enqueued before a
+ * read is visible to it. Completions are queued and replayed on the game thread (a per-frame
+ * pump self-registers in Start), so callbacks may touch engine and plugin state freely.
+ *
+ * - `Query` / `Exec` are the gameplay path: fire, and (for Query) receive the result later.
+ * - The `*Blocking` variants enqueue the same way but wait for the worker - use them ONLY at
+ *   load time (OnLoad, migrations, `!admin_reload`); never on a per-frame or per-event path.
+ *
+ * Shutdown (`Stop`): new work is dropped with a log line, the already-queued jobs drain within
+ * `drainDeadline` (a ban written just before unload must land), anything past the deadline is
+ * dropped with a warning, blocked waiters are released with a failed result, and undispatched
+ * completions are destroyed unrun - the state they would touch is going away.
  */
 class PostgresDatabase
 {
 public:
+    using ResultCallback = std::move_only_function<void(DbResult<pqxx::result>)>;
+
     PostgresDatabase() = default;
+    ~PostgresDatabase();
+    PostgresDatabase(const PostgresDatabase&) = delete;
+    PostgresDatabase& operator=(const PostgresDatabase&) = delete;
 
-    /** Open the connection. Returns false if it cannot be established. */
-    bool Initialize(const PostgresConfig& config);
+    /**
+     * Spawn the worker, verify connectivity with a ping, and register the completion pump with
+     * Engine().Scheduler. Returns false (worker stopped again) when the database is unreachable,
+     * so the plugin can degrade instead of queueing into the void.
+     */
+    bool Start(const PostgresConfig& config);
 
-    /** Close the connection and forget every prepared statement. */
-    void CloseConnection();
+    /** Drain + join the worker (see class docs). Idempotent; also runs from the destructor. */
+    void Stop(std::chrono::milliseconds drainDeadline = std::chrono::seconds(5));
 
-    /** True while the connection is open. */
-    bool IsConnected() const;
+    /** Run a named prepared statement off-thread; @p onDone runs on the game thread later. */
+    void Query(std::string name, std::string sql, pqxx::params params, ResultCallback onDone);
 
-    /** Run a constant SQL statement (no parameters). Throws on failure. */
-    pqxx::result Execute(const std::string& query);
+    /** Fire-and-forget write; failures are logged with @p name. */
+    void Exec(std::string name, std::string sql, pqxx::params params = {});
 
-    /** Run a named prepared statement, preparing it once on first use. Throws on failure. */
-    template <typename... Args>
-    pqxx::result ExecutePrepared(const std::string& name, const std::string& query, Args&&... params);
+    /** Blocking variant of Query - load time only. */
+    DbResult<pqxx::result> QueryBlocking(const std::string& name, const std::string& sql, pqxx::params params = {});
 
-    /** Run `fn(connection)` against the live connection under the lock (reopening if needed). For
-     *  multi-statement work like the migration runner that manages its own transactions. Throws if the
-     *  connection cannot be opened; exceptions thrown by `fn` propagate. */
-    template <typename Fn>
-    auto WithConnection(Fn&& fn) -> decltype(fn(std::declval<pqxx::connection&>()));
+    /** Run @p fn against the live connection on the worker, blocking until done - load time
+     *  only. For multi-statement work that manages its own transactions (the migration runner). */
+    DbResult<bool> WithConnection(std::function<bool(pqxx::connection&)> fn);
+
+    /** Invoke all ready completions on the calling (game) thread. Start self-registers this. */
+    void DispatchCompletions();
 
 private:
-    /** Open `_connection` if it is null/closed, clearing the prepared-statement cache. Assumes the
-     *  mutex is held. Throws std::runtime_error if the connection cannot be opened. */
-    void EnsureOpen();
-    /** Drop the connection and the prepared-statement cache. Assumes the mutex is held. */
-    void Reset();
+    struct Waiter
+    {
+        std::mutex M;
+        std::condition_variable Cv;
+        bool Done = false;
+        DbResult<pqxx::result> Result = std::unexpected(std::string("pending"));
+        bool RawOk = false;
+    };
+
+    struct Job
+    {
+        std::string Name;  ///< prepared-statement name; also the log label
+        std::string Sql;
+        pqxx::params Params;
+        std::function<bool(pqxx::connection&)> Raw;  ///< WithConnection body (Sql empty)
+        ResultCallback OnDone;                       ///< async completion (may be null)
+        std::shared_ptr<Waiter> Wait;                ///< blocking rendezvous (may be null)
+    };
+
+    void Enqueue(Job job);
+    void WorkerMain();
+    DbResult<pqxx::result> RunJob(Job& job, pqxx::connection& conn);
+    /** Open/reopen the worker's connection; returns null on failure (secret-free log). */
+    pqxx::connection* EnsureOpen();
+    void FinishJob(Job& job, DbResult<pqxx::result> result, bool rawOk);
 
     std::string _connectionString;
+
+    std::mutex _queueMutex;
+    std::condition_variable _queueCv;
+    std::deque<Job> _queue;
+    bool _accepting = false;
+    bool _stopping = false;
+    std::chrono::steady_clock::time_point _drainDeadline{};
+
+    std::mutex _completionMutex;
+    std::vector<std::pair<ResultCallback, DbResult<pqxx::result>>> _completions;
+
+    std::thread _worker;
+    uint64_t _pumpId = 0;
+
+    // Worker-thread-only state (no lock needed).
     std::unique_ptr<pqxx::connection> _connection;
     std::unordered_set<std::string> _prepared;
-    std::mutex _mutex;
 };
-
-template <typename... Args>
-pqxx::result PostgresDatabase::ExecutePrepared(const std::string& name, const std::string& query, Args&&... params)
-{
-    std::lock_guard<std::mutex> lock(_mutex);
-    EnsureOpen();
-
-    if (!_prepared.contains(name))
-    {
-        _connection->prepare(name, query);
-        _prepared.insert(name);
-    }
-
-    pqxx::work txn(*_connection);
-    pqxx::result result = txn.exec(pqxx::prepped{name}, pqxx::params{std::forward<Args>(params)...});
-    txn.commit();
-    return result;
-}
-
-template <typename Fn>
-auto PostgresDatabase::WithConnection(Fn&& fn) -> decltype(fn(std::declval<pqxx::connection&>()))
-{
-    std::lock_guard<std::mutex> lock(_mutex);
-    EnsureOpen();
-    return fn(*_connection);
-}
 
 }  // namespace CS2Kit::Database
