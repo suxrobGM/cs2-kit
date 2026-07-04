@@ -12,8 +12,8 @@
 // The fully-qualified module names keep working; the short forms are synonyms.
 // Include this header wherever the short `CS2Kit::Type` spelling is used.
 
-#include <CS2Kit/Commands/Command.hpp>
 #include <CS2Kit/Commands/CommandManager.hpp>
+#include <CS2Kit/Commands/CommandSpec.hpp>
 #include <CS2Kit/Core/EffectManager.hpp>
 #include <CS2Kit/Core/JsonConfig.hpp>
 #include <CS2Kit/Core/MetamodPluginBase.hpp>
@@ -104,14 +104,18 @@ using Players::Action;
 using Players::ParamAction;
 using Players::ActionDispatcher;
 using Players::CanTargetFn;
-using Players::ResolveSingleTarget;
-using Players::SingleTargetError;
-using Players::SingleTargetResult;
+using Players::ResolveTargets;
+using Players::TargetRules;
+using Players::TargetError;
+using Players::TargetFailure;
 
 // Commands
-using Commands::Command;
 using Commands::CommandManager;
 using Commands::CommandResult;
+using Commands::CommandSpec;
+using Commands::CommandContext;
+using Commands::ArgKind;
+using Commands::ArgSpec;
 
 // Database
 using Database::PostgresDatabase;

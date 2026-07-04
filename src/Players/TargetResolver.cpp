@@ -1,98 +1,53 @@
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Players/TargetResolver.hpp>
-#include <CS2Kit/Utils/StringUtils.hpp>
-#include <charconv>
-#include <cstdint>
-#include <optional>
+#include <CS2Kit/Sdk/PlayerController.hpp>
+#include <random>
 
 namespace CS2Kit::Players
 {
 
-using Utils::StringUtils;
-
-namespace
+std::expected<std::vector<Player*>, TargetFailure> ResolveTargets(std::string_view token, Player* caller,
+                                                                  const TargetRules& rules,
+                                                                  const CanTargetFn& canTarget)
 {
-
-/** from_chars over the whole string; nullopt on any parse failure (no exceptions, unlike stoll). */
-template <typename T>
-std::optional<T> ParseNumber(const std::string& text)
-{
-    T value{};
-    auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
-    if (ec != std::errc{} || ptr != text.data() + text.size())
-        return std::nullopt;
-    return value;
-}
-
-}  // namespace
-
-std::vector<ResolvedTarget> ResolveTargets(const std::string& token, Player* caller, const CanTargetFn& canTarget)
-{
-    std::vector<ResolvedTarget> out;
     if (token.empty())
-        return out;
+        return std::unexpected(TargetFailure{TargetError::NoMatch});
 
     auto& mgr = Core::Engine().Players;
+    const CanTargetFn& policy = canTarget ? canTarget : Core::Engine().Policy.CanTarget;
 
-    auto add = [&](Player* p) {
+    // Snapshot the roster into engine-free views; FilterRoster owns the grammar semantics.
+    std::vector<PlayerView> roster;
+    for (auto* p : mgr.GetAllPlayers())
+    {
         if (!p)
-            return;
-        ResolvedTarget r;
-        r.Target = p;
-        r.Allowed = (caller && canTarget) ? canTarget(*caller, *p) : true;
-        out.push_back(r);
-    };
-
-    const auto info = StringUtils::ParseTarget(token);
-    switch (info.Type)
-    {
-    case StringUtils::TargetType::All:
-        for (auto* p : mgr.GetAllPlayers())
-            add(p);
-        break;
-    case StringUtils::TargetType::Me:
-        add(caller);
-        break;
-    case StringUtils::TargetType::Index:
-        if (auto slot = ParseNumber<int>(info.Value))
-            add(mgr.GetPlayerBySlot(*slot));
-        break;
-    case StringUtils::TargetType::SteamId:
-        if (auto steamId = ParseNumber<int64_t>(info.Value))
-            add(mgr.GetPlayerBySteamId(*steamId));
-        break;
-    case StringUtils::TargetType::Name:
-    {
-        const auto needle = StringUtils::ToLower(info.Value);
-        for (auto* p : mgr.GetAllPlayers())
-            if (p && StringUtils::ToLower(p->GetName()).find(needle) != std::string::npos)
-                add(p);
-        break;
-    }
-    }
-    return out;
-}
-
-SingleTargetResult ResolveSingleTarget(const std::string& token, Player* caller, const CanTargetFn& canTarget)
-{
-    auto matches = ResolveTargets(token, caller, canTarget);
-    if (matches.empty())
-        return {.Error = SingleTargetError::NoMatch};
-
-    // Prefer allowed targets; if every match is blocked by the policy, fail with that reason.
-    std::vector<Player*> allowed;
-    for (const auto& m : matches)
-    {
-        if (m.Allowed && m.Target)
-            allowed.push_back(m.Target);
+            continue;
+        Sdk::PlayerController ctrl = p->Controller();
+        roster.push_back({
+            .Slot = p->GetSlot(),
+            .SteamId = p->GetSteamID(),
+            .Name = p->GetName(),
+            .Team = ctrl.IsValid() ? ctrl.GetTeam() : 0,
+            .Alive = ctrl.IsValid() && ctrl.IsAlive(),
+            .Bot = p->GetSteamID() == 0,  // bots have no real SteamID
+            .Targetable = (caller && policy) ? policy(*caller, *p) : true,
+        });
     }
 
-    if (allowed.empty())
-        return {.Error = SingleTargetError::Immune};
-    if (allowed.size() > 1)
-        return {.Error = SingleTargetError::Ambiguous, .MatchCount = static_cast<int>(allowed.size())};
-    return {.Target = allowed[0], .MatchCount = 1};
+    static std::mt19937 rng{std::random_device{}()};
+    auto randomIndex = [](std::size_t n) { return std::uniform_int_distribution<std::size_t>(0, n - 1)(rng); };
+
+    auto slots = FilterRoster(roster, ParseTargetToken(token), rules, caller ? caller->GetSlot() : -1, randomIndex);
+    if (!slots)
+        return std::unexpected(slots.error());
+
+    std::vector<Player*> players;
+    players.reserve(slots->size());
+    for (int slot : *slots)
+        if (auto* p = mgr.GetPlayerBySlot(slot))
+            players.push_back(p);
+    return players;
 }
 
 }  // namespace CS2Kit::Players

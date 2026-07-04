@@ -110,10 +110,12 @@ if(BUILD_TESTING)
         tests/SlotThrottleTests.cpp
         tests/StringUtilsTests.cpp
         tests/SteamIdTests.cpp
+        tests/TargetingTests.cpp
         tests/TimeUtilsTests.cpp
         src/Core/EffectManager.cpp
         src/Core/ScheduledEffect.cpp
         src/Core/Scheduler.cpp
+        src/Players/Targeting.cpp
         src/Utils/StringUtils.cpp
         src/Utils/SteamId.cpp
         src/Utils/TimeUtils.cpp
