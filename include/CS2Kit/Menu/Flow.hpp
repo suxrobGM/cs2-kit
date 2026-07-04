@@ -54,10 +54,7 @@ public:
     /** Step predicate over the current state; a false skips the step. */
     using AppliesFn = std::function<bool(const TState&)>;
 
-    static Ptr Create(TState initial)
-    {
-        return Ptr(new Flow(std::move(initial)));
-    }
+    static Ptr Create(TState initial) { return Ptr(new Flow(std::move(initial))); }
 
     /** Append a custom step. */
     Ptr AddStep(BuildFn build, AppliesFn applies = {})
@@ -75,8 +72,8 @@ public:
         auto weak = this->weak_from_this();
         return AddStep(
             [weak, title = std::move(title), presets = std::move(presets), set = std::move(set),
-             customLabel = std::move(customLabel), customPrompt = std::move(customPrompt)](
-                int slot, Flow&) -> std::shared_ptr<MenuView> {
+             customLabel = std::move(customLabel),
+             customPrompt = std::move(customPrompt)](int slot, Flow&) -> std::shared_ptr<MenuView> {
                 auto self = weak.lock();
                 if (!self)
                     return nullptr;
@@ -85,7 +82,8 @@ public:
                     self->Advance(s);
                 };
                 return BuildDurationPicker(slot, title(slot), presets(slot), std::move(onPick),
-                                           customLabel ? customLabel(slot) : "", customPrompt ? customPrompt(slot) : "");
+                                           customLabel ? customLabel(slot) : "",
+                                           customPrompt ? customPrompt(slot) : "");
             },
             std::move(applies));
     }
@@ -99,8 +97,8 @@ public:
         auto weak = this->weak_from_this();
         return AddStep(
             [weak, title = std::move(title), options = std::move(options), set = std::move(set),
-             customLabel = std::move(customLabel), customPrompt = std::move(customPrompt)](
-                int slot, Flow&) -> std::shared_ptr<MenuView> {
+             customLabel = std::move(customLabel),
+             customPrompt = std::move(customPrompt)](int slot, Flow&) -> std::shared_ptr<MenuView> {
                 auto self = weak.lock();
                 if (!self)
                     return nullptr;
@@ -117,8 +115,7 @@ public:
                 if (customLabel)
                 {
                     builder.AddInput(
-                        customLabel(slot), customPrompt ? customPrompt(slot) : "",
-                        [](int) { return std::string(); },
+                        customLabel(slot), customPrompt ? customPrompt(slot) : "", [](int) { return std::string(); },
                         [self, set](int s, std::string_view text) {
                             std::string value = Utils::StringUtils::Trim(std::string(text));
                             if (value.empty())

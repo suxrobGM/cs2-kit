@@ -1,7 +1,6 @@
 #include "MicroTest.hpp"
 
 #include <CS2Kit/Sdk/MemoryAccess.hpp>
-
 #include <cstddef>
 #include <cstdint>
 #include <cstring>

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Core/ScheduledEffect.hpp>
-
 #include <array>
 #include <functional>
 #include <unordered_map>
@@ -18,11 +17,11 @@ namespace CS2Kit::Core
  */
 struct EffectSpec
 {
-    int TickIntervalMs = 0;         /**< >0 => repeating body. */
-    int DurationMs = 0;             /**< >0 => auto-expire after this long. */
-    bool RoundScoped = false;       /**< Auto-cancel via @ref EffectManager::CancelRoundScoped. */
-    std::function<void()> OnTick;   /**< Repeating body; null for state-only effects. */
-    std::function<void()> OnStop;   /**< Undo/restore; runs exactly once on any end. */
+    int TickIntervalMs = 0;       /**< >0 => repeating body. */
+    int DurationMs = 0;           /**< >0 => auto-expire after this long. */
+    bool RoundScoped = false;     /**< Auto-cancel via @ref EffectManager::CancelRoundScoped. */
+    std::function<void()> OnTick; /**< Repeating body; null for state-only effects. */
+    std::function<void()> OnStop; /**< Undo/restore; runs exactly once on any end. */
 };
 
 /**

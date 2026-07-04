@@ -34,9 +34,9 @@ struct TargetRules
 enum class TargetError
 {
     NoMatch,
-    Immune,          ///< matches existed, but the targetability policy blocked all of them
-    Ambiguous,       ///< a name fragment matched more than one player
-    MultiNotAllowed, ///< a multi-selector was used where the command takes a single target
+    Immune,           ///< matches existed, but the targetability policy blocked all of them
+    Ambiguous,        ///< a name fragment matched more than one player
+    MultiNotAllowed,  ///< a multi-selector was used where the command takes a single target
     DeadNotAllowed,
     BotNotAllowed,
 };
@@ -53,7 +53,7 @@ enum class TargetKind
     All,
     Me,
     NotMe,
-    Team,        ///< uses TargetQuery::Team (engine index: 2 = T, 3 = CT)
+    Team,  ///< uses TargetQuery::Team (engine index: 2 = T, 3 = CT)
     Spectators,
     Dead,
     Alive,

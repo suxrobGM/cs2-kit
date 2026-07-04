@@ -36,7 +36,6 @@ CEntityInstance* SpawnBeam(const Vector& from, const Vector& to, const Color& co
  * via Engine().Precache.Add(modelPath) and shipped to clients.
  * @param lifetimeSeconds destroy the prop after this long; 0 keeps it until round end.
  */
-CEntityInstance* SpawnProp(const char* modelPath, const Vector& origin, bool physics,
-                           float lifetimeSeconds = 0.0f);
+CEntityInstance* SpawnProp(const char* modelPath, const Vector& origin, bool physics, float lifetimeSeconds = 0.0f);
 
 }  // namespace CS2Kit::Sdk::EffectOps

@@ -73,8 +73,8 @@ private:
 
     std::array<SlotState, Core::MaxPlayers> _state{};
     std::vector<ExclusiveEntity> _exclusive; /**< Entities transmitted only to their beneficiary. */
-    int _activeCount = 0; /**< Slots with any flag set; OnCheckTransmit early-outs at 0. */
-    int _slotOffset = -1; /**< Recipient player-slot byte offset inside CCheckTransmitInfo. */
+    int _activeCount = 0;                    /**< Slots with any flag set; OnCheckTransmit early-outs at 0. */
+    int _slotOffset = -1;                    /**< Recipient player-slot byte offset inside CCheckTransmitInfo. */
 };
 
 }  // namespace CS2Kit::Sdk

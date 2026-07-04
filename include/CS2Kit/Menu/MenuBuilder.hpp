@@ -14,13 +14,13 @@ namespace CS2Kit::Core
 {
 struct EffectDescriptor;
 struct ParamEffectDescriptor;
-}
+}  // namespace CS2Kit::Core
 
 namespace CS2Kit::Players
 {
 struct Action;
 struct ParamAction;
-}
+}  // namespace CS2Kit::Players
 
 namespace CS2Kit::Sdk
 {

@@ -87,9 +87,10 @@ TargetQuery ParseTargetToken(std::string_view token)
     return {.Kind = Kind::Name, .Needle = lower};
 }
 
-std::expected<std::vector<int>, TargetFailure> FilterRoster(
-    std::span<const PlayerView> roster, const TargetQuery& query, const TargetRules& rules, int callerSlot,
-    const std::function<std::size_t(std::size_t)>& randomIndex)
+std::expected<std::vector<int>, TargetFailure> FilterRoster(std::span<const PlayerView> roster,
+                                                            const TargetQuery& query, const TargetRules& rules,
+                                                            int callerSlot,
+                                                            const std::function<std::size_t(std::size_t)>& randomIndex)
 {
     using Kind = TargetKind;
 
@@ -146,8 +147,12 @@ std::expected<std::vector<int>, TargetFailure> FilterRoster(
             return !candidates.empty();
         };
         tier([&](const PlayerView& p) { return StringUtils::ToLower(p.Name) == query.Needle; }) ||
-            tier([&](const PlayerView& p) { return StringUtils::StartsWith(StringUtils::ToLower(p.Name), query.Needle); }) ||
-            tier([&](const PlayerView& p) { return StringUtils::ToLower(p.Name).find(query.Needle) != std::string::npos; });
+            tier([&](const PlayerView& p) {
+                return StringUtils::StartsWith(StringUtils::ToLower(p.Name), query.Needle);
+            }) ||
+            tier([&](const PlayerView& p) {
+                return StringUtils::ToLower(p.Name).find(query.Needle) != std::string::npos;
+            });
         break;
     }
     }

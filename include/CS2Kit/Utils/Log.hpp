@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Core/ILogger.hpp>
-
 #include <format>
 #include <string>
 

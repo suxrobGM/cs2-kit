@@ -1,7 +1,6 @@
 #pragma once
 
 #include <CS2Kit/Menu/MenuOption.hpp>
-
 #include <format>
 #include <functional>
 #include <string>

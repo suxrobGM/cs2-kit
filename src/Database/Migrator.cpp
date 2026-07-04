@@ -84,60 +84,59 @@ bool RunMigrations(PostgresDatabase& db, const std::string& dir, const Migration
 
     // Runs on the database worker via the blocking WithConnection - load-time only.
     auto outcome = db.WithConnection([&](pqxx::connection& conn) -> bool {
+        {
+            pqxx::work txn(conn);
+            txn.exec("CREATE TABLE IF NOT EXISTS " + table +
+                     " (version INTEGER PRIMARY KEY, "
+                     "name TEXT NOT NULL, "
+                     "applied_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT)");
+            txn.commit();
+        }
+
+        // Session-level advisory lock held across the per-file transactions below; auto-released if
+        // the connection drops. Serializes two plugin loads that race on the same database.
+        {
+            pqxx::work txn(conn);
+            txn.exec("SELECT pg_advisory_lock(" + std::to_string(options.AdvisoryLockKey) + ")");
+            txn.commit();
+        }
+
+        int current = 0;
+        {
+            pqxx::work txn(conn);
+            pqxx::result r = txn.exec("SELECT COALESCE(MAX(version), 0) FROM " + table);
+            current = r[0][0].as<int>();
+            txn.commit();
+        }
+
+        int applied = 0;
+        bool ok = true;
+        for (const Migration& m : migrations)
+        {
+            if (m.Version <= current)
+                continue;
+            try
             {
                 pqxx::work txn(conn);
-                txn.exec("CREATE TABLE IF NOT EXISTS " + table +
-                         " (version INTEGER PRIMARY KEY, "
-                         "name TEXT NOT NULL, "
-                         "applied_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT)");
+                txn.exec(ReadFile(m.Path));
+                txn.exec("INSERT INTO " + table + " (version, name) VALUES ($1, $2)", pqxx::params{m.Version, m.Name});
                 txn.commit();
+                ++applied;
+                Log::Info("Applied migration {} ({}).", m.Version, m.Name);
             }
-
-            // Session-level advisory lock held across the per-file transactions below; auto-released if
-            // the connection drops. Serializes two plugin loads that race on the same database.
+            catch (const std::exception& e)
             {
-                pqxx::work txn(conn);
-                txn.exec("SELECT pg_advisory_lock(" + std::to_string(options.AdvisoryLockKey) + ")");
-                txn.commit();
+                Log::Error("Migration {} ({}) failed: {}", m.Version, m.Name, e.what());
+                ok = false;
+                break;
             }
+        }
 
-            int current = 0;
-            {
-                pqxx::work txn(conn);
-                pqxx::result r = txn.exec("SELECT COALESCE(MAX(version), 0) FROM " + table);
-                current = r[0][0].as<int>();
-                txn.commit();
-            }
-
-            int applied = 0;
-            bool ok = true;
-            for (const Migration& m : migrations)
-            {
-                if (m.Version <= current)
-                    continue;
-                try
-                {
-                    pqxx::work txn(conn);
-                    txn.exec(ReadFile(m.Path));
-                    txn.exec("INSERT INTO " + table + " (version, name) VALUES ($1, $2)",
-                             pqxx::params{m.Version, m.Name});
-                    txn.commit();
-                    ++applied;
-                    Log::Info("Applied migration {} ({}).", m.Version, m.Name);
-                }
-                catch (const std::exception& e)
-                {
-                    Log::Error("Migration {} ({}) failed: {}", m.Version, m.Name, e.what());
-                    ok = false;
-                    break;
-                }
-            }
-
-            {
-                pqxx::work txn(conn);
-                txn.exec("SELECT pg_advisory_unlock(" + std::to_string(options.AdvisoryLockKey) + ")");
-                txn.commit();
-            }
+        {
+            pqxx::work txn(conn);
+            txn.exec("SELECT pg_advisory_unlock(" + std::to_string(options.AdvisoryLockKey) + ")");
+            txn.commit();
+        }
 
         if (applied > 0)
             Log::Info("Database schema up to date ({} migration(s) applied).", applied);

@@ -119,8 +119,8 @@ const std::string& InsertSql()
                 placeholders += ", ";
             placeholders += std::format("${}", i);
         }
-        return std::format("INSERT INTO {} ({}) VALUES ({}) RETURNING {}", T::Table,
-                           Detail::JoinColumnNames<T>(true), placeholders, T::Key);
+        return std::format("INSERT INTO {} ({}) VALUES ({}) RETURNING {}", T::Table, Detail::JoinColumnNames<T>(true),
+                           placeholders, T::Key);
     }();
     return sql;
 }

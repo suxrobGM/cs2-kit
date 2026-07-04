@@ -2,7 +2,6 @@
 
 #include <CS2Kit/Menu/MenuOption.hpp>
 #include <CS2Kit/Menu/Options/Bar.hpp>
-
 #include <algorithm>
 #include <format>
 #include <functional>

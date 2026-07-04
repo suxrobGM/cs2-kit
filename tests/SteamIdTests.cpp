@@ -1,7 +1,6 @@
 #include "MicroTest.hpp"
 
 #include <CS2Kit/Utils/SteamId.hpp>
-
 #include <cstdint>
 #include <string>
 
@@ -17,8 +16,8 @@ TEST_CASE("SteamId::IsValid range")
     CHECK(SteamId::IsValid(SampleId64));
     CHECK(!SteamId::IsValid(Base - 1));
     CHECK(!SteamId::IsValid(0));
-    CHECK(!SteamId::IsValid(Base + 0x100000000LL));   // one past the top
-    CHECK(SteamId::IsValid(Base + 0xFFFFFFFFLL));      // top valid account id
+    CHECK(!SteamId::IsValid(Base + 0x100000000LL));  // one past the top
+    CHECK(SteamId::IsValid(Base + 0xFFFFFFFFLL));    // top valid account id
 }
 
 TEST_CASE("SteamId::GetAccountId")
@@ -48,9 +47,9 @@ TEST_CASE("SteamId::FromSteamId3 valid")
 
 TEST_CASE("SteamId::FromSteamId3 invalid")
 {
-    CHECK(!SteamId::FromSteamId3("U:1:22202").has_value());        // missing brackets
-    CHECK(!SteamId::FromSteamId3("[U:1:]").has_value());           // no digits
-    CHECK(!SteamId::FromSteamId3("[U:1:abc]").has_value());        // non-numeric
+    CHECK(!SteamId::FromSteamId3("U:1:22202").has_value());  // missing brackets
+    CHECK(!SteamId::FromSteamId3("[U:1:]").has_value());     // no digits
+    CHECK(!SteamId::FromSteamId3("[U:1:abc]").has_value());  // non-numeric
     CHECK(!SteamId::FromSteamId3("garbage").has_value());
 }
 
@@ -68,9 +67,9 @@ TEST_CASE("SteamId::FromSteamId valid")
 
 TEST_CASE("SteamId::FromSteamId invalid")
 {
-    CHECK(!SteamId::FromSteamId("STEAM_0:2:11101").has_value());   // authServer out of [0,1]
-    CHECK(!SteamId::FromSteamId("STEAM_6:0:11101").has_value());   // universe out of [0,5]
-    CHECK(!SteamId::FromSteamId("STEAM_0:0:").has_value());        // no account number
+    CHECK(!SteamId::FromSteamId("STEAM_0:2:11101").has_value());  // authServer out of [0,1]
+    CHECK(!SteamId::FromSteamId("STEAM_6:0:11101").has_value());  // universe out of [0,5]
+    CHECK(!SteamId::FromSteamId("STEAM_0:0:").has_value());       // no account number
     CHECK(!SteamId::FromSteamId("not a steam id").has_value());
 }
 

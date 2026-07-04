@@ -18,6 +18,7 @@
     do                                                                                                                \
     {                                                                                                                 \
         SH_ADD_HOOK(Iface, Func, (ifacePtr), handler, (post));                                                        \
-        this->Defer([this, cs2kitHookIface = (ifacePtr)]                                                              \
-                    { SH_REMOVE_HOOK(Iface, Func, cs2kitHookIface, handler, (post)); });                              \
-    } while (0)
+        this->Defer(                                                                                                  \
+            [this, cs2kitHookIface = (ifacePtr)] { SH_REMOVE_HOOK(Iface, Func, cs2kitHookIface, handler, (post)); }); \
+    }                                                                                                                 \
+    while (0)

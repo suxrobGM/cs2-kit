@@ -49,13 +49,13 @@ struct CommandResult
  */
 enum class ArgKind : uint8_t
 {
-    Target,          ///< online player(s) via the selector grammar -> Context.Target / .Targets
-    TargetOrSteamId, ///< online player -> Target + SteamId; bare numeric -> SteamId only (offline)
-    Duration,        ///< ParseDuration grammar -> Context.DurationSec (bare numbers = minutes)
-    SteamId64,       ///< numeric SteamID64 -> Context.SteamId
-    Int,             ///< -> Context.IntValue
-    Word,            ///< single verbatim token -> Context.Word
-    ReasonTail,      ///< joins all remaining tokens -> Context.Reason (FallbackKey when absent)
+    Target,           ///< online player(s) via the selector grammar -> Context.Target / .Targets
+    TargetOrSteamId,  ///< online player -> Target + SteamId; bare numeric -> SteamId only (offline)
+    Duration,         ///< ParseDuration grammar -> Context.DurationSec (bare numbers = minutes)
+    SteamId64,        ///< numeric SteamID64 -> Context.SteamId
+    Int,              ///< -> Context.IntValue
+    Word,             ///< single verbatim token -> Context.Word
+    ReasonTail,       ///< joins all remaining tokens -> Context.Reason (FallbackKey when absent)
 };
 
 struct ArgSpec

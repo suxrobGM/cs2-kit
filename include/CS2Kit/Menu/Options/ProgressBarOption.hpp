@@ -2,7 +2,6 @@
 
 #include <CS2Kit/Menu/MenuOption.hpp>
 #include <CS2Kit/Menu/Options/Bar.hpp>
-
 #include <algorithm>
 #include <format>
 #include <functional>
@@ -18,10 +17,8 @@ class ProgressBarOption : public MenuOption
 public:
     using GetFn = std::function<int(int)>;
 
-    ProgressBarOption(std::string title, GetFn get, int max)
-        : _title(std::move(title)), _get(std::move(get)), _max(max)
-    {
-    }
+    ProgressBarOption(std::string title, GetFn get, int max) : _title(std::move(title)), _get(std::move(get)), _max(max)
+    {}
 
     std::string GetLabel(int slot) const override
     {

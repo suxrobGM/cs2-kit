@@ -1,5 +1,6 @@
-#include <CS2Kit/Sdk/GameEvents.hpp>
 #include <igameevents.h>
+
+#include <CS2Kit/Sdk/GameEvents.hpp>
 #include <playerslot.h>
 
 namespace CS2Kit::Sdk::Events

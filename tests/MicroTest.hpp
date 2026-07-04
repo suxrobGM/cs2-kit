@@ -64,25 +64,27 @@ inline int RunAllTests()
 }  // namespace MicroTest
 
 #define MT_CONCAT_INNER(a, b) a##b
-#define MT_CONCAT(a, b) MT_CONCAT_INNER(a, b)
+#define MT_CONCAT(a, b)       MT_CONCAT_INNER(a, b)
 
-#define TEST_CASE(name)                                                                                                \
-    static void MT_CONCAT(mt_test_, __LINE__)();                                                                       \
-    static ::MicroTest::Registrar MT_CONCAT(mt_reg_, __LINE__)(name, &MT_CONCAT(mt_test_, __LINE__));                  \
+#define TEST_CASE(name)                                                                               \
+    static void MT_CONCAT(mt_test_, __LINE__)();                                                      \
+    static ::MicroTest::Registrar MT_CONCAT(mt_reg_, __LINE__)(name, &MT_CONCAT(mt_test_, __LINE__)); \
     static void MT_CONCAT(mt_test_, __LINE__)()
 
-#define CHECK(expr)                                                                                                    \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        ++::MicroTest::CheckCount();                                                                                   \
-        if (!(expr))                                                                                                   \
-            ::MicroTest::ReportFailure(__FILE__, __LINE__, #expr);                                                     \
-    } while (0)
+#define CHECK(expr)                                                \
+    do                                                             \
+    {                                                              \
+        ++::MicroTest::CheckCount();                               \
+        if (!(expr))                                               \
+            ::MicroTest::ReportFailure(__FILE__, __LINE__, #expr); \
+    }                                                              \
+    while (0)
 
-#define CHECK_EQ(a, b)                                                                                                 \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        ++::MicroTest::CheckCount();                                                                                   \
-        if (!((a) == (b)))                                                                                             \
-            ::MicroTest::ReportFailure(__FILE__, __LINE__, #a " == " #b);                                              \
-    } while (0)
+#define CHECK_EQ(a, b)                                                    \
+    do                                                                    \
+    {                                                                     \
+        ++::MicroTest::CheckCount();                                      \
+        if (!((a) == (b)))                                                \
+            ::MicroTest::ReportFailure(__FILE__, __LINE__, #a " == " #b); \
+    }                                                                     \
+    while (0)
