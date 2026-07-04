@@ -5,8 +5,7 @@
 ## Prerequisites
 
 - C++23 compiler (MSVC 2022+, or the Steam Runtime toolchain for Linux)
-- CMake 4.3.4+ and Conan 2.29.1+ (both installable via `uv`/pip)
-- Ninja
+- CMake 4.3.4+, Conan 2.29.1+, and Ninja - all three are pinned in `pyproject.toml`, so `uv sync` installs them into the project environment (or install globally via pip/pipx)
 
 The HL2SDK and Metamod:Source come with the kit as submodules - you don't install them separately.
 
