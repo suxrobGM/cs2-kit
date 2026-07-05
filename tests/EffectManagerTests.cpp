@@ -112,9 +112,9 @@ TEST_CASE("EffectManager: CancelPerLife keeps only SurvivesDeath effects")
     mgr.Apply(5, Disco, {.OnStop = [&] { ++cancels; }});
 
     mgr.CancelPerLife(3);
-    CHECK(!mgr.IsActive(3, Disco));   // per-life: swept on death
-    CHECK(mgr.IsActive(3, Ghost));    // SurvivesDeath: kept
-    CHECK(mgr.IsActive(5, Disco));    // other slot untouched
+    CHECK(!mgr.IsActive(3, Disco));  // per-life: swept on death
+    CHECK(mgr.IsActive(3, Ghost));   // SurvivesDeath: kept
+    CHECK(mgr.IsActive(5, Disco));   // other slot untouched
     CHECK_EQ(cancels, 1);
 
     mgr.CancelPerLife(-1);  // out-of-range: no-op
