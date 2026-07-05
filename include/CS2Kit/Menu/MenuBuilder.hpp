@@ -102,9 +102,10 @@ public:
                                    const Players::Action& action);
 
     /** An inline choice row: A/D cycles "{value} {unit}" presets, E runs the @ref Players::ParamAction
-     *  with the picked value and closes the player's menus. */
+     *  with the picked value and closes the player's menus. @p initialIndex selects the preset the row
+     *  opens on (e.g. the "no change" anchor). */
     MenuBuilder& AddPresetChoiceRow(std::string_view labelKey, std::string_view unit, std::span<const int> presets,
-                                    const Players::ParamAction& action);
+                                    const Players::ParamAction& action, int initialIndex = 0);
 
     /** A toggle row bound to a data-defined effect (uses the context's EffectManager; the on/off
      *  state labels come from the reserved keys `effectState.on` / `effectState.off`). */

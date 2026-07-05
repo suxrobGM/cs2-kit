@@ -42,7 +42,8 @@ MenuBuilder& MenuBuilder::AddStateToggleRow(std::string_view labelKey,
 }
 
 MenuBuilder& MenuBuilder::AddPresetChoiceRow(std::string_view labelKey, std::string_view unit,
-                                             std::span<const int> presets, const Players::ParamAction& action)
+                                             std::span<const int> presets, const Players::ParamAction& action,
+                                             int initialIndex)
 {
     std::vector<ChoiceOption<int>::Choice> choices;
     choices.reserve(presets.size());
@@ -56,7 +57,7 @@ MenuBuilder& MenuBuilder::AddPresetChoiceRow(std::string_view labelKey, std::str
             ActionDispatcher{}.Run(admin, target, value, *a);
             Core::Engine().Menus.CloseAllMenus(slot);
         },
-        _context.Allowed(action.Permission));
+        _context.Allowed(action.Permission), initialIndex);
 }
 
 MenuBuilder& MenuBuilder::AddEffectToggleRow(const Core::EffectDescriptor& effect)
