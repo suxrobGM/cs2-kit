@@ -13,6 +13,7 @@
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/GameEventService.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
+#include <CS2Kit/Sdk/MovementHook.hpp>
 #include <CS2Kit/Sdk/PrecacheService.hpp>
 #include <CS2Kit/Sdk/TransmitFilter.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
@@ -56,6 +57,8 @@ public:
     Sdk::TransmitFilterService Transmit;
     Sdk::PrecacheService Precache;
     Sdk::ConVarService ConVars;
+    /** Dormant until a plugin calls Install(); removes its vtable hook on destruction. */
+    Sdk::MovementHook MovementHook;
     Sdk::GameEventService Events;
     Core::Scheduler Scheduler;
     Sdk::ChatInputCapture ChatInput;

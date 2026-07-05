@@ -71,6 +71,10 @@ public:
     uint32_t GetEntityHandle(CEntityInstance* entity) const;
 
     uint64_t GetPlayerButtons(int slot);
+
+    /** The pawn's CPlayer_MovementServices* for @p slot, or nullptr (no pawn / offsets unresolved). */
+    void* GetPlayerMovementServices(int slot);
+
     bool IsPlayerSlotValid(int slot);
 
     /** First entity of @p className after @p startAfter (nullptr = list head).

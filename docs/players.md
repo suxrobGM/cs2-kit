@@ -106,3 +106,5 @@ static const bool _reg = Registry<EffectEntry>::Add({.Order = 10, .Toggle = &Gho
 ```
 
 Dispatch through `ToggleEffect` / `ApplyEffect` / `ClearEffect` (they apply `Engine().Policy` first), or drop the descriptor straight into a menu with `AddEffectToggleRow`. `ParamEffectDescriptor` adds a `Choices` list and a parameterized `Setup` for picker-style effects (model selection); `AddEffectPickerRow` renders it. `EffectManager` guarantees `OnStop` runs exactly once however the effect ends - toggle, death, disconnect, round end, or unload.
+
+Sweeps come in three shapes: `CancelAllForSlot(slot)` clears a player, `CancelRoundScoped()` clears round-scoped effects everywhere, and `CancelPerLife(slot)` clears a player's per-life effects on death while keeping `EffectScope::Session` grants - declare `Scope = EffectScope::Session` on the descriptor and the death sweep skips it, no per-effect special-casing.

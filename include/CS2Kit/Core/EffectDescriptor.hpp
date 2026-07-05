@@ -14,7 +14,8 @@ class EffectManager;
 enum class EffectScope
 {
     Persistent, /**< Lives until toggled off, death, disconnect, or unload. */
-    Round       /**< Also auto-cancels on round end/prestart. */
+    Round,      /**< Also auto-cancels on round end/prestart. */
+    Session     /**< Survives death; cleared only on toggle-off, disconnect, or unload. */
 };
 
 /**

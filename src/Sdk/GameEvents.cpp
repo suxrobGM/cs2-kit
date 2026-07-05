@@ -24,6 +24,11 @@ PlayerSpawn PlayerSpawn::From(IGameEvent& e)
     return {.Slot = e.GetPlayerSlot("userid").Get()};
 }
 
+PlayerJump PlayerJump::From(IGameEvent& e)
+{
+    return {.Slot = e.GetPlayerSlot("userid").Get()};
+}
+
 PlayerHurt PlayerHurt::From(IGameEvent& e)
 {
     return {

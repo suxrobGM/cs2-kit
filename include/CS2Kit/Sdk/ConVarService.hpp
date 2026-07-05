@@ -6,8 +6,38 @@
 #include <optional>
 #include <string>
 
+class INetworkMessageInternal;
+
 namespace CS2Kit::Sdk
 {
+
+/**
+ * @brief Direct handle to a convar's raw value storage.
+ *
+ * Reads and writes bypass change callbacks and FCVAR_REPLICATED networking: nothing is sent
+ * to clients and no OnChange listener fires. Intended for scoped flips around one player's
+ * processing (e.g. inside a MovementHook pre/post pair) where the engine setters' broadcast-
+ * to-everyone behavior would be wrong; the caller must restore the prior value itself.
+ *
+ * There is no type checking - use the accessor matching the convar's actual engine type.
+ * The handle stays valid for the convar's lifetime (registered convars outlive map changes),
+ * so it can be resolved once and cached.
+ */
+class RawConVar
+{
+public:
+    RawConVar() = default;
+    explicit RawConVar(const char* name);
+
+    bool Valid() const { return _value != nullptr; }
+    bool GetBool() const;
+    void SetBool(bool value);
+    float GetFloat() const;
+    void SetFloat(float value);
+
+private:
+    void* _value = nullptr;  // the convar's CVValue_t* (kept as void* so this header stays SDK-free)
+};
 
 /**
  * @brief Typed wrapper around ICvar for finding, reading, writing, and listening to ConVars.
@@ -31,6 +61,19 @@ public:
 
     void ExecuteServerCommand(const char* command);
 
+    /** Raw-storage handle for @p name (see @ref RawConVar). !Valid() when the convar is unknown. */
+    RawConVar Raw(const char* name) const { return RawConVar(name); }
+
+    /**
+     * @brief Send CNETMsg_SetConVar to one client so its prediction uses @p value.
+     *
+     * Only that client's replicated view changes - the server-side value is untouched and no
+     * other client is affected. The client's snapshot on connect (and on map change) restores
+     * the server value, so re-send from a PlayerSpawn listener to keep the override sticky.
+     * @return false when the message system or slot is unavailable.
+     */
+    bool ReplicateToClient(int slot, const char* name, const char* value);
+
     using ChangeCallback = std::function<void(const char* name, const char* oldValue, const char* newValue)>;
     uint64_t OnChange(ChangeCallback callback);
     void RemoveChangeListener(uint64_t id);
@@ -39,6 +82,7 @@ public:
 private:
     Core::CallbackRegistry<ChangeCallback> _changeCallbacks;
     bool _globalCallbackInstalled = false;
+    INetworkMessageInternal* _setConVarMsg = nullptr;
 };
 
 }  // namespace CS2Kit::Sdk

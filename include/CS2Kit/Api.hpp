@@ -50,10 +50,12 @@
 #include <CS2Kit/Sdk/GameEvents.hpp>
 #include <CS2Kit/Sdk/GlowVision.hpp>
 #include <CS2Kit/Sdk/MoveType.hpp>
+#include <CS2Kit/Sdk/MovementHook.hpp>
 #include <CS2Kit/Sdk/PawnOps.hpp>
 #include <CS2Kit/Sdk/PawnPredicates.hpp>
 #include <CS2Kit/Sdk/PersistentCenterHtml.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
+#include <CS2Kit/Sdk/ServerCommand.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/SlotThrottle.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
@@ -98,9 +100,12 @@ using Sdk::HasPawnFlag;
 using Sdk::InMoveType;
 using Sdk::MessageKind;
 using Sdk::MessageSystem;
+using Sdk::MovementHook;
 using Sdk::MoveType;
 using Sdk::PersistentCenterHtml;
 using Sdk::PlayerController;
+using Sdk::RawConVar;
+using Sdk::ServerCommand;
 namespace PawnOps = Sdk::PawnOps;
 namespace Events = Sdk::Events;
 

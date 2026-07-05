@@ -32,6 +32,7 @@ void EffectManager::Apply(int slot, int effectId, EffectSpec spec)
 
     _effects[slot].insert_or_assign(
         effectId, ActiveEffect{.RoundScoped = spec.RoundScoped,
+                               .SurvivesDeath = spec.SurvivesDeath,
                                .Fx = ScheduledEffect(_scheduler, spec.TickIntervalMs, spec.DurationMs,
                                                      std::move(spec.OnTick), std::move(spec.OnStop))});
 }
@@ -51,12 +52,12 @@ void EffectManager::Cancel(int slot, int effectId)
     entry.Fx.Stop();
 }
 
-void EffectManager::CancelWhere(int slot, const std::function<bool(const ActiveEffect&)>& keep)
+void EffectManager::CancelWhere(int slot, const std::function<bool(int id, const ActiveEffect&)>& keep)
 {
     std::vector<int> ids;
     ids.reserve(_effects[slot].size());
     for (const auto& [id, entry] : _effects[slot])
-        if (keep(entry))
+        if (keep(id, entry))
             ids.push_back(id);
     for (int id : ids)
         Cancel(slot, id);
@@ -66,13 +67,20 @@ void EffectManager::CancelAllForSlot(int slot)
 {
     if (!ValidSlot(slot))
         return;
-    CancelWhere(slot, [](const ActiveEffect&) { return true; });
+    CancelWhere(slot, [](int, const ActiveEffect&) { return true; });
+}
+
+void EffectManager::CancelPerLife(int slot)
+{
+    if (!ValidSlot(slot))
+        return;
+    CancelWhere(slot, [](int, const ActiveEffect& e) { return !e.SurvivesDeath; });
 }
 
 void EffectManager::CancelRoundScoped()
 {
     for (int slot = 0; slot < MaxSlots; ++slot)
-        CancelWhere(slot, [](const ActiveEffect& e) { return e.RoundScoped; });
+        CancelWhere(slot, [](int, const ActiveEffect& e) { return e.RoundScoped; });
 }
 
 void EffectManager::CancelAll()

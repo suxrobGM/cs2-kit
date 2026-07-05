@@ -82,7 +82,7 @@ if (db.Start(App().Config.Get().database))
 
 ## Typed game events
 
-Listen for game events as structs instead of string + `GetInt` pairs. The structs live in `CS2Kit::Events` (`Sdk/GameEvents.hpp`): `PlayerDeath`, `PlayerSpawn`, `PlayerHurt`, `PlayerTeam`, `PlayerConnectFull`, `WeaponFire`, `RoundStart`, `RoundEnd`, `RoundPrestart`.
+Listen for game events as structs instead of string + `GetInt` pairs. The structs live in `CS2Kit::Events` (`Sdk/GameEvents.hpp`): `PlayerDeath`, `PlayerSpawn`, `PlayerJump`, `PlayerHurt`, `PlayerTeam`, `PlayerConnectFull`, `WeaponFire`, `RoundStart`, `RoundEnd`, `RoundPrestart`.
 
 ```cpp
 namespace Events = CS2Kit::Events;
@@ -98,6 +98,8 @@ The stringly `Listen("event_name", ...)` overload stays as the escape hatch for 
 ## Custom hooks
 
 `SH_DECL_HOOKn` must still appear once at namespace scope in your .cpp (it expands to hook-manager classes; no helper can wrap it). The add/remove pairing *is* automated: `CS2KIT_SCOPED_HOOK` installs the hook and queues the matching removal on the Defer stack in one statement.
+
+For per-tick player movement you don't need a custom hook at all - the kit ships @ref CS2Kit::Sdk::MovementHook (see @ref sdk_hooks_guide).
 
 ```cpp
 #include <CS2Kit/Core/HookMacros.hpp>

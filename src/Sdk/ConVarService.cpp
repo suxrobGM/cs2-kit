@@ -1,8 +1,14 @@
 #include <CS2Kit/Core/Services.hpp>
+#include <CS2Kit/Core/Slot.hpp>
 #include <CS2Kit/Sdk/ConVarService.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
+#include <CS2Kit/Sdk/RecipientFilter.hpp>
 #include <CS2Kit/Utils/Log.hpp>
+#include <engine/igameeventsystem.h>
 #include <icvar.h>
+#include <networkbasetypes.pb.h>
+#include <networksystem/inetworkmessages.h>
+#include <networksystem/netmessage.h>
 #include <tier1/convar.h>
 
 using CS2Kit::Core::Engine;
@@ -25,6 +31,41 @@ void GlobalConVarChangeCallback(ConVarRefAbstract* ref, CSplitScreenSlot /*slot*
 namespace CS2Kit::Sdk
 {
 using namespace CS2Kit::Utils;
+
+RawConVar::RawConVar(const char* name)
+{
+    ConVarRefAbstract ref(name);
+    if (!ref.IsValidRef() || !ref.IsConVarDataAvailable())
+        return;
+
+    // Slot -1 is the shared (non-splitscreen) storage; some cvars only expose slot 0.
+    CVValue_t* value = ref.GetConVarData()->Value(CSplitScreenSlot(-1));
+    if (!value)
+        value = ref.GetConVarData()->Value(CSplitScreenSlot(0));
+    _value = value;
+}
+
+bool RawConVar::GetBool() const
+{
+    return _value && static_cast<CVValue_t*>(_value)->m_bValue;
+}
+
+void RawConVar::SetBool(bool value)
+{
+    if (_value)
+        static_cast<CVValue_t*>(_value)->m_bValue = value;
+}
+
+float RawConVar::GetFloat() const
+{
+    return _value ? static_cast<CVValue_t*>(_value)->m_fl32Value : 0.0f;
+}
+
+void RawConVar::SetFloat(float value)
+{
+    if (_value)
+        static_cast<CVValue_t*>(_value)->m_fl32Value = value;
+}
 
 bool ConVarService::Initialize()
 {
@@ -121,6 +162,47 @@ void ConVarService::ExecuteServerCommand(const char* command)
     }
 
     engine->ServerCommand(command);
+}
+
+bool ConVarService::ReplicateToClient(int slot, const char* name, const char* value)
+{
+    auto& interfaces = Engine().Interfaces;
+    if (!interfaces.GameEventSystem || !interfaces.NetworkMessages || !Core::IsValidSlot(slot) || !name || !value)
+        return false;
+
+    if (!_setConVarMsg)
+    {
+        _setConVarMsg = interfaces.NetworkMessages->FindNetworkMessage("CNETMsg_SetConVar");
+        if (!_setConVarMsg)
+            _setConVarMsg = interfaces.NetworkMessages->FindNetworkMessagePartial("SetConVar");
+    }
+
+    if (!_setConVarMsg)
+    {
+        Log::Warn("ConVarService::ReplicateToClient: CNETMsg_SetConVar not found.");
+        return false;
+    }
+
+    CNetMessage* pMsg = _setConVarMsg->AllocateMessage();
+    if (!pMsg)
+        return false;
+
+    auto* pSetConVar = pMsg->ToPB<CNETMsg_SetConVar>();
+    if (!pSetConVar)
+    {
+        interfaces.NetworkMessages->DeallocateNetMessageAbstract(_setConVarMsg, pMsg);
+        return false;
+    }
+
+    auto* cvar = pSetConVar->mutable_convars()->add_cvars();
+    cvar->set_name(name);
+    cvar->set_value(value);
+
+    SingleRecipientFilter filter(slot);
+    interfaces.GameEventSystem->PostEventAbstract(-1, false, &filter, _setConVarMsg, pMsg, 0);
+
+    interfaces.NetworkMessages->DeallocateNetMessageAbstract(_setConVarMsg, pMsg);
+    return true;
 }
 
 uint64_t ConVarService::OnChange(ChangeCallback callback)

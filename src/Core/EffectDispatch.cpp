@@ -16,6 +16,7 @@ EffectSpec MakeSpec(EffectScope scope, int tickIntervalMs, int durationMs, Effec
     return {.TickIntervalMs = tickIntervalMs,
             .DurationMs = durationMs,
             .RoundScoped = scope == EffectScope::Round,
+            .SurvivesDeath = scope == EffectScope::Session,
             .OnTick = std::move(inst.OnTick),
             .OnStop = std::move(inst.OnStop)};
 }

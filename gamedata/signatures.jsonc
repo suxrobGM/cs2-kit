@@ -38,6 +38,12 @@
     "CheckTransmitPlayerSlot": {
       "windows": 576,
       "linux": 576
+    },
+    // CPlayer_MovementServices::RunCommand vtable index (SwiftlyS2: 22/23).
+    // Drives Sdk::MovementHook - a wrong index calls an unrelated vfunc and crashes.
+    "RunCommand": {
+      "windows": 22,
+      "linux": 23
     }
   },
 

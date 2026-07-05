@@ -160,28 +160,33 @@ CEntityInstance* EntitySystem::GetPlayerController(int slot)
 
 uint64_t EntitySystem::GetPlayerButtons(int slot)
 {
-    if (!_schemaOffsetsResolved)
-        ResolveSchemaOffsets();
-
-    if (_offsetPlayerPawn < 0 || _offsetMovementServices < 0 || _offsetButtons < 0 || _offsetButtonStates < 0)
-        return 0;
-
-    CEntityInstance* pController = GetPlayerController(slot);
-    if (!pController)
-        return 0;
-
-    uint32_t hPawn = ReadAt<uint32_t>(pController, _offsetPlayerPawn);
-    CEntityInstance* pPawn = ResolveEntityHandle(hPawn);
-    if (!pPawn)
-        return 0;
-
-    auto* pMovementServices = ReadAt<uint8_t*>(pPawn, _offsetMovementServices);
-    if (!pMovementServices)
+    auto* pMovementServices = static_cast<uint8_t*>(GetPlayerMovementServices(slot));
+    if (!pMovementServices || _offsetButtons < 0 || _offsetButtonStates < 0)
         return 0;
 
     auto* pButtonStates = MemberPtr<uint64_t>(pMovementServices, _offsetButtons + _offsetButtonStates);
 
     return pButtonStates[0];  // m_pButtonStates is uint64[3]: [0] held, [1] changed, [2] scroll
+}
+
+void* EntitySystem::GetPlayerMovementServices(int slot)
+{
+    if (!_schemaOffsetsResolved)
+        ResolveSchemaOffsets();
+
+    if (_offsetPlayerPawn < 0 || _offsetMovementServices < 0)
+        return nullptr;
+
+    CEntityInstance* pController = GetPlayerController(slot);
+    if (!pController)
+        return nullptr;
+
+    uint32_t hPawn = ReadAt<uint32_t>(pController, _offsetPlayerPawn);
+    CEntityInstance* pPawn = ResolveEntityHandle(hPawn);
+    if (!pPawn)
+        return nullptr;
+
+    return ReadAt<uint8_t*>(pPawn, _offsetMovementServices);
 }
 
 bool EntitySystem::IsPlayerSlotValid(int slot)

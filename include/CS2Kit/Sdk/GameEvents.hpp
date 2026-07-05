@@ -42,6 +42,13 @@ struct PlayerSpawn
     static PlayerSpawn From(IGameEvent& e);
 };
 
+struct PlayerJump
+{
+    static constexpr const char* Name = "player_jump";
+    int Slot = -1;
+    static PlayerJump From(IGameEvent& e);
+};
+
 struct PlayerHurt
 {
     static constexpr const char* Name = "player_hurt";

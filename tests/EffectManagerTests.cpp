@@ -101,6 +101,27 @@ TEST_CASE("EffectManager: CancelAllForSlot and CancelAll")
     CHECK(!mgr.IsActive(5, Disco));
 }
 
+TEST_CASE("EffectManager: CancelPerLife keeps only SurvivesDeath effects")
+{
+    Scheduler scheduler;
+    EffectManager mgr(scheduler);
+
+    int cancels = 0;
+    mgr.Apply(3, Disco, {.OnStop = [&] { ++cancels; }});
+    mgr.Apply(3, Ghost, {.SurvivesDeath = true, .OnStop = [&] { ++cancels; }});
+    mgr.Apply(5, Disco, {.OnStop = [&] { ++cancels; }});
+
+    mgr.CancelPerLife(3);
+    CHECK(!mgr.IsActive(3, Disco));   // per-life: swept on death
+    CHECK(mgr.IsActive(3, Ghost));    // SurvivesDeath: kept
+    CHECK(mgr.IsActive(5, Disco));    // other slot untouched
+    CHECK_EQ(cancels, 1);
+
+    mgr.CancelPerLife(-1);  // out-of-range: no-op
+    mgr.CancelPerLife(EffectManager::MaxSlots);
+    CHECK(mgr.IsActive(3, Ghost));
+}
+
 TEST_CASE("EffectManager: out-of-range slots are no-ops")
 {
     Scheduler scheduler;

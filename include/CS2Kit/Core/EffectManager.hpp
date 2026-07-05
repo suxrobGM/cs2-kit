@@ -20,6 +20,7 @@ struct EffectSpec
     int TickIntervalMs = 0;       /**< >0 => repeating body. */
     int DurationMs = 0;           /**< >0 => auto-expire after this long. */
     bool RoundScoped = false;     /**< Auto-cancel via @ref EffectManager::CancelRoundScoped. */
+    bool SurvivesDeath = false;   /**< Skip the death sweep (@ref EffectManager::CancelPerLife). */
     std::function<void()> OnTick; /**< Repeating body; null for state-only effects. */
     std::function<void()> OnStop; /**< Undo/restore; runs exactly once on any end. */
 };
@@ -31,6 +32,7 @@ struct EffectSpec
 struct ActiveEffect
 {
     bool RoundScoped = false;
+    bool SurvivesDeath = false;
     ScheduledEffect Fx;
 };
 
@@ -61,6 +63,9 @@ public:
 
     void Cancel(int slot, int effectId);
     void CancelAllForSlot(int slot);
+    /** Death sweep: cancel every effect on @p slot except those flagged `SurvivesDeath`
+     *  (session-long grants that outlive a single life). */
+    void CancelPerLife(int slot);
     /** Cancel every active effect registered with `roundScoped == true`, on every slot. */
     void CancelRoundScoped();
     void CancelAll();
@@ -68,7 +73,7 @@ public:
 private:
     // Snapshot the ids to cancel before cancelling: Cancel runs onStop, which may re-enter the
     // slot map, so the map must not be iterated while entries are erased.
-    void CancelWhere(int slot, const std::function<bool(const ActiveEffect&)>& keep);
+    void CancelWhere(int slot, const std::function<bool(int id, const ActiveEffect&)>& keep);
 
     Scheduler& _scheduler;
     // Slot-indexed array of small maps: only a handful of effects run per player at once.
