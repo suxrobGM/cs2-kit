@@ -10,6 +10,8 @@
 #include <string_view>
 #include <vector>
 
+class ISource2WorldSession;
+
 namespace CS2Kit::Players
 {
 class Player;
@@ -99,6 +101,14 @@ protected:
      */
     virtual void OnDestroyInstances() {}
 
+    /**
+     * @brief The engine is starting a (new) map. Fires on every map start, after the engine has
+     * loaded game event definitions - by this point kit game-event listeners are attached. Note
+     * that the engine resets game convars and re-execs gamemode cfgs around this, so values set
+     * at load time may need re-asserting from here or from a game event.
+     */
+    virtual void OnServerStartup(const char* mapName) {}
+
     /** @brief A player joined and is now tracked. @p player is valid (read its SteamID, name, etc.). */
     virtual void OnPlayerConnect(Players::Player* player) {}
 
@@ -127,6 +137,8 @@ protected:
     // The base's own callbacks for the standard hooks. They forward to the virtuals above -
     // you don't call these directly.
     void Hook_GameFrame(bool simulating, bool firstTick, bool lastTick);
+    void Hook_StartupServer(const GameSessionConfiguration_t& config, ISource2WorldSession* session,
+                            const char* mapName);
     void Hook_OnClientConnected(CPlayerSlot slot, const char* name, uint64 xuid, const char* networkId,
                                 const char* address, bool fakePlayer);
     void Hook_ClientDisconnect(CPlayerSlot slot, ENetworkDisconnectionReason reason, const char* name, uint64 xuid,

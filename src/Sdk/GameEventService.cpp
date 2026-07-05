@@ -53,13 +53,36 @@ uint64_t GameEventService::Listen(const char* eventName, EventCallback callback)
     if (!mgr)
         return 0;
 
-    if (_registeredEvents.find(eventName) == _registeredEvents.end())
+    auto [it, inserted] = _registeredEvents.try_emplace(eventName, false);
+    if (inserted)
     {
-        mgr->AddListener(this, eventName, true);
-        _registeredEvents.insert(eventName);
+        // AddListener fails while the event is undefined - definitions load with the first map,
+        // after plugin load on a cold boot. OnServerStartup retries these on every map start.
+        it->second = mgr->AddListener(this, eventName, true);
+        if (!it->second)
+            Log::Info("Game event '{}' unknown to the engine yet; attaching at map start.", eventName);
     }
 
     return _listeners.Add({eventName, std::move(callback)});
+}
+
+void GameEventService::OnServerStartup()
+{
+    auto* mgr = Engine().Interfaces.GameEventManager;
+    if (!mgr)
+        return;
+
+    for (auto& [name, attached] : _registeredEvents)
+    {
+        if (attached)
+            continue;
+
+        attached = mgr->AddListener(this, name.c_str(), true);
+        if (attached)
+            Log::Info("Game event listener attached: {}.", name);
+        else
+            Log::Warn("Game event listener still failed to attach: {}.", name);
+    }
 }
 
 void GameEventService::RemoveListener(uint64_t id)

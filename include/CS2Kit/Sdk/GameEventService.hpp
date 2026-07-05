@@ -5,7 +5,7 @@
 #include <CS2Kit/Core/CallbackRegistry.hpp>
 #include <cstdint>
 #include <functional>
-#include <set>
+#include <map>
 #include <string>
 
 namespace CS2Kit::Sdk
@@ -46,6 +46,16 @@ public:
      * double-registration on reload). */
     void RemoveAllListeners();
 
+    /**
+     * @brief Attach listeners that the engine rejected at Listen() time. Called by the kit's
+     * StartupServer hook on every map start.
+     *
+     * The event manager only knows an event's name after its definition file is loaded during
+     * the first map startup, so AddListener calls made at plugin load (server still hibernating,
+     * no map) fail and the listener would silently never fire.
+     */
+    void OnServerStartup();
+
     void FireGameEvent(IGameEvent* event) override;
 
 private:
@@ -56,7 +66,7 @@ private:
     };
 
     Core::CallbackRegistry<RegisteredListener> _listeners;
-    std::set<std::string> _registeredEvents;
+    std::map<std::string, bool> _registeredEvents;  // event name -> attached to the engine
 };
 
 }  // namespace CS2Kit::Sdk

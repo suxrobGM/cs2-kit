@@ -7,11 +7,18 @@
 #include <CS2Kit/Utils/Log.hpp>
 #include <cstdio>
 #include <cstring>
+#include <iserver.h>
 #include <string>
 
 // extern decls for the SourceHook globals the consumer's PLUGIN_EXPOSE defines; lets the base
 // own the standard hooks and call PLUGIN_SAVEVARS in Load().
 PLUGIN_GLOBALVARS();
+
+// The SDK only forward-declares this (iloopmode.h keeps the real one commented out). SourceHook's
+// param table needs a complete type; the hook receives it by reference and never looks inside.
+class GameSessionConfiguration_t
+{
+};
 
 using CS2Kit::Core::Engine;
 
@@ -23,6 +30,8 @@ using namespace CS2Kit::Sdk;
 using namespace CS2Kit::Utils;
 
 SH_DECL_HOOK3_void(IServerGameDLL, GameFrame, SH_NOATTRIB, 0, bool, bool, bool);
+SH_DECL_HOOK3_void(INetworkServerService, StartupServer, SH_NOATTRIB, 0, const GameSessionConfiguration_t&,
+                   ISource2WorldSession*, const char*);
 SH_DECL_HOOK6_void(IServerGameClients, OnClientConnected, SH_NOATTRIB, 0, CPlayerSlot, const char*, uint64, const char*,
                    const char*, bool);
 SH_DECL_HOOK5_void(IServerGameClients, ClientDisconnect, SH_NOATTRIB, 0, CPlayerSlot, ENetworkDisconnectionReason,
@@ -111,6 +120,8 @@ void MetamodPluginBase::RegisterStandardHooks()
     auto& gi = Engine().Interfaces;
 
     SH_ADD_HOOK(IServerGameDLL, GameFrame, gi.ServerGameDLL, SH_MEMBER(this, &MetamodPluginBase::Hook_GameFrame), true);
+    SH_ADD_HOOK(INetworkServerService, StartupServer, gi.NetworkServerService,
+                SH_MEMBER(this, &MetamodPluginBase::Hook_StartupServer), true);
     SH_ADD_HOOK(IServerGameClients, OnClientConnected, gi.ServerGameClients,
                 SH_MEMBER(this, &MetamodPluginBase::Hook_OnClientConnected), false);
     SH_ADD_HOOK(IServerGameClients, ClientDisconnect, gi.ServerGameClients,
@@ -125,6 +136,8 @@ void MetamodPluginBase::RegisterStandardHooks()
         auto& g = Engine().Interfaces;
         SH_REMOVE_HOOK(IServerGameDLL, GameFrame, g.ServerGameDLL, SH_MEMBER(this, &MetamodPluginBase::Hook_GameFrame),
                        true);
+        SH_REMOVE_HOOK(INetworkServerService, StartupServer, g.NetworkServerService,
+                       SH_MEMBER(this, &MetamodPluginBase::Hook_StartupServer), true);
         SH_REMOVE_HOOK(IServerGameClients, OnClientConnected, g.ServerGameClients,
                        SH_MEMBER(this, &MetamodPluginBase::Hook_OnClientConnected), false);
         SH_REMOVE_HOOK(IServerGameClients, ClientDisconnect, g.ServerGameClients,
@@ -141,6 +154,13 @@ void MetamodPluginBase::RegisterStandardHooks()
 void MetamodPluginBase::Hook_GameFrame(bool simulating, bool firstTick, bool lastTick)
 {
     CS2Kit::OnGameFrame(*_services);
+}
+
+void MetamodPluginBase::Hook_StartupServer(const GameSessionConfiguration_t&, ISource2WorldSession*,
+                                           const char* mapName)
+{
+    _services->Events.OnServerStartup();
+    OnServerStartup(mapName ? mapName : "");
 }
 
 void MetamodPluginBase::Hook_CheckTransmit(CCheckTransmitInfo** infoList, int infoCount, CBitVec<16384>&,
