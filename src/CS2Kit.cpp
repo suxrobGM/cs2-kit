@@ -25,6 +25,7 @@
 #include <interfaces/interfaces.h>
 #include <networksystem/inetworkmessages.h>
 #include <schemasystem/schemasystem.h>
+#include <tier1/convar.h>
 
 namespace CS2Kit
 {
@@ -83,8 +84,10 @@ bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, Core::Services& servi
 
 #undef CS2KIT_RESOLVE
 
-    // 4. Set g_pCVar (required by HL2SDK's tier1/convar.cpp)
+    // 4. Set g_pCVar and flush pending registrations; without ConVar_Register, tier1 ConCommands
+    // (CS2Kit::ServerCommand) construct but never register, so the engine reports "Unknown command".
     g_pCVar = gi.CVar;
+    ConVar_Register(FCVAR_RELEASE | FCVAR_CLIENT_CAN_EXECUTE | FCVAR_SERVER_CAN_EXECUTE | FCVAR_GAMEDLL);
 
     // 5. Load game data (signatures and offsets)
     const char* gameDataPath = params.GameDataPath ? params.GameDataPath : DefaultGameDataPath;
