@@ -142,6 +142,18 @@ bool ConVarService::SetFloat(const char* name, float value)
     return true;
 }
 
+bool ConVarService::SetBool(const char* name, bool value)
+{
+    ConVarRefAbstract ref(name);
+    if (!ref.IsValidRef() || !ref.IsConVarDataAvailable())
+        return false;
+
+    // Bool-typed convars (e.g. sv_autobunnyhopping) ignore SetInt/SetFloat: the SDK's SetAs<T>
+    // only acts when a conversion exists for the convar's type, so the value must be set as a bool.
+    ref.SetBool(value);
+    return true;
+}
+
 bool ConVarService::SetString(const char* name, const char* value)
 {
     ConVarRefAbstract ref(name);

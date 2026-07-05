@@ -57,6 +57,7 @@ public:
 
     bool SetInt(const char* name, int value);
     bool SetFloat(const char* name, float value);
+    bool SetBool(const char* name, bool value);
     bool SetString(const char* name, const char* value);
 
     void ExecuteServerCommand(const char* command);
