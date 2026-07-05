@@ -173,7 +173,17 @@ void ConVarService::ExecuteServerCommand(const char* command)
         return;
     }
 
-    engine->ServerCommand(command);
+    if (!command)
+        return;
+
+    // ServerCommand appends to the shared command buffer verbatim, with no separator between
+    // calls - so back-to-back commands would concatenate into one malformed line. Guarantee a
+    // trailing newline so each call is parsed as its own console line.
+    std::string line(command);
+    if (line.empty() || line.back() != '\n')
+        line.push_back('\n');
+
+    engine->ServerCommand(line.c_str());
 }
 
 bool ConVarService::ReplicateToClient(int slot, const char* name, const char* value)
