@@ -27,6 +27,15 @@ events.Listen("bomb_planted", [](IGameEvent* event) {
 
 You can also create and fire events (`CreateEvent` / `FireEvent` / `FreeEvent`) - the center-HTML transport is built on exactly that.
 
+### Listener lifecycle
+
+Call `Listen` whenever you like - typically in your manager's `Initialize` during OnLoad - and the kit takes care of when the engine actually accepts the registration. The trap it handles: `IGameEventManager2::AddListener` **succeeds** before the first map, but the engine resets its listener table during every map startup, so a registration made at plugin load on a cold boot is silently dropped and the listener never fires (no error anywhere; the callback just doesn't run). The kit therefore re-attaches every listened event from its `StartupServer` hook on **every** map start - watch for `Attached N/N game event listener(s) at map start.` in the server log as the health check.
+
+Two related lifecycle points:
+
+- `MetamodPluginBase::OnServerStartup(mapName)` is the plugin-facing map-start callback. The engine resets game convars and re-execs gamemode cfgs around map init, so values set at load time may need re-asserting from here or from a `RoundStart` listener.
+- On `meta reload`, `Shutdown` detaches everything (`RemoveAllListeners`), and the fresh load re-registers - no double dispatch.
+
 ## ConVarService
 
 Typed reads and writes over ICvar:
