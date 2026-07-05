@@ -46,7 +46,7 @@ uint64_t id = cvars.OnChange([](const char* name, const char* oldValue, const ch
 });
 ```
 
-The setters go through the engine: change callbacks fire and `FCVAR_REPLICATED` values broadcast to every client. That is what you want for server-wide changes; two escape hatches cover the per-player cases.
+The setters change the server's stored value and fire change callbacks, but they do **not** network anything - an `FCVAR_REPLICATED` convar set this way silently diverges from what clients predict with. They also do no cross-type conversion: the SDK's `SetAs<T>` no-ops when the convar's type has no conversion from `T` (e.g. `SetInt` on a bool convar like `sv_autobunnyhopping`; `SetString` works for any type). For a server-wide change that must reach clients, use `ExecuteServerCommand("name value")` - the console path both sets and replicates, exactly as a cfg line would. Two escape hatches cover the per-player cases.
 
 ### Per-client replication
 

@@ -55,9 +55,14 @@ public:
     std::optional<bool> GetBool(const char* name) const;
     bool Exists(const char* name) const;
 
+    /**
+     * Direct sets: change only the server's stored value - no networking (FCVAR_REPLICATED
+     * convars won't reach clients; use ExecuteServerCommand for cfg-line semantics) and no
+     * cross-type conversion (the SDK's SetAs<T> silently no-ops on a differently-typed convar,
+     * e.g. SetInt on a bool convar like sv_autobunnyhopping - use SetString for those).
+     */
     bool SetInt(const char* name, int value);
     bool SetFloat(const char* name, float value);
-    bool SetBool(const char* name, bool value);
     bool SetString(const char* name, const char* value);
 
     void ExecuteServerCommand(const char* command);
