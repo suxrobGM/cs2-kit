@@ -1,0 +1,43 @@
+[project]
+name = "$project"
+version = "1.0.0"
+description = "CS2 Metamod plugins built on cs2-kit"
+readme = "README.md"
+requires-python = ">=3.14"
+
+dependencies = [
+    "cmake>=4.3.4",
+    "conan>=2.29.1",
+    "ninja>=1.13.0",
+    "ruff>=0.14.0",
+    "mypy>=1.19.0",
+    "poethepoet>=0.47.0",
+    "clang-format==22.1.5",
+]
+
+[tool.uv]
+package = false
+
+[tool.poe.tasks]
+build = "python vendor/cs2-kit/scripts/build.py"
+build-linux = "python vendor/cs2-kit/scripts/build.py linux-steamrt-release"
+bootstrap = "python vendor/cs2-kit/scripts/bootstrap.py"
+new-plugin = "python vendor/cs2-kit/scripts/new_plugin.py"
+lint = "ruff check ."
+format = "python vendor/cs2-kit/scripts/format.py"
+format-check = "python vendor/cs2-kit/scripts/format.py --check"
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+extend-exclude = ["vendor"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.14"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+exclude = ["vendor"]

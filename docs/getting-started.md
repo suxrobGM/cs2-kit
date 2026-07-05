@@ -9,7 +9,54 @@
 
 The HL2SDK and Metamod:Source come with the kit as submodules - you don't install them separately.
 
-## Add the kit to your repo
+## Start a new project
+
+From an empty directory, vendor the kit and let `init_project.py` stamp the whole project:
+
+```sh
+mkdir my-cs2-plugins && cd my-cs2-plugins
+git init
+git submodule add https://github.com/suxrobgm/cs2-kit.git vendor/cs2-kit
+git submodule update --init --recursive
+python vendor/cs2-kit/scripts/init_project.py --plugin my-plugin
+uv sync
+uv run poe build
+```
+
+The init script needs only a system Python 3. It generates:
+
+- `CMakeLists.txt` - a few lines: `project()`, `include(CTest)`, `add_subdirectory(vendor/cs2-kit)`, and one `add_subdirectory(plugins/<name>)` per plugin. Everything else comes from the kit.
+- `CMakePresets.json` - one line that includes the kit's presets (`windows-msvc-{release,debug}`, `linux-steamrt-{release,debug}`, with matching build/test/workflow presets).
+- `conanfile.py` - the third-party deps (cpr, nlohmann_json); add your own here. The Conan profiles under `vendor/cs2-kit/conan/profiles/` are canonical and picked up automatically.
+- `pyproject.toml` - pins CMake/Conan/Ninja/clang-format via uv, and poe tasks (`build`, `bootstrap`, `new-plugin`, `format`, `lint`) that call the kit's scripts directly - the project carries no build scripts of its own.
+- `plugins/my-plugin/` - a working first plugin (see below).
+
+`uv run poe build` runs `conan install` plus the CMake workflow preset; output lands in `build/<preset>/plugins/<name>/<platform-arch>/`. Once the first build works, you can pin the dependency graph with `conan lock create .` (using the same profiles) and commit the resulting `conan.lock` - builds pick it up automatically.
+
+## Scaffold more plugins
+
+```sh
+uv run poe new-plugin fun-votes        # from your repo's root
+```
+
+You get `plugins/fun-votes/` with a `PluginBase` skeleton, a self-registering example command, a `settings.jsonc` mapped by @ref CS2Kit::Core::JsonConfig, and translations - it builds, loads, and answers `!ping` before you write a line of code. The root `CMakeLists.txt` gains its `add_subdirectory` line automatically.
+
+## Plugins are one function call
+
+A plugin's `CMakeLists.txt` is a single declaration - `cs2_add_plugin` is defined by the kit and available after `add_subdirectory(vendor/cs2-kit)`:
+
+```cmake
+cs2_add_plugin(fun-votes
+    LIBRARIES nlohmann_json::nlohmann_json
+)
+```
+
+- `cs2_add_plugin(<name> [SOURCES ...] [INCLUDE_DIRS ...] [LIBRARIES ...])` creates the Metamod MODULE: `SOURCES` defaults to a recursive glob of `src/*.cpp`; the required HL2SDK translation units (`memoverride.cpp`, `convar.cpp`) and the `CS2Kit::CS2Kit` link are added for you, along with C++23, the static MSVC runtime, and ccache when present.
+- `cs2_install_plugin(<name>)` (called automatically) defines the deploy bundle as an install component: the module under `addons/<name>/bin/{win64|linuxsteamrt64}`, a generated Metamod `.vdf` under `addons/metamod`, the plugin's `configs/`, and the kit's shared gamedata. `cmake --install build/<preset> --component <name> --prefix <dir>` stages a server-ready `addons/` tree.
+
+## Adding to an existing repo
+
+If you already have a CMake project, you only need the submodule and the subdirectory:
 
 ```sh
 git submodule add https://github.com/suxrobgm/cs2-kit.git vendor/cs2-kit
@@ -18,25 +65,25 @@ git submodule update --init --recursive
 
 ```cmake
 add_subdirectory(vendor/cs2-kit)
-target_link_libraries(my-plugin PRIVATE CS2Kit::CS2Kit)
+add_subdirectory(plugins/my-plugin)    # cs2_add_plugin(my-plugin) inside
 ```
 
-Normal third-party libraries come from Conan; the Conan profiles under `vendor/cs2-kit/conan/profiles/` are canonical, so consuming repos reuse them instead of keeping copies.
+Run Conan before configuring (the kit's targets resolve cpr/nlohmann_json through `find_package`), or drive everything through `python vendor/cs2-kit/scripts/build.py`, which works from any repo root that vendors the kit.
 
-## Scaffold a plugin
+## PostgreSQL (optional)
 
-The kit ships a generator that stamps a working plugin - it builds, loads, and answers `!ping` before you write a line of code:
+Enable the kit's async Postgres client by setting `CS2KIT_ENABLE_POSTGRES` before the subdirectory and adding the driver to your Conan requires:
 
-```sh
-uv run poe new-plugin my-plugin        # from your repo's root
+```cmake
+set(CS2KIT_ENABLE_POSTGRES ON)
+add_subdirectory(vendor/cs2-kit)
 ```
 
-You get `plugins/my-plugin/` with a `PluginBase` skeleton, a self-registering example command, a `settings.jsonc` mapped by @ref CS2Kit::Core::JsonConfig, and translations. The root `CMakeLists.txt` gains its `add_subdirectory` line automatically. Expose the task in your own `pyproject.toml` as:
-
-```toml
-[tool.poe.tasks]
-new-plugin = "python vendor/cs2-kit/scripts/new_plugin.py"
+```python
+requires = ("cpr/1.11.2", "nlohmann_json/3.11.3", "libpqxx/7.10.0")
 ```
+
+The generated project carries both lines commented out, at exactly the spots to edit.
 
 ## The skeleton, by hand
 

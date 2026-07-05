@@ -17,16 +17,22 @@ Metamod:Source 2.0.
 include/CS2Kit/        Public API headers
 src/                   Implementation
 gamedata/              Engine signatures and offsets
-scripts/               Build tooling + new_plugin.py scaffold generator
-templates/plugin/      Scaffold template tree ($name/$ns/... placeholders)
+cmake/                 CS2KitSdk.cmake + CS2Plugin.cmake (cs2_add_plugin) + plugin.vdf.in
+scripts/               Build tooling (cwd-based; consumers invoke them directly),
+                       init_project.py + new_plugin.py scaffold generators
+templates/plugin/      Plugin scaffold tree ($name/$ns/... placeholders)
+templates/project/     Consumer-project scaffold tree ($project placeholder)
 tests/                 SDK-free unit tests (ctest)
 docs/                  Doxygen pages and guides
 vendor/                SDK submodules
 CMakeLists.txt         Standalone CMake build
-CMakePresets.json      Windows/Linux presets
+CMakePresets.json      Windows/Linux presets (consumers include this file)
 conanfile.py           Third-party deps
 conan/profiles/        Conan profiles (canonical; consuming repos reuse them)
 ```
+
+`templates/project/CMakePresets.json` includes the root `CMakePresets.json` by
+relative path; preset names are public API for consumers - rename with care.
 
 ## Build Commands
 
@@ -35,15 +41,24 @@ uv run poe build
 uv run poe build windows-msvc-release
 uv run poe build-linux
 uv run poe new-plugin <name>   # scaffold a plugin into the invoking repo's plugins/
+python scripts/init_project.py # stamp a whole consumer project (run from its root)
 ```
 
-`poe build` runs the full workflow preset (configure, build, ctest).
+`poe build` runs the full workflow preset (configure, build, ctest). All scripts
+target `Path.cwd()`, so consuming repos call them in place
+(`python vendor/cs2-kit/scripts/build.py`) instead of keeping wrappers.
 
-Consuming projects should use:
+Consuming projects add the subdirectory and declare plugins with the kit-provided
+`cs2_add_plugin` (from `cmake/CS2Plugin.cmake`, included by the kit's root
+CMakeLists):
 
 ```cmake
 add_subdirectory(vendor/cs2-kit)
-target_link_libraries(my-plugin PRIVATE CS2Kit::CS2Kit)
+```
+
+```cmake
+# plugins/<name>/CMakeLists.txt
+cs2_add_plugin(<name> [SOURCES ...] [INCLUDE_DIRS ...] [LIBRARIES ...])
 ```
 
 ## Code Conventions
