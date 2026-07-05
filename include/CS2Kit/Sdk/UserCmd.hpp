@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 namespace CS2Kit::Sdk
 {
@@ -25,5 +26,9 @@ bool InjectSubtickPress(void* userCmd, uint64_t button, bool pressed, float when
 
 /** True when @p userCmd already carries a pressed=true event for @p button. */
 bool HasSubtickPress(void* userCmd, uint64_t button);
+
+/** Debug: the command's subtick events for @p button (0 = all buttons) as
+ *  "btn<id>[+|-]@<when>" entries, e.g. "2+@0.42 2-@0.55". Empty when none. */
+std::string DescribeSubtickMoves(void* userCmd, uint64_t button);
 
 }  // namespace CS2Kit::Sdk

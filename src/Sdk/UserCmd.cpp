@@ -1,5 +1,6 @@
 #include <CS2Kit/Sdk/UserCmd.hpp>
 #include <cs_usercmd.pb.h>
+#include <format>
 
 namespace CS2Kit::Sdk
 {
@@ -44,6 +45,27 @@ bool HasSubtickPress(void* userCmd, uint64_t button)
             return true;
 
     return false;
+}
+
+std::string DescribeSubtickMoves(void* userCmd, uint64_t button)
+{
+    if (!userCmd)
+        return {};
+
+    const auto* cmd = static_cast<EngineUserCmd*>(userCmd);
+    if (!cmd->Cmd.has_base())
+        return {};
+
+    std::string result;
+    for (const CSubtickMoveStep& step : cmd->Cmd.base().subtick_moves())
+    {
+        if (button != 0 && step.button() != button)
+            continue;
+        if (!result.empty())
+            result += ' ';
+        result += std::format("btn{}{}@{:.3f}", step.button(), step.pressed() ? '+' : '-', step.when());
+    }
+    return result;
 }
 
 }  // namespace CS2Kit::Sdk
