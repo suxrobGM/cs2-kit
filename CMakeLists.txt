@@ -87,8 +87,10 @@ target_link_libraries(cs2-kit
 )
 
 if(CS2KIT_ENABLE_POSTGRES)
-    # PUBLIC: PostgresDatabase.hpp exposes pqxx types in its templates.
+    # PUBLIC: PostgresDatabase.hpp exposes pqxx types in its templates, and
+    # Api.hpp gates its Database surface on the macro in consumer TUs.
     target_link_libraries(cs2-kit PUBLIC libpqxx::pqxx)
+    target_compile_definitions(cs2-kit PUBLIC CS2KIT_ENABLE_POSTGRES=1)
 endif()
 
 if(WIN32)
