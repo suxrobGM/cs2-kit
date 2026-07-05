@@ -152,6 +152,34 @@ function(cs2kit_configure_sdk)
     endif()
 endfunction()
 
+# Add protoc rules for each proto name in ARGN, compiling ${proto_dir}/<name>.proto
+# into ${out_dir}; `proto_paths` is the ;-list of --proto_path import dirs.
+# Appends the generated .pb.cc paths to the list variable named by `out_list_var`.
+function(_cs2kit_protoc out_list_var protoc_path proto_dir out_dir proto_paths)
+    set(path_args)
+    foreach(path IN LISTS proto_paths)
+        list(APPEND path_args "--proto_path=${path}")
+    endforeach()
+
+    set(generated "${${out_list_var}}")
+    foreach(proto_name IN LISTS ARGN)
+        set(proto_file "${proto_dir}/${proto_name}.proto")
+        set(output_cc "${out_dir}/${proto_name}.pb.cc")
+
+        add_custom_command(
+            OUTPUT "${output_cc}" "${out_dir}/${proto_name}.pb.h"
+            COMMAND "${CMAKE_COMMAND}" -E make_directory "${out_dir}"
+            COMMAND "${protoc_path}" ${path_args} "--cpp_out=${out_dir}" "${proto_file}"
+            DEPENDS "${proto_file}" "${protoc_path}"
+            COMMENT "Generating ${proto_name}.pb.cc"
+            VERBATIM
+        )
+
+        list(APPEND generated "${output_cc}")
+    endforeach()
+    set("${out_list_var}" "${generated}" PARENT_SCOPE)
+endfunction()
+
 # Generate .pb.cc/.pb.h from the SDK protos with the SDK's bundled protoc;
 # returns the generated sources and their include dirs via the out args.
 function(cs2kit_generate_sdk_protobuf out_sources out_includes)
@@ -172,49 +200,14 @@ function(cs2kit_generate_sdk_protobuf out_sources out_includes)
     set(generated_shared_dir "${generated_root}/game/shared")
 
     set(generated_sources)
-
-    foreach(proto_name IN ITEMS network_connection networkbasetypes engine_gcmessages)
-        set(proto_file "${common_proto_dir}/${proto_name}.proto")
-        set(output_cc "${generated_public_dir}/${proto_name}.pb.cc")
-        set(output_h "${generated_public_dir}/${proto_name}.pb.h")
-
-        add_custom_command(
-            OUTPUT "${output_cc}" "${output_h}"
-            COMMAND "${CMAKE_COMMAND}" -E make_directory "${generated_public_dir}"
-            COMMAND "${protoc_path}"
-                "--proto_path=${common_proto_dir}"
-                "--proto_path=${google_proto_dir}"
-                "--cpp_out=${generated_public_dir}"
-                "${proto_file}"
-            DEPENDS "${proto_file}" "${protoc_path}"
-            COMMENT "Generating ${proto_name}.pb.cc"
-            VERBATIM
-        )
-
-        list(APPEND generated_sources "${output_cc}")
-    endforeach()
-
-    foreach(proto_name IN ITEMS usermessages usercmd gameevents)
-        set(proto_file "${shared_proto_dir}/${proto_name}.proto")
-        set(output_cc "${generated_shared_dir}/${proto_name}.pb.cc")
-        set(output_h "${generated_shared_dir}/${proto_name}.pb.h")
-
-        add_custom_command(
-            OUTPUT "${output_cc}" "${output_h}"
-            COMMAND "${CMAKE_COMMAND}" -E make_directory "${generated_shared_dir}"
-            COMMAND "${protoc_path}"
-                "--proto_path=${common_proto_dir}"
-                "--proto_path=${shared_proto_dir}"
-                "--proto_path=${google_proto_dir}"
-                "--cpp_out=${generated_shared_dir}"
-                "${proto_file}"
-            DEPENDS "${proto_file}" "${protoc_path}"
-            COMMENT "Generating ${proto_name}.pb.cc"
-            VERBATIM
-        )
-
-        list(APPEND generated_sources "${output_cc}")
-    endforeach()
+    _cs2kit_protoc(generated_sources "${protoc_path}"
+        "${common_proto_dir}" "${generated_public_dir}"
+        "${common_proto_dir};${google_proto_dir}"
+        network_connection networkbasetypes engine_gcmessages)
+    _cs2kit_protoc(generated_sources "${protoc_path}"
+        "${shared_proto_dir}" "${generated_shared_dir}"
+        "${common_proto_dir};${shared_proto_dir};${google_proto_dir}"
+        usermessages usercmd gameevents)
 
     set_source_files_properties(${generated_sources} PROPERTIES GENERATED TRUE)
     set("${out_sources}" "${generated_sources}" PARENT_SCOPE)
