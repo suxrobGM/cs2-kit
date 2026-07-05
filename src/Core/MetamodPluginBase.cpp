@@ -159,6 +159,7 @@ void MetamodPluginBase::Hook_GameFrame(bool simulating, bool firstTick, bool las
 void MetamodPluginBase::Hook_StartupServer(const GameSessionConfiguration_t&, ISource2WorldSession*,
                                            const char* mapName)
 {
+    Log::Info("Server startup: map '{}'.", mapName ? mapName : "<none>");
     _services->Events.OnServerStartup();
     OnServerStartup(mapName ? mapName : "");
 }

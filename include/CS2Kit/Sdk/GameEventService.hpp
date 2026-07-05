@@ -5,7 +5,7 @@
 #include <CS2Kit/Core/CallbackRegistry.hpp>
 #include <cstdint>
 #include <functional>
-#include <map>
+#include <set>
 #include <string>
 
 namespace CS2Kit::Sdk
@@ -47,12 +47,13 @@ public:
     void RemoveAllListeners();
 
     /**
-     * @brief Attach listeners that the engine rejected at Listen() time. Called by the kit's
-     * StartupServer hook on every map start.
+     * @brief Re-attach every listener to the engine. Called by the kit's StartupServer hook on
+     * every map start.
      *
-     * The event manager only knows an event's name after its definition file is loaded during
-     * the first map startup, so AddListener calls made at plugin load (server still hibernating,
-     * no map) fail and the listener would silently never fire.
+     * AddListener succeeds even before the first map, but the engine resets the event manager's
+     * listener table during map startup - so registrations made at plugin load (or on a previous
+     * map) are silently dropped and must be re-attached each map. CS2Fixes registers from
+     * StartupServer for the same reason.
      */
     void OnServerStartup();
 
@@ -66,7 +67,7 @@ private:
     };
 
     Core::CallbackRegistry<RegisteredListener> _listeners;
-    std::map<std::string, bool> _registeredEvents;  // event name -> attached to the engine
+    std::set<std::string> _registeredEvents;  // every event name ever listened to; see OnServerStartup
 };
 
 }  // namespace CS2Kit::Sdk

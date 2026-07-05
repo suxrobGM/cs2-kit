@@ -53,15 +53,10 @@ uint64_t GameEventService::Listen(const char* eventName, EventCallback callback)
     if (!mgr)
         return 0;
 
-    auto [it, inserted] = _registeredEvents.try_emplace(eventName, false);
-    if (inserted)
-    {
-        // AddListener fails while the event is undefined - definitions load with the first map,
-        // after plugin load on a cold boot. OnServerStartup retries these on every map start.
-        it->second = mgr->AddListener(this, eventName, true);
-        if (!it->second)
-            Log::Info("Game event '{}' unknown to the engine yet; attaching at map start.", eventName);
-    }
+    // This attach only serves listens made while a map is live (late load, mid-map Listen);
+    // the engine drops it during the next map startup, where OnServerStartup re-attaches.
+    if (_registeredEvents.insert(eventName).second)
+        mgr->AddListener(this, eventName, true);
 
     return _listeners.Add({eventName, std::move(callback)});
 }
@@ -69,20 +64,21 @@ uint64_t GameEventService::Listen(const char* eventName, EventCallback callback)
 void GameEventService::OnServerStartup()
 {
     auto* mgr = Engine().Interfaces.GameEventManager;
-    if (!mgr)
+    if (!mgr || _registeredEvents.empty())
         return;
 
-    for (auto& [name, attached] : _registeredEvents)
-    {
-        if (attached)
-            continue;
+    // Detach first so a listener that did survive is not registered twice (double dispatch).
+    mgr->RemoveListener(this);
 
-        attached = mgr->AddListener(this, name.c_str(), true);
-        if (attached)
-            Log::Info("Game event listener attached: {}.", name);
+    int attached = 0;
+    for (const auto& name : _registeredEvents)
+    {
+        if (mgr->AddListener(this, name.c_str(), true))
+            ++attached;
         else
-            Log::Warn("Game event listener still failed to attach: {}.", name);
+            Log::Warn("Game event listener failed to attach: {}.", name);
     }
+    Log::Info("Attached {}/{} game event listener(s) at map start.", attached, _registeredEvents.size());
 }
 
 void GameEventService::RemoveListener(uint64_t id)
