@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Build cs2-kit with Conan + CMake. Usage: build.py [preset]"""
+"""Build the current repo with Conan + CMake. Usage: build.py [preset]
+
+Targets the working directory, so it serves cs2-kit itself and any repo that
+vendors it: python vendor/cs2-kit/scripts/build.py [preset]
+"""
 
 from __future__ import annotations
 
@@ -8,7 +12,7 @@ from pathlib import Path
 
 import buildtools
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path.cwd()
 
 
 def main(argv: list[str] | None = None) -> None:

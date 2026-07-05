@@ -1,20 +1,29 @@
 #!/usr/bin/env python3
-"""Format cs2-kit C++ sources with clang-format. Usage: format.py [--check]"""
+"""Format C++ sources with clang-format. Usage: format.py [--check] [dirs...]
+
+Targets the working directory. Default dirs are cs2-kit's own sources when run
+from the kit root, else plugins/ (the consumer-repo layout); pass explicit dirs
+to override.
+"""
 
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
-import buildtools  # noqa: E402
+import buildtools
 
-DIRS = ["src", "include", "tests"]
+ROOT = Path.cwd()
+KIT_ROOT = Path(__file__).resolve().parents[1]
 
 
 def main() -> None:
-    buildtools.format_sources(ROOT, DIRS, check="--check" in sys.argv[1:])
+    args = sys.argv[1:]
+    check = "--check" in args
+    dirs = [a for a in args if a != "--check"]
+    if not dirs:
+        dirs = ["src", "include", "tests"] if ROOT == KIT_ROOT else ["plugins"]
+    buildtools.format_sources(ROOT, dirs, check=check)
 
 
 if __name__ == "__main__":

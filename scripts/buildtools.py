@@ -157,12 +157,17 @@ def build(repo_root: Path, preset: str, *, workflow: bool) -> None:
     else:
         die(f"Unknown preset: {preset}")
 
+    # Lockfile only when the repo pins one; fresh projects build unpinned until
+    # they run `conan lock create`.
+    lock = repo_root / "conan.lock"
+    lock_args = ["--lockfile", str(lock)] if lock.is_file() else []
+
     build_dir = repo_root / "build" / preset
     run_tool(
         "conan", "install", str(repo_root),
         "--output-folder", str(build_dir / "generators"),
         "--build=missing",
-        "--lockfile", str(repo_root / "conan.lock"),
+        *lock_args,
         "--profile:host", str(profile),
         "--profile:build", str(profile),
         *settings,
