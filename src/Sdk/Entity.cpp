@@ -169,6 +169,11 @@ uint64_t EntitySystem::GetPlayerButtons(int slot)
     return pButtonStates[0];  // m_pButtonStates is uint64[3]: [0] held, [1] changed, [2] scroll
 }
 
+int EntitySystem::SchemaOffset(const char* className, const char* fieldName)
+{
+    return Engine().Schema().GetOffset(className, fieldName);
+}
+
 void* EntitySystem::GetPlayerMovementServices(int slot)
 {
     if (!_schemaOffsetsResolved)
