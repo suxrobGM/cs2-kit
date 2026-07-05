@@ -16,6 +16,17 @@ struct EngineUserCmd
     CSGOUserCmdPB Cmd;
 };
 
+// Full engine stride, for indexing the cmds array ProcessUsercmds receives (CS2Fixes layout).
+struct EngineUserCmdFull
+{
+    char _head[0x10];
+    CSGOUserCmdPB Cmd;
+    char _tail[0x38];
+#ifdef _WIN32
+    char _tailWindows[0x8];
+#endif
+};
+
 }  // namespace
 
 bool InjectSubtickPress(void* userCmd, uint64_t button, bool pressed, float when)
@@ -66,6 +77,13 @@ std::string DescribeSubtickMoves(void* userCmd, uint64_t button)
         result += std::format("btn{}{}@{:.3f}", step.button(), step.pressed() ? '+' : '-', step.when());
     }
     return result;
+}
+
+void* UserCmdAt(void* cmds, int index)
+{
+    if (!cmds || index < 0)
+        return nullptr;
+    return static_cast<EngineUserCmdFull*>(cmds) + index;
 }
 
 }  // namespace CS2Kit::Sdk

@@ -148,6 +148,7 @@ bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, Core::Services& servi
 void Shutdown(Core::Services& services)
 {
     services.Precache.Shutdown();  // first: the engine must stop referencing our vtables
+    services.UserCmds.Remove();    // unpatch ProcessUsercmds before anything it dispatches to dies
     services.Events.RemoveAllListeners();
     services.Http.Stop();  // drains in-flight requests before their completion targets go away
     services.Scheduler.CancelAll();

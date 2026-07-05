@@ -31,4 +31,7 @@ bool HasSubtickPress(void* userCmd, uint64_t button);
  *  "btn<id>[+|-]@<when>" entries, e.g. "2+@0.42 2-@0.55". Empty when none. */
 std::string DescribeSubtickMoves(void* userCmd, uint64_t button);
 
+/** Address of the i-th command in the engine's CUserCmd array (UserCmdHook's cmds). */
+void* UserCmdAt(void* cmds, int index);
+
 }  // namespace CS2Kit::Sdk

@@ -16,6 +16,7 @@
 #include <CS2Kit/Sdk/MovementHook.hpp>
 #include <CS2Kit/Sdk/PrecacheService.hpp>
 #include <CS2Kit/Sdk/TransmitFilter.hpp>
+#include <CS2Kit/Sdk/UserCmdHook.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Translations.hpp>
 #include <memory>
@@ -59,6 +60,8 @@ public:
     Sdk::ConVarService ConVars;
     /** Dormant until a plugin calls Install(); removes its vtable hook on destruction. */
     Sdk::MovementHook MovementHook;
+    /** Dormant until a plugin calls Install(); removes its inline detour on destruction. */
+    Sdk::UserCmdHook UserCmds;
     Sdk::GameEventService Events;
     Core::Scheduler Scheduler;
     Sdk::ChatInputCapture ChatInput;
