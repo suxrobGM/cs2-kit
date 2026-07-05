@@ -216,30 +216,6 @@ function(cs2kit_generate_sdk_protobuf out_sources out_includes)
         list(APPEND generated_sources "${output_cc}")
     endforeach()
 
-    # CS-specific usercmd wrapper (CSGOUserCmdPB): hl2sdk-cs2 does not carry this proto, so the
-    # kit vendors it under protobufs/. Imports resolve against the SDK proto dirs above.
-    set(kit_proto_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../protobufs")
-    set(proto_file "${kit_proto_dir}/cs_usercmd.proto")
-    set(output_cc "${generated_shared_dir}/cs_usercmd.pb.cc")
-    set(output_h "${generated_shared_dir}/cs_usercmd.pb.h")
-
-    add_custom_command(
-        OUTPUT "${output_cc}" "${output_h}"
-        COMMAND "${CMAKE_COMMAND}" -E make_directory "${generated_shared_dir}"
-        COMMAND "${protoc_path}"
-            "--proto_path=${kit_proto_dir}"
-            "--proto_path=${common_proto_dir}"
-            "--proto_path=${shared_proto_dir}"
-            "--proto_path=${google_proto_dir}"
-            "--cpp_out=${generated_shared_dir}"
-            "${proto_file}"
-        DEPENDS "${proto_file}" "${protoc_path}"
-        COMMENT "Generating cs_usercmd.pb.cc"
-        VERBATIM
-    )
-
-    list(APPEND generated_sources "${output_cc}")
-
     set_source_files_properties(${generated_sources} PROPERTIES GENERATED TRUE)
     set("${out_sources}" "${generated_sources}" PARENT_SCOPE)
     set("${out_includes}" "${generated_public_dir};${generated_shared_dir}" PARENT_SCOPE)

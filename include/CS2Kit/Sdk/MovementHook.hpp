@@ -19,17 +19,12 @@ namespace CS2Kit::Sdk
  * (-1 when unresolved). A pre/post pair brackets exactly that player's movement
  * processing, which makes it the place for per-player state flips (see RawConVar).
  *
- * Pre callbacks additionally receive the CUserCmd* about to be processed. The layout is
- * engine-defined: the CSGOUserCmdPB protobuf lives at +0x10 (verified against CS2Fixes and
- * SwiftlyS2). Mutating it before the command runs changes what the movement code consumes.
- *
  * The vtable index is gamedata-maintained and drifts with CS2 updates; a wrong index
  * calls an unrelated vfunc and crashes, so re-verify it after every update.
  */
 class MovementHook
 {
 public:
-    using PreCallback = std::function<void(int slot, void* userCmd)>;
     using Callback = std::function<void(int slot)>;
 
     MovementHook() = default;
@@ -42,7 +37,7 @@ public:
     bool Installed() const { return _installed; }
     void Remove();
 
-    uint64_t ListenPre(PreCallback callback) { return _pre.Add(std::move(callback)); }
+    uint64_t ListenPre(Callback callback) { return _pre.Add(std::move(callback)); }
     uint64_t ListenPost(Callback callback) { return _post.Add(std::move(callback)); }
     void RemoveListener(uint64_t id);
 
@@ -53,7 +48,7 @@ private:
     void* Hook_RunCommandPre(void* userCmd);
     void* Hook_RunCommandPost(void* userCmd);
 
-    Core::CallbackRegistry<PreCallback> _pre;
+    Core::CallbackRegistry<Callback> _pre;
     Core::CallbackRegistry<Callback> _post;
     bool _installed = false;
     void* _vtable = nullptr;  // vtable of the hooked instance; see Remove()

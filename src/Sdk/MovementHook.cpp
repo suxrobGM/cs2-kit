@@ -83,11 +83,11 @@ int MovementHook::SlotFromMovementServices(void* movementServices) const
     return -1;
 }
 
-void* MovementHook::Hook_RunCommandPre(void* userCmd)
+void* MovementHook::Hook_RunCommandPre(void* /*userCmd*/)
 {
     _preSlot = SlotFromMovementServices(META_IFACEPTR(void));
     for (const auto& [id, callback] : _pre.Items())
-        callback(_preSlot, userCmd);
+        callback(_preSlot);
     RETURN_META_VALUE(MRES_IGNORED, nullptr);
 }
 
