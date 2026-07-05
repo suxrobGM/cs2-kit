@@ -35,10 +35,22 @@ bool InjectSubtickPress(void* userCmd, uint64_t button, bool pressed, float when
         return false;
 
     auto* cmd = static_cast<EngineUserCmd*>(userCmd);
-    CSubtickMoveStep* step = cmd->Cmd.mutable_base()->add_subtick_moves();
+    CBaseUserCmdPB* base = cmd->Cmd.mutable_base();
+
+    CSubtickMoveStep* step = base->add_subtick_moves();
     step->set_button(button);
     step->set_pressed(pressed);
     step->set_when(when);
+
+    // Keep the command's button masks consistent with the injected event: [1] is the
+    // changed-this-tick (edge) mask real presses always carry - input processing keys off it,
+    // with the subtick step supplying the within-tick timing.
+    CInButtonStatePB* buttons = base->mutable_buttons_pb();
+    buttons->set_buttonstate2(buttons->buttonstate2() | button);
+    if (pressed)
+        buttons->set_buttonstate1(buttons->buttonstate1() | button);
+    else
+        buttons->set_buttonstate1(buttons->buttonstate1() & ~button);
     return true;
 }
 
