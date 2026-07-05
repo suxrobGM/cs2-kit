@@ -17,8 +17,7 @@ PLUGIN_GLOBALVARS();
 // The SDK only forward-declares this (iloopmode.h keeps the real one commented out). SourceHook's
 // param table needs a complete type; the hook receives it by reference and never looks inside.
 class GameSessionConfiguration_t
-{
-};
+{};
 
 using CS2Kit::Core::Engine;
 
