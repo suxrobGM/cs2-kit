@@ -41,10 +41,10 @@ public:
     /** Lifetime call counters, readable via a plugin debug command for live diagnosis. */
     struct Stats
     {
-        uint64_t UsercmdsCalls = 0;   // ProcessUsercmds detour invocations
-        uint64_t MovementCalls = 0;   // ProcessMovement detour invocations
-        uint64_t ScopesEntered = 0;   // outermost scopes with a resolved slot
-        uint64_t UnresolvedSlots = 0; // outermost scopes where slot resolution failed (-1)
+        uint64_t UsercmdsCalls = 0;    // ProcessUsercmds detour invocations
+        uint64_t MovementCalls = 0;    // ProcessMovement detour invocations
+        uint64_t ScopesEntered = 0;    // outermost scopes with a resolved slot
+        uint64_t UnresolvedSlots = 0;  // outermost scopes where slot resolution failed (-1)
     };
 
     MovementHook() = default;
@@ -79,8 +79,8 @@ private:
     Core::CallbackRegistry<Callback> _pre;
     Core::CallbackRegistry<Callback> _post;
     bool _installed = false;
-    int _depth = 0;      // nesting depth: ProcessMovement usually runs inside ProcessUsercmds
-    int _scopeSlot = -1; // slot resolved at the outermost entry, reused while nested
+    int _depth = 0;       // nesting depth: ProcessMovement usually runs inside ProcessUsercmds
+    int _scopeSlot = -1;  // slot resolved at the outermost entry, reused while nested
     Stats _stats;
 };
 

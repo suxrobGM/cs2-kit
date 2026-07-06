@@ -2,7 +2,6 @@
 #include <CS2Kit/Core/Slot.hpp>
 #include <CS2Kit/Sdk/MovementHook.hpp>
 #include <CS2Kit/Utils/Log.hpp>
-
 #include <safetyhook.hpp>
 
 using CS2Kit::Core::Engine;
@@ -68,7 +67,8 @@ bool MovementHook::Install()
     if (_installed)
         return true;
 
-    bool movement = InstallDetour(g_processMovement, "ProcessMovement", reinterpret_cast<void*>(&ProcessMovementDetour));
+    bool movement =
+        InstallDetour(g_processMovement, "ProcessMovement", reinterpret_cast<void*>(&ProcessMovementDetour));
     bool usercmds =
         InstallDetour(g_processUsercmds, "ProcessUsercmds", reinterpret_cast<void*>(&ProcessUsercmdsDetour));
 
