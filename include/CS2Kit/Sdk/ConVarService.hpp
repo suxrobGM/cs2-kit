@@ -22,10 +22,6 @@ namespace CS2Kit::Sdk
  * There is no type checking - use the accessor matching the convar's actual engine type.
  * The handle stays valid for the convar's lifetime (registered convars outlive map changes),
  * so it can be resolved once and cached.
- *
- * Source 2 convars expose two value storages (the shared slot -1 and splitscreen slot 0),
- * and engine code is not consistent about which one it reads. Writes go to both; reads use
- * the shared slot.
  */
 class RawConVar
 {
@@ -40,10 +36,7 @@ public:
     void SetFloat(float value);
 
 private:
-    // CVValue_t* (kept as void* so this header stays SDK-free); _slot0 is null when it
-    // aliases the shared storage.
-    void* _value = nullptr;
-    void* _slot0 = nullptr;
+    void* _value = nullptr;  // the convar's CVValue_t* (kept as void* so this header stays SDK-free)
 };
 
 /**

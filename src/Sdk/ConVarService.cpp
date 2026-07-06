@@ -39,12 +39,10 @@ RawConVar::RawConVar(const char* name)
         return;
 
     // Slot -1 is the shared (non-splitscreen) storage; some cvars only expose slot 0.
-    // Engine code is inconsistent about which storage it reads, so keep both and write
-    // through both - otherwise a raw flip can land in storage the reader never consults.
-    CVValue_t* shared = ref.GetConVarData()->Value(CSplitScreenSlot(-1));
-    CVValue_t* slot0 = ref.GetConVarData()->Value(CSplitScreenSlot(0));
-    _value = shared ? shared : slot0;
-    _slot0 = (slot0 && slot0 != _value) ? slot0 : nullptr;
+    CVValue_t* value = ref.GetConVarData()->Value(CSplitScreenSlot(-1));
+    if (!value)
+        value = ref.GetConVarData()->Value(CSplitScreenSlot(0));
+    _value = value;
 }
 
 bool RawConVar::GetBool() const
@@ -56,8 +54,6 @@ void RawConVar::SetBool(bool value)
 {
     if (_value)
         static_cast<CVValue_t*>(_value)->m_bValue = value;
-    if (_slot0)
-        static_cast<CVValue_t*>(_slot0)->m_bValue = value;
 }
 
 float RawConVar::GetFloat() const
@@ -69,8 +65,6 @@ void RawConVar::SetFloat(float value)
 {
     if (_value)
         static_cast<CVValue_t*>(_value)->m_fl32Value = value;
-    if (_slot0)
-        static_cast<CVValue_t*>(_slot0)->m_fl32Value = value;
 }
 
 bool ConVarService::Initialize()

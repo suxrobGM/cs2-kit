@@ -13,8 +13,7 @@ if(NOT DEFINED CMAKE_CXX_COMPILER_LAUNCHER)
     endif()
 endif()
 
-# C is for the vendored Zydis amalgamation (SafetyHook's disassembler).
-project(cs2-kit VERSION 1.0.0 LANGUAGES C CXX)
+project(cs2-kit VERSION 1.0.0 LANGUAGES CXX)
 
 option(CS2KIT_BUILD_STANDALONE "Build CS2Kit as a standalone project" ${PROJECT_IS_TOP_LEVEL})
 option(CS2KIT_ENABLE_POSTGRES "Build the CS2Kit::Database Postgres client (requires libpqxx)" OFF)
@@ -55,24 +54,6 @@ set(CS2KIT_HL2SDK_SOURCES
     "${CS2KIT_HL2SDK_DIR}/tier1/keyvalues3.cpp"
 )
 
-# Vendored SafetyHook amalgamation (inline detours for non-virtual engine
-# functions); see vendor/safetyhook/README.md for provenance. A separate target
-# so the SDK's interface flags (notably MSVC /TP, which would force Zydis.c
-# through the C++ compiler) never apply to it.
-add_library(cs2kit-safetyhook STATIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/safetyhook/safetyhook.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/safetyhook/Zydis.c"
-)
-target_compile_features(cs2kit-safetyhook PRIVATE cxx_std_23)
-set_target_properties(cs2kit-safetyhook PROPERTIES
-    CXX_STANDARD 23
-    CXX_STANDARD_REQUIRED ON
-    POSITION_INDEPENDENT_CODE ON
-)
-target_include_directories(cs2kit-safetyhook PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/safetyhook"
-)
-
 add_library(cs2-kit STATIC
     ${CS2KIT_SOURCES}
     ${CS2KIT_HL2SDK_SOURCES}
@@ -103,8 +84,6 @@ target_link_libraries(cs2-kit
         CS2Kit::HL2SDK
         cpr::cpr
         nlohmann_json::nlohmann_json
-    PRIVATE
-        cs2kit-safetyhook
 )
 
 if(CS2KIT_ENABLE_POSTGRES)
