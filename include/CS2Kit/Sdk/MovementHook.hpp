@@ -8,19 +8,25 @@ namespace CS2Kit::Sdk
 {
 
 /**
- * @brief Manual vtable hook on CPlayer_MovementServices::RunCommand - the per-tick,
- * per-player movement entry point (gamedata offset "RunCommand").
+ * @brief Inline detour on `CCSPlayer_MovementServices::ProcessMovement` - the per-tick,
+ * per-player movement entry point (gamedata signature "ProcessMovement").
  *
- * Install() needs at least one live movement-services instance (i.e. a spawned pawn), so
- * call it lazily - e.g. from a PlayerSpawn listener - and treat false as "retry later".
- * SourceHook patches the shared vtable, so hooking one instance covers every player.
+ * ProcessMovement is where the actual movement simulation runs (jump/stamina/friction/
+ * velocity), so a pre/post pair brackets exactly the code that reads the movement convars.
+ * That makes it the place for per-player state flips (see RawConVar) that must be visible
+ * to the engine's own movement code - e.g. server-side auto-bunnyhop for one player.
  *
- * Pre/post callbacks fire around each player's RunCommand with the owning slot resolved
- * (-1 when unresolved). A pre/post pair brackets exactly that player's movement
- * processing, which makes it the place for per-player state flips (see RawConVar).
+ * Install() resolves the signature and patches the function; it needs no live pawn and can
+ * be called from OnLoad or lazily. The detour is removed on destruction (plugin unload).
  *
- * The vtable index is gamedata-maintained and drifts with CS2 updates; a wrong index
- * calls an unrelated vfunc and crashes, so re-verify it after every update.
+ * Pre/post callbacks fire around each player's ProcessMovement with the owning slot
+ * resolved (-1 when unresolved).
+ *
+ * The byte pattern is gamedata-maintained and drifts with CS2 updates; a failed match
+ * just disables the hook (Install() returns false), but re-verify the pattern against
+ * SwiftlyS2/CS2Fixes gamedata after every game update. Only one plugin per server should
+ * install this detour: stacked inline hooks from separately unloadable modules are only
+ * safe to remove in LIFO order.
  */
 class MovementHook
 {
@@ -32,7 +38,7 @@ public:
     MovementHook(const MovementHook&) = delete;
     MovementHook& operator=(const MovementHook&) = delete;
 
-    /** Install the vtable hook. False when the gamedata offset is missing or no pawn is live yet. */
+    /** Install the detour. False when the gamedata signature is missing or patching failed. */
     bool Install();
     bool Installed() const { return _installed; }
     void Remove();
@@ -44,15 +50,13 @@ public:
     /** Slot whose pawn owns @p movementServices, or -1. */
     int SlotFromMovementServices(void* movementServices) const;
 
-private:
-    void* Hook_RunCommandPre(void* userCmd);
-    void* Hook_RunCommandPost(void* userCmd);
+    /** @internal Detour body: pre listeners, original ProcessMovement, post listeners. */
+    void OnProcessMovement(void* movementServices, void* moveData);
 
+private:
     Core::CallbackRegistry<Callback> _pre;
     Core::CallbackRegistry<Callback> _post;
     bool _installed = false;
-    void* _vtable = nullptr;  // vtable of the hooked instance; see Remove()
-    int _preSlot = -1;        // slot resolved in the pre hook, reused by the immediately-following post
 };
 
 }  // namespace CS2Kit::Sdk

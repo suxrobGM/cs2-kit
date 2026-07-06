@@ -4,28 +4,24 @@
 
 ## MovementHook
 
-@ref CS2Kit::Sdk::MovementHook is a manual vtable hook on `CPlayer_MovementServices::RunCommand` - the per-tick, per-player movement entry point. Pre/post callbacks bracket exactly one player's movement processing, which makes the pair the right place for per-player state flips (see @ref CS2Kit::Sdk::RawConVar "RawConVar").
+@ref CS2Kit::Sdk::MovementHook is an inline detour on `CCSPlayer_MovementServices::ProcessMovement` - the per-tick, per-player movement simulation (jump, stamina, friction, velocity all run inside). Pre/post callbacks bracket exactly one player's movement code, which makes the pair the right place for per-player state flips (see @ref CS2Kit::Sdk::RawConVar "RawConVar") that the engine's own movement logic must observe - e.g. server-side auto-bunnyhop for a single player.
 
-The service is a dormant `Services` member: it costs nothing until a plugin calls `Install()`, and it removes its hook on destruction.
+The service is a dormant `Services` member: it costs nothing until a plugin calls `Install()`, and it removes its detour on destruction.
 
 ```cpp
 // Callbacks can be registered up front; they fire only once the hook is installed.
 Engine().MovementHook.ListenPre([](int slot) { /* before this player's movement runs */ });
 Engine().MovementHook.ListenPost([](int slot) { /* after it ran - restore state here */ });
 
-// Install needs a live movement-services instance (a spawned pawn), so call it lazily
-// and treat false as "retry later" - a PlayerSpawn listener is the natural place:
-Engine().Events.Listen<Events::PlayerSpawn>([](const Events::PlayerSpawn&) {
-    Engine().MovementHook.Install();   // no-op once installed
-});
+Engine().MovementHook.Install();   // resolves the signature and patches; no-op once installed
 ```
 
 Details worth knowing:
 
-- SourceHook patches the class vtable, so hooking any one instance covers every player.
+- The detour (SafetyHook, vendored under `vendor/safetyhook/`) patches the function itself, so it covers every player and needs no live pawn - `Install()` works from OnLoad.
 - The owning slot is resolved for you (`-1` when unresolved, e.g. an instance mid-destruction).
-- Removal works even after the hooked instance died (map change): the service keeps the vtable pointer and hands SourceHook a stand-in object.
-- The vtable index lives in gamedata as `"RunCommand"` and **drifts with CS2 updates** - a wrong index calls an unrelated vfunc and crashes. Re-verify it (against SwiftlyS2/CS2Fixes gamedata) after every game update.
+- The byte pattern lives in gamedata as `"ProcessMovement"` and **drifts with CS2 updates** - a failed match disables the hook with a logged warning (no crash). Re-verify the pattern (against SwiftlyS2/CS2Fixes gamedata) after every game update.
+- Run at most one plugin that installs this detour: inline hooks stacked by separately unloadable modules are only safe to remove in reverse install order.
 
 ## ServerCommand
 

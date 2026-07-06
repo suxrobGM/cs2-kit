@@ -1,12 +1,9 @@
-#include <CS2Kit/Core/MetamodPluginBase.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Core/Slot.hpp>
-#include <CS2Kit/Sdk/Entity.hpp>
-#include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/MovementHook.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 
-PLUGIN_GLOBALVARS();
+#include <safetyhook.hpp>
 
 using CS2Kit::Core::Engine;
 
@@ -14,37 +11,50 @@ namespace CS2Kit::Sdk
 {
 using namespace CS2Kit::Utils;
 
-// void* return/param stand in for the real CPlayer_MovementServices::RunCommand(CUserCmd*)
-// signature - a pre/post observer never touches either. The vtable index is reconfigured
-// from gamedata at install time.
-SH_DECL_MANUALHOOK1(CS2Kit_MovementRunCommand, 0, 0, 0, void*, void*);
+namespace
+{
+
+// Exactly one MovementHook exists per plugin module (a Services member); the plain-function
+// detour thunk reaches it through this pointer. Both are module-local statics, so two plugins
+// each get their own independent detour (see the header's stacking caveat).
+MovementHook* g_activeHook = nullptr;
+SafetyHookInline g_processMovement{};
+
+// void CCSPlayer_MovementServices::ProcessMovement(CMoveData*): member function, so the
+// detour receives `this` as the first argument under both x64 conventions.
+void ProcessMovementDetour(void* movementServices, void* moveData)
+{
+    if (g_activeHook)
+        g_activeHook->OnProcessMovement(movementServices, moveData);
+    else
+        g_processMovement.call<void>(movementServices, moveData);
+}
+
+}  // namespace
 
 bool MovementHook::Install()
 {
     if (_installed)
         return true;
 
-    int index = Engine().GameData.GetOffset("RunCommand");
-    if (index < 0)
+    void* target = Engine().GameData.FindSignature("ProcessMovement");
+    if (!target)
     {
-        Log::Warn("MovementHook: gamedata offset 'RunCommand' missing; hook disabled.");
+        Log::Warn("MovementHook: gamedata signature 'ProcessMovement' not found; hook disabled.");
         return false;
     }
 
-    // Any live instance works: SourceHook patches the class vtable, covering all players.
-    void* instance = nullptr;
-    for (int slot = 0; slot < Core::MaxPlayers && !instance; ++slot)
-        instance = Engine().Entities.GetPlayerMovementServices(slot);
-    if (!instance)
+    auto hook = safetyhook::InlineHook::create(target, reinterpret_cast<void*>(&ProcessMovementDetour));
+    if (!hook)
+    {
+        Log::Warn("MovementHook: inline detour on ProcessMovement failed to install.");
         return false;
+    }
 
-    SH_MANUALHOOK_RECONFIGURE(CS2Kit_MovementRunCommand, index, 0, 0);
-    SH_ADD_MANUALHOOK(CS2Kit_MovementRunCommand, instance, SH_MEMBER(this, &MovementHook::Hook_RunCommandPre), false);
-    SH_ADD_MANUALHOOK(CS2Kit_MovementRunCommand, instance, SH_MEMBER(this, &MovementHook::Hook_RunCommandPost), true);
-
-    _vtable = *static_cast<void**>(instance);
+    g_processMovement = std::move(*hook);
+    g_activeHook = this;
     _installed = true;
-    Log::Info("Movement RunCommand hook installed (vtable index {}).", index);
+    Log::Info("Movement ProcessMovement detour installed at {}.", target);
     return true;
 }
 
@@ -53,15 +63,9 @@ void MovementHook::Remove()
     if (!_installed)
         return;
 
-    // The instance hooked in Install() may be gone by now (map change destroys pawns).
-    // SourceHook locates a manual vhook through the object's vtable pointer, so hand it a
-    // stand-in object whose first pointer-sized field is that same vtable.
-    void* fake = &_vtable;
-    SH_REMOVE_MANUALHOOK(CS2Kit_MovementRunCommand, fake, SH_MEMBER(this, &MovementHook::Hook_RunCommandPre), false);
-    SH_REMOVE_MANUALHOOK(CS2Kit_MovementRunCommand, fake, SH_MEMBER(this, &MovementHook::Hook_RunCommandPost), true);
-
+    g_activeHook = nullptr;
+    g_processMovement = {};  // move-assign empty: destructor of the old value unpatches
     _installed = false;
-    _vtable = nullptr;
 }
 
 void MovementHook::RemoveListener(uint64_t id)
@@ -83,22 +87,17 @@ int MovementHook::SlotFromMovementServices(void* movementServices) const
     return -1;
 }
 
-void* MovementHook::Hook_RunCommandPre(void* /*userCmd*/)
+void MovementHook::OnProcessMovement(void* movementServices, void* moveData)
 {
-    _preSlot = SlotFromMovementServices(META_IFACEPTR(void));
-    for (const auto& [id, callback] : _pre.Items())
-        callback(_preSlot);
-    RETURN_META_VALUE(MRES_IGNORED, nullptr);
-}
+    int slot = SlotFromMovementServices(movementServices);
 
-void* MovementHook::Hook_RunCommandPost(void* /*userCmd*/)
-{
-    // Post always brackets the same RunCommand call as the preceding pre (movement is
-    // processed one player at a time, no nesting), so reuse the pre-resolved slot rather
-    // than repeating the O(players) reverse lookup.
+    for (const auto& [id, callback] : _pre.Items())
+        callback(slot);
+
+    g_processMovement.call<void>(movementServices, moveData);
+
     for (const auto& [id, callback] : _post.Items())
-        callback(_preSlot);
-    RETURN_META_VALUE(MRES_IGNORED, nullptr);
+        callback(slot);
 }
 
 }  // namespace CS2Kit::Sdk
