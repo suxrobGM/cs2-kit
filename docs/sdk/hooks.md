@@ -4,24 +4,27 @@
 
 ## MovementHook
 
-@ref CS2Kit::Sdk::MovementHook is an inline detour on `CCSPlayer_MovementServices::ProcessMovement` - the per-tick, per-player movement simulation (jump, stamina, friction, velocity all run inside). Pre/post callbacks bracket exactly one player's movement code, which makes the pair the right place for per-player state flips (see @ref CS2Kit::Sdk::RawConVar "RawConVar") that the engine's own movement logic must observe - e.g. server-side auto-bunnyhop for a single player.
+@ref CS2Kit::Sdk::MovementHook brackets one player's movement processing with two inline detours: `CCSPlayerController::ProcessUsercmds` (the usercmd batch - subtick button decomposition and the jump code's convar reads happen here) and `CCSPlayer_MovementServices::ProcessMovement` (the movement simulation). ProcessMovement alone is not enough: the subtick jump code reads `sv_autobunnyhopping` outside it, which was exactly the bug that motivated the second detour.
 
-The service is a dormant `Services` member: it costs nothing until a plugin calls `Install()`, and it removes its detour on destruction.
+Listeners see one logical scope: when the calls nest, pre fires once at the outermost entry and post once at the outermost exit. That makes the pair the right place for per-player state flips (see @ref CS2Kit::Sdk::RawConVar "RawConVar") that the engine's own movement logic must observe - e.g. server-side auto-bunnyhop for a single player.
+
+The service is a dormant `Services` member: it costs nothing until a plugin calls `Install()`, and it removes its detours on destruction.
 
 ```cpp
 // Callbacks can be registered up front; they fire only once the hook is installed.
 Engine().MovementHook.ListenPre([](int slot) { /* before this player's movement runs */ });
 Engine().MovementHook.ListenPost([](int slot) { /* after it ran - restore state here */ });
 
-Engine().MovementHook.Install();   // resolves the signature and patches; no-op once installed
+Engine().MovementHook.Install();   // resolves the signatures and patches; no-op once installed
 ```
 
 Details worth knowing:
 
-- The detour (SafetyHook, vendored under `vendor/safetyhook/`) patches the function itself, so it covers every player and needs no live pawn - `Install()` works from OnLoad.
+- The detours (SafetyHook, vendored under `vendor/safetyhook/`) patch the functions themselves, so they cover every player and need no live pawn - `Install()` works from OnLoad.
 - The owning slot is resolved for you (`-1` when unresolved, e.g. an instance mid-destruction).
-- The byte pattern lives in gamedata as `"ProcessMovement"` and **drifts with CS2 updates** - a failed match disables the hook with a logged warning (no crash). Re-verify the pattern (against SwiftlyS2/CS2Fixes gamedata) after every game update.
-- Run at most one plugin that installs this detour: inline hooks stacked by separately unloadable modules are only safe to remove in reverse install order.
+- `GetStats()` exposes lifetime call/scope/unresolved counters - surface them through a plugin debug command for live diagnosis (bhop does this via `bhop_debug`).
+- The byte patterns live in gamedata as `"ProcessUsercmds"` and `"ProcessMovement"` and **drift with CS2 updates** - each failed match disables just that detour with a logged warning (no crash). Re-verify the patterns (against SwiftlyS2/CS2Fixes gamedata) after every game update.
+- Run at most one plugin that installs these detours: inline hooks stacked by separately unloadable modules are only safe to remove in reverse install order.
 
 ## ServerCommand
 

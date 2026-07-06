@@ -43,9 +43,9 @@
 
   "signatures": {
     // CCSPlayer_MovementServices::ProcessMovement(CMoveData*) - the per-player
-    // movement entry point (jump/stamina/velocity code runs inside). Detoured by
-    // Sdk::MovementHook; match IS the function. Windows synced from CS2Fixes and
-    // SwiftlyS2 (identical there); Linux from SwiftlyS2 (fresher as of 2026-06).
+    // movement simulation (stamina/friction/velocity). Detoured by Sdk::MovementHook;
+    // match IS the function. Windows synced from CS2Fixes and SwiftlyS2 (identical
+    // there); Linux from SwiftlyS2 (fresher as of 2026-06).
     // Nearby strings: "PlayerMovementTraces", "following entity %d".
     "ProcessMovement": {
       "library": "server",
@@ -54,6 +54,22 @@
       },
       "linux": {
         "pattern": "55 48 89 E5 41 57 41 56 41 55 41 54 49 89 F4 53 48 89 FB 48 83 EC ? 48 8B 57"
+      }
+    },
+
+    // CCSPlayerController::ProcessUsercmds(CUserCmd*, int, bool, float) - the
+    // per-player usercmd batch; subtick button decomposition and the jump code's
+    // convar reads (sv_autobunnyhopping) happen here, OUTSIDE ProcessMovement.
+    // Detoured by Sdk::MovementHook alongside ProcessMovement so a pre/post pair
+    // brackets both. Synced from CS2Fixes; verified against the live linux server
+    // binary 2026-07-06 (unique match).
+    "ProcessUsercmds": {
+      "library": "server",
+      "windows": {
+        "pattern": "48 8B C4 44 88 48 20 44 89 40 18 48 89 50 10 53"
+      },
+      "linux": {
+        "pattern": "55 48 89 E5 41 57 41 56 41 55 41 54 53 48 89 FB 48 83 EC ? 89 4D"
       }
     },
 
