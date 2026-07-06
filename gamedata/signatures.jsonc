@@ -38,6 +38,13 @@
     "CheckTransmitPlayerSlot": {
       "windows": 576,
       "linux": 576
+    },
+    // CPlayer_MovementServices::RunCommand vtable index (SwiftlyS2: 22/23, re-verified
+    // 2026-07). The deferred physics-phase movement entry, bracketed by Sdk::MovementHook
+    // alongside its detours. A wrong index calls an unrelated vfunc and crashes.
+    "RunCommand": {
+      "windows": 22,
+      "linux": 23
     }
   },
 

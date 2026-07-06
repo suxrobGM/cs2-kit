@@ -8,15 +8,13 @@ namespace CS2Kit::Sdk
 {
 
 /**
- * @brief Inline detours bracketing one player's movement processing (gamedata signatures
- * "ProcessUsercmds" and "ProcessMovement").
- *
- * Two detours cover the span where the engine consumes movement state:
- * `CCSPlayerController::ProcessUsercmds` (the per-player usercmd batch - subtick button
- * decomposition and jump handling live here) and `CCSPlayer_MovementServices::ProcessMovement`
- * (the movement simulation itself). ProcessMovement alone is NOT enough for convar-sensitive
- * behavior: the subtick jump code reads e.g. sv_autobunnyhopping outside it, which is why both
- * are bracketed.
+ * @brief Brackets one player's movement processing with three hooks: inline detours on
+ * `CCSPlayerController::ProcessUsercmds` (usercmd intake) and
+ * `CCSPlayer_MovementServices::ProcessMovement` (gamedata signatures of the same names), plus
+ * a vtable hook on `CPlayer_MovementServices::RunCommand` (gamedata offset "RunCommand") - the
+ * deferred physics-phase entry that actually runs the movement simulation, jump checks
+ * included. Live counter data showed the physics phase is NOT nested inside ProcessUsercmds,
+ * so all three are needed to cover every place the engine reads movement convars.
  *
  * Listeners see one logical scope: when the calls nest, pre fires once on the outermost entry
  * and post once on the outermost exit, so a pre/post pair always brackets everything the engine
@@ -24,14 +22,16 @@ namespace CS2Kit::Sdk
  * that the engine's own movement code must observe - e.g. server-side auto-bunnyhop for one
  * player.
  *
- * Install() resolves the signatures and patches; it needs no live pawn and can be called from
- * OnLoad or lazily. Detours are removed on destruction (plugin unload). Each signature fails
- * soft: a missed pattern logs a warning and skips that detour.
+ * Install() resolves the signatures and patches immediately; the RunCommand vtable hook
+ * additionally needs a live movement-services instance (a spawned pawn), so Install() may be
+ * called repeatedly - it retries just that part until it succeeds (a PlayerSpawn listener is
+ * the natural place). Each hook fails soft with a logged warning.
  *
- * The byte patterns are gamedata-maintained and drift with CS2 updates - re-verify against
- * SwiftlyS2/CS2Fixes gamedata after every game update. Only one plugin per server should
- * install these detours: stacked inline hooks from separately unloadable modules are only
- * safe to remove in LIFO order.
+ * The byte patterns and the vtable index are gamedata-maintained and drift with CS2 updates -
+ * re-verify against SwiftlyS2/CS2Fixes gamedata after every game update (a wrong vtable index
+ * calls an unrelated vfunc and crashes). Only one plugin per server should install the inline
+ * detours: stacked inline hooks from separately unloadable modules are only safe to remove in
+ * LIFO order.
  */
 class MovementHook
 {
@@ -43,6 +43,7 @@ public:
     {
         uint64_t UsercmdsCalls = 0;    // ProcessUsercmds detour invocations
         uint64_t MovementCalls = 0;    // ProcessMovement detour invocations
+        uint64_t RunCommandCalls = 0;  // RunCommand vtable-hook invocations
         uint64_t ScopesEntered = 0;    // outermost scopes with a resolved slot
         uint64_t UnresolvedSlots = 0;  // outermost scopes where slot resolution failed (-1)
     };
@@ -52,7 +53,8 @@ public:
     MovementHook(const MovementHook&) = delete;
     MovementHook& operator=(const MovementHook&) = delete;
 
-    /** Install the detours. False when nothing could be patched (all signatures missing). */
+    /** Install the hooks. Safe to call repeatedly: the RunCommand vtable part retries until a
+     *  live pawn exists. False when nothing at all could be patched. */
     bool Install();
     bool Installed() const { return _installed; }
     void Remove();
@@ -75,12 +77,18 @@ public:
 private:
     void EnterScope(int slot);
     void ExitScope();
+    bool InstallRunCommandHook();
+    void RemoveRunCommandHook();
+    void* Hook_RunCommandPre(void* userCmd);
+    void* Hook_RunCommandPost(void* userCmd);
 
     Core::CallbackRegistry<Callback> _pre;
     Core::CallbackRegistry<Callback> _post;
     bool _installed = false;
-    int _depth = 0;       // nesting depth: ProcessMovement usually runs inside ProcessUsercmds
-    int _scopeSlot = -1;  // slot resolved at the outermost entry, reused while nested
+    bool _runCommandHooked = false;
+    void* _vtable = nullptr;  // vtable of the RunCommand-hooked instance; see RemoveRunCommandHook()
+    int _depth = 0;           // nesting depth across the three bracketing hooks
+    int _scopeSlot = -1;      // slot resolved at the outermost entry, reused while nested
     Stats _stats;
 };
 

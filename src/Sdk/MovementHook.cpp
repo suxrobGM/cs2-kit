@@ -1,14 +1,22 @@
+#include <CS2Kit/Core/MetamodPluginBase.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Core/Slot.hpp>
 #include <CS2Kit/Sdk/MovementHook.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <safetyhook.hpp>
 
+PLUGIN_GLOBALVARS();
+
 using CS2Kit::Core::Engine;
 
 namespace CS2Kit::Sdk
 {
 using namespace CS2Kit::Utils;
+
+// void* return/param stand in for the real CPlayer_MovementServices::RunCommand(CUserCmd*)
+// signature - a pre/post observer never touches either. The vtable index is reconfigured
+// from gamedata at install time.
+SH_DECL_MANUALHOOK1(CS2Kit_MovementRunCommand, 0, 0, 0, void*, void*);
 
 namespace
 {
@@ -64,24 +72,74 @@ bool InstallDetour(SafetyHookInline& hook, const char* signatureName, void* deto
 
 bool MovementHook::Install()
 {
-    if (_installed)
-        return true;
+    if (!_installed)
+    {
+        bool movement =
+            InstallDetour(g_processMovement, "ProcessMovement", reinterpret_cast<void*>(&ProcessMovementDetour));
+        bool usercmds =
+            InstallDetour(g_processUsercmds, "ProcessUsercmds", reinterpret_cast<void*>(&ProcessUsercmdsDetour));
 
-    bool movement =
-        InstallDetour(g_processMovement, "ProcessMovement", reinterpret_cast<void*>(&ProcessMovementDetour));
-    bool usercmds =
-        InstallDetour(g_processUsercmds, "ProcessUsercmds", reinterpret_cast<void*>(&ProcessUsercmdsDetour));
+        if (movement || usercmds)
+        {
+            g_activeHook = this;
+            _installed = true;
+        }
+    }
 
-    if (!movement && !usercmds)
+    // Separate lifecycle: the vtable hook needs a live pawn, so it may succeed only on a
+    // later call (e.g. from a PlayerSpawn listener).
+    if (!_runCommandHooked)
+        InstallRunCommandHook();
+
+    return _installed || _runCommandHooked;
+}
+
+bool MovementHook::InstallRunCommandHook()
+{
+    int index = Engine().GameData.GetOffset("RunCommand");
+    if (index < 0)
+    {
+        Log::Warn("MovementHook: gamedata offset 'RunCommand' missing; vtable hook disabled.");
         return false;
+    }
 
-    g_activeHook = this;
-    _installed = true;
+    // Any live instance works: SourceHook patches the class vtable, covering all players.
+    void* instance = nullptr;
+    for (int slot = 0; slot < Core::MaxPlayers && !instance; ++slot)
+        instance = Engine().Entities.GetPlayerMovementServices(slot);
+    if (!instance)
+        return false;  // no pawn yet - Install() retries later
+
+    SH_MANUALHOOK_RECONFIGURE(CS2Kit_MovementRunCommand, index, 0, 0);
+    SH_ADD_MANUALHOOK(CS2Kit_MovementRunCommand, instance, SH_MEMBER(this, &MovementHook::Hook_RunCommandPre), false);
+    SH_ADD_MANUALHOOK(CS2Kit_MovementRunCommand, instance, SH_MEMBER(this, &MovementHook::Hook_RunCommandPost), true);
+
+    _vtable = *static_cast<void**>(instance);
+    _runCommandHooked = true;
+    Log::Info("Movement RunCommand vtable hook installed (index {}).", index);
     return true;
+}
+
+void MovementHook::RemoveRunCommandHook()
+{
+    if (!_runCommandHooked)
+        return;
+
+    // The instance hooked in InstallRunCommandHook() may be gone by now (map change destroys
+    // pawns). SourceHook locates a manual vhook through the object's vtable pointer, so hand
+    // it a stand-in object whose first pointer-sized field is that same vtable.
+    void* fake = &_vtable;
+    SH_REMOVE_MANUALHOOK(CS2Kit_MovementRunCommand, fake, SH_MEMBER(this, &MovementHook::Hook_RunCommandPre), false);
+    SH_REMOVE_MANUALHOOK(CS2Kit_MovementRunCommand, fake, SH_MEMBER(this, &MovementHook::Hook_RunCommandPost), true);
+
+    _runCommandHooked = false;
+    _vtable = nullptr;
 }
 
 void MovementHook::Remove()
 {
+    RemoveRunCommandHook();
+
     if (!_installed)
         return;
 
@@ -166,6 +224,19 @@ void* MovementHook::OnProcessUsercmds(void* controller, void* cmds, int numcmds,
     void* result = g_processUsercmds.call<void*>(controller, cmds, numcmds, paused, margin);
     ExitScope();
     return result;
+}
+
+void* MovementHook::Hook_RunCommandPre(void* /*userCmd*/)
+{
+    ++_stats.RunCommandCalls;
+    EnterScope(_depth > 0 ? _scopeSlot : SlotFromMovementServices(META_IFACEPTR(void)));
+    RETURN_META_VALUE(MRES_IGNORED, nullptr);
+}
+
+void* MovementHook::Hook_RunCommandPost(void* /*userCmd*/)
+{
+    ExitScope();
+    RETURN_META_VALUE(MRES_IGNORED, nullptr);
 }
 
 }  // namespace CS2Kit::Sdk
