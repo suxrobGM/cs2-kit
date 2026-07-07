@@ -101,22 +101,17 @@ if(CS2KIT_BUILD_STANDALONE)
     include(CTest)
 endif()
 
-# SDK-free utils tests: recompile the pure-logic sources instead of linking
-# cs2-kit, so the test binary needs no HL2SDK/Metamod link inputs.
+# SDK-free utils tests: recompile pure-logic sources instead of linking cs2-kit,
+# so the test binary needs no HL2SDK/Metamod link inputs.
 if(BUILD_TESTING)
+    # Test drivers: every tests/*.cpp is a test TU (the framework is a .hpp).
+    file(GLOB CS2KIT_TEST_SOURCES CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp"
+    )
+
     add_executable(cs2kit-utils-tests
-        tests/MicroTestMain.cpp
-        tests/AngleMathTests.cpp
-        tests/DecayingScoreTests.cpp
-        tests/EffectManagerTests.cpp
-        tests/MemoryAccessTests.cpp
-        tests/MigratorTests.cpp
-        tests/ParseDurationTests.cpp
-        tests/SlotThrottleTests.cpp
-        tests/StringUtilsTests.cpp
-        tests/SteamIdTests.cpp
-        tests/TargetingTests.cpp
-        tests/TimeUtilsTests.cpp
+        ${CS2KIT_TEST_SOURCES}
+        # SDK-free TUs, hand-picked: the rest of src/ needs HL2SDK/pqxx/json.
         src/Core/EffectManager.cpp
         src/Core/ScheduledEffect.cpp
         src/Core/Scheduler.cpp
