@@ -1,0 +1,57 @@
+#pragma once
+
+#include <array>
+#include <cstdint>
+
+namespace CS2Kit::Sdk
+{
+
+/** One CSubtickMoveStep from the usercmd: a sub-tick input change with its intra-tick time. */
+struct SubtickMove
+{
+    uint64_t Button = 0;   // button bit(s) this step toggles; 0 for pure aim steps
+    bool Pressed = false;  // press vs release when Button != 0
+    float When = 0.0f;     // intra-tick fraction [0,1)
+    float PitchDelta = 0.0f;
+    float YawDelta = 0.0f;
+};
+
+/**
+ * @brief Protobuf-free snapshot of the CUserCmd handed to
+ * CPlayer_MovementServices::RunCommand, decoded by MovementHook for its
+ * cmd listeners (ListenPreCmd/ListenPostCmd).
+ *
+ * Valid is false when the usercmd pointer was null or the "UserCmdPB" gamedata
+ * offset is missing - fields then hold their defaults and must not be trusted.
+ */
+struct UserCmdView
+{
+    bool Valid = false;
+    int32_t ClientTick = 0;
+
+    // CBaseUserCmdPB.viewangles (x = pitch, y = yaw)
+    float ViewPitch = 0.0f;
+    float ViewYaw = 0.0f;
+
+    float ForwardMove = 0.0f;
+    float LeftMove = 0.0f;
+
+    // CInButtonStatePB words: held and changed-this-tick button masks
+    uint64_t ButtonsHeld = 0;
+    uint64_t ButtonsChanged = 0;
+
+    // Raw mouse movement the client reported for this command
+    int32_t MouseDx = 0;
+    int32_t MouseDy = 0;
+
+    // Sub-tick shooting bookkeeping (-1 = no attack started this command)
+    int32_t Attack1StartHistoryIndex = -1;
+    int32_t Attack2StartHistoryIndex = -1;
+    int32_t InputHistoryCount = 0;
+
+    static constexpr int MaxSubtickMoves = 12;
+    int SubtickMoveCount = 0;  // clamped to MaxSubtickMoves
+    std::array<SubtickMove, MaxSubtickMoves> SubtickMoves{};
+};
+
+}  // namespace CS2Kit::Sdk

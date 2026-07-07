@@ -42,6 +42,7 @@
 #include <CS2Kit/Menu/MenuPresets.hpp>
 #include <CS2Kit/Menu/Options/ChoiceOption.hpp>
 #include <CS2Kit/Players/ActionDispatcher.hpp>
+#include <CS2Kit/Players/PerSlot.hpp>
 #include <CS2Kit/Players/Player.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
 #include <CS2Kit/Players/TargetResolver.hpp>
@@ -53,6 +54,7 @@
 #include <CS2Kit/Sdk/GameEventService.hpp>
 #include <CS2Kit/Sdk/GameEvents.hpp>
 #include <CS2Kit/Sdk/GlowVision.hpp>
+#include <CS2Kit/Sdk/InputHistoryService.hpp>
 #include <CS2Kit/Sdk/MoveType.hpp>
 #include <CS2Kit/Sdk/MovementHook.hpp>
 #include <CS2Kit/Sdk/PawnOps.hpp>
@@ -60,7 +62,10 @@
 #include <CS2Kit/Sdk/PersistentCenterHtml.hpp>
 #include <CS2Kit/Sdk/PlayerController.hpp>
 #include <CS2Kit/Sdk/ServerCommand.hpp>
+#include <CS2Kit/Sdk/UserCmd.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
+#include <CS2Kit/Utils/AngleMath.hpp>
+#include <CS2Kit/Utils/DecayingScore.hpp>
 #include <CS2Kit/Utils/SlotThrottle.hpp>
 #include <CS2Kit/Utils/StringUtils.hpp>
 #include <CS2Kit/Utils/TimeUtils.hpp>
@@ -102,6 +107,7 @@ using Sdk::GameEventService;
 using Sdk::GlowVision;
 using Sdk::HasPawnFlag;
 using Sdk::InMoveType;
+using Sdk::InputHistoryService;
 using Sdk::MessageKind;
 using Sdk::MessageSystem;
 using Sdk::MovementHook;
@@ -110,6 +116,8 @@ using Sdk::PersistentCenterHtml;
 using Sdk::PlayerController;
 using Sdk::RawConVar;
 using Sdk::ServerCommand;
+using Sdk::SubtickMove;
+using Sdk::UserCmdView;
 namespace PawnOps = Sdk::PawnOps;
 namespace Events = Sdk::Events;
 
@@ -134,6 +142,7 @@ using Players::ActionContext;
 using Players::ActionDispatcher;
 using Players::CanTargetFn;
 using Players::ParamAction;
+using Players::PerSlot;
 using Players::Player;
 using Players::PlayerManager;
 using Players::ResolveTargets;
@@ -177,12 +186,14 @@ using Http::HttpClient;
 using Http::HttpResult;
 
 // Utils
+using Utils::DecayingScore;
 using Utils::ParseDuration;
 using Utils::SlotThrottle;
 using Utils::StringUtils;
 using Utils::TimeUtils;
 using Utils::Tokens;
 using Utils::Translations;
+namespace AngleMath = Utils::AngleMath;
 namespace Validation = Utils::Validation;
 
 }  // namespace CS2Kit

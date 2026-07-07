@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CS2Kit/Core/CallbackRegistry.hpp>
+#include <CS2Kit/Sdk/UserCmd.hpp>
 #include <cstdint>
 #include <functional>
 
@@ -19,6 +20,12 @@ namespace CS2Kit::Sdk
  * (-1 when unresolved). A pre/post pair brackets exactly that player's movement
  * processing, which makes it the place for per-player state flips (see RawConVar).
  *
+ * Cmd listeners (ListenPreCmd/ListenPostCmd) additionally receive a UserCmdView - the
+ * command's viewangles, buttons, mouse deltas, and sub-tick moves decoded from the
+ * CSGOUserCmdPB payload (gamedata byte offset "UserCmdPB" inside the CUserCmd wrapper).
+ * The view is decoded once per RunCommand and shared by the pre and post dispatch;
+ * when the offset is missing or the pointer is null its Valid flag is false.
+ *
  * The vtable index is gamedata-maintained and drifts with CS2 updates; a wrong index
  * calls an unrelated vfunc and crashes, so re-verify it after every update.
  */
@@ -26,6 +33,7 @@ class MovementHook
 {
 public:
     using Callback = std::function<void(int slot)>;
+    using CmdCallback = std::function<void(int slot, const UserCmdView& cmd)>;
 
     MovementHook() = default;
     ~MovementHook() { Remove(); }
@@ -39,6 +47,8 @@ public:
 
     uint64_t ListenPre(Callback callback) { return _pre.Add(std::move(callback)); }
     uint64_t ListenPost(Callback callback) { return _post.Add(std::move(callback)); }
+    uint64_t ListenPreCmd(CmdCallback callback) { return _preCmd.Add(std::move(callback)); }
+    uint64_t ListenPostCmd(CmdCallback callback) { return _postCmd.Add(std::move(callback)); }
     void RemoveListener(uint64_t id);
 
     /** Slot whose pawn owns @p movementServices, or -1. */
@@ -47,9 +57,14 @@ public:
 private:
     void* Hook_RunCommandPre(void* userCmd);
     void* Hook_RunCommandPost(void* userCmd);
+    void DecodeUserCmd(void* userCmd);
 
     Core::CallbackRegistry<Callback> _pre;
     Core::CallbackRegistry<Callback> _post;
+    Core::CallbackRegistry<CmdCallback> _preCmd;
+    Core::CallbackRegistry<CmdCallback> _postCmd;
+    UserCmdView _cmdView;     // decoded once per RunCommand, reused across pre/post dispatch
+    int _pbOffset = -1;       // gamedata "UserCmdPB"; negative disables decoding
     bool _installed = false;
     void* _vtable = nullptr;  // vtable of the hooked instance; see Remove()
     int _preSlot = -1;        // slot resolved in the pre hook, reused by the immediately-following post

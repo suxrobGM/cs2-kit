@@ -13,6 +13,7 @@
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/GameEventService.hpp>
 #include <CS2Kit/Sdk/GameInterfaces.hpp>
+#include <CS2Kit/Sdk/InputHistoryService.hpp>
 #include <CS2Kit/Sdk/MovementHook.hpp>
 #include <CS2Kit/Sdk/PrecacheService.hpp>
 #include <CS2Kit/Sdk/TransmitFilter.hpp>
@@ -64,6 +65,8 @@ public:
     Sdk::ChatInputCapture ChatInput;
     Utils::Translations Translations;
     Players::PlayerManager Players;
+    /** Dormant until Enable(depth); listens on MovementHook cmd feed + Players slot changes. */
+    Sdk::InputHistoryService InputHistory;
     Commands::CommandManager Commands;
     Menu::MenuManager Menus;
     /** Completions dispatch on the game thread from the OnGameFrame pump; Shutdown stops it. */

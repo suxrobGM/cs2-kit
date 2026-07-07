@@ -44,6 +44,14 @@
     "RunCommand": {
       "windows": 22,
       "linux": 23
+    },
+    // Byte offset of the CSGOUserCmdPB message inside the CUserCmd wrapper that
+    // RunCommand receives. Cross-checked vs CS2Fixes (pad0[0x10]) and SwiftlyS2
+    // (CUserCmd.Address + 0x10). Missing/wrong => MovementHook cmd listeners get
+    // Valid=false views.
+    "UserCmdPB": {
+      "windows": 16,
+      "linux": 16
     }
   },
 

@@ -1,6 +1,8 @@
 #pragma once
 
+#include <CS2Kit/Core/CallbackRegistry.hpp>
 #include <CS2Kit/Players/Player.hpp>
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -18,11 +20,21 @@ namespace CS2Kit::Players
 class PlayerManager
 {
 public:
+    using SlotCallback = std::function<void(int slot)>;
+
     PlayerManager() = default;
 
     Player* AddPlayer(int slot, int64_t steamId, const std::string& name, const std::string& ipAddress);
     void RemovePlayer(int slot);
     void Clear();
+
+    /**
+     * Fires whenever a slot's occupant changes: on AddPlayer, RemovePlayer, and
+     * once per tracked slot on Clear. The backing hook for per-slot state that
+     * must not leak across occupants (see PerSlot, InputHistoryService).
+     */
+    uint64_t ListenSlotChange(SlotCallback callback) { return _slotChange.Add(std::move(callback)); }
+    void RemoveListener(uint64_t id) { _slotChange.Remove(id); }
 
     Player* GetPlayerBySlot(int slot);
     Player* GetPlayerBySteamId(int64_t steamId);
@@ -31,8 +43,11 @@ public:
     size_t GetPlayerCount() const;
 
 private:
+    void FireSlotChange(int slot);
+
     std::unordered_map<int, std::unique_ptr<Player>> _playersBySlot;
     std::unordered_map<int64_t, Player*> _playersBySteamId;
+    Core::CallbackRegistry<SlotCallback> _slotChange;
 };
 
 }  // namespace CS2Kit::Players

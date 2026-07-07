@@ -231,6 +231,21 @@ QAngle PlayerController::GetEyeAngles() const
     return GetPawnField<QAngle>("CCSPlayerPawnBase", "m_angEyeAngles");
 }
 
+Vector PlayerController::GetEyePosition() const
+{
+    return GetAbsOrigin() + GetPawnField<Vector>("CBaseModelEntity", "m_vecViewOffset");
+}
+
+float PlayerController::GetFlashDuration() const
+{
+    return GetPawnField<float>("CCSPlayerPawnBase", "m_flFlashDuration");
+}
+
+float PlayerController::GetFlashMaxAlpha() const
+{
+    return GetPawnField<float>("CCSPlayerPawnBase", "m_flFlashMaxAlpha");
+}
+
 void PlayerController::Slay() const
 {
     CallVtableByName(GetPawn(), "CommitSuicide", false, true);

@@ -59,6 +59,15 @@ struct PlayerHurt
     static PlayerHurt From(IGameEvent& e);
 };
 
+struct PlayerBlind
+{
+    static constexpr const char* Name = "player_blind";
+    int Slot = -1;
+    int AttackerSlot = -1;
+    float BlindDuration = 0.0f;
+    static PlayerBlind From(IGameEvent& e);
+};
+
 struct PlayerTeam
 {
     static constexpr const char* Name = "player_team";

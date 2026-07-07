@@ -17,7 +17,7 @@ A working plugin is a `CommandSpec` and forty lines of skeleton. Generate one wi
 | **Sdk** | `CS2Kit::Sdk` | Engine wrappers: entities, schema, signatures, convars, typed game events, messages (`MessageSystem`), pawn operations, transmit filtering |
 | **Database** | `CS2Kit::Database` | Async-first PostgreSQL (`PostgresDatabase`), column-table row mapping, forward-only migrations; opt-in via `CS2KIT_ENABLE_POSTGRES` |
 | **Http** | `CS2Kit::Http` | Async `HttpClient` with game-thread completions, config-driven JSON endpoint helpers |
-| **Utils** | `CS2Kit::Utils` | Translations with `{token}` substitution, SteamID and duration parsing, chat colors, string/time helpers, config validation |
+| **Utils** | `CS2Kit::Utils` | Translations with `{token}` substitution, SteamID and duration parsing, chat colors, string/time helpers, angle math, decaying scores, config validation |
 
 <h2>Guides</h2>
 

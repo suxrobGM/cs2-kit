@@ -208,6 +208,12 @@ function(cs2kit_generate_sdk_protobuf out_sources out_includes)
         "${shared_proto_dir}" "${generated_shared_dir}"
         "${common_proto_dir};${shared_proto_dir};${google_proto_dir}"
         usermessages usercmd gameevents)
+    # game/shared/cs is the first proto_path so cs_usercmd.proto resolves flat and its
+    # generated header sits next to usercmd.pb.h, which it includes.
+    _cs2kit_protoc(generated_sources "${protoc_path}"
+        "${shared_proto_dir}/cs" "${generated_shared_dir}"
+        "${shared_proto_dir}/cs;${shared_proto_dir};${common_proto_dir};${google_proto_dir}"
+        cs_usercmd)
 
     set_source_files_properties(${generated_sources} PROPERTIES GENERATED TRUE)
     set("${out_sources}" "${generated_sources}" PARENT_SCOPE)

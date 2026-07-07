@@ -27,6 +27,32 @@ Details worth knowing:
 - Removal works even after the hooked instance died (map change): the service keeps the vtable pointer and hands SourceHook a stand-in object.
 - The vtable index lives in gamedata as `"RunCommand"` and **drifts with CS2 updates** - a wrong index calls an unrelated vfunc and crashes. Re-verify it (against SwiftlyS2/CS2Fixes gamedata) after every game update.
 
+### Cmd listeners: reading the usercmd
+
+`ListenPreCmd`/`ListenPostCmd` additionally hand you a @ref CS2Kit::Sdk::UserCmdView - the command's viewangles, held/changed button masks, raw mouse deltas, and per-subtick pitch/yaw deltas, decoded once per RunCommand from the `CSGOUserCmdPB` payload:
+
+```cpp
+Engine().MovementHook.ListenPreCmd([](int slot, const CS2Kit::UserCmdView& cmd) {
+    if (!cmd.Valid)
+        return;  // null usercmd or missing gamedata offset
+    // cmd.ViewYaw, cmd.MouseDx, cmd.ButtonsHeld, cmd.SubtickMoves[0].YawDelta, ...
+});
+```
+
+The decode happens only while at least one cmd listener is registered; plain `ListenPre`/`ListenPost` stay free of it. The payload's byte offset inside the `CUserCmd` wrapper lives in gamedata as `"UserCmdPB"` (cross-checked against CS2Fixes and SwiftlyS2) and, like the vtable index, **must be re-verified after CS2 updates** - a missing offset degrades to `Valid=false` views rather than crashing, but a *stale* one reads garbage.
+
+### InputHistoryService: lookback over recent usercmds
+
+@ref CS2Kit::Sdk::InputHistoryService (`Engine().InputHistory`) is an opt-in per-slot ring buffer of the decoded views - for plugins that need "what did this player's aim do over the last N ticks" (anti-cheat, movement analytics) without wiring their own buffers:
+
+```cpp
+Engine().InputHistory.Enable(128);                    // keep ~2s at 64 tick
+int n = Engine().InputHistory.Count(slot);
+const auto& newest = Engine().InputHistory.At(slot, 0);  // At(slot, ago)
+```
+
+History for a slot resets automatically when its player joins or leaves (via @ref CS2Kit::Players::PlayerManager::ListenSlotChange, which is also the backing feed for the generic @ref CS2Kit::Players::PerSlot container). The MovementHook must still be installed for samples to flow.
+
 ## ServerCommand
 
 @ref CS2Kit::Sdk::ServerCommand is a RAII tier1 `ConCommand`: registered on construction, unregistered on destruction, with a `std::function` handler that runs on the game thread.

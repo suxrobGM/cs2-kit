@@ -47,6 +47,21 @@ player.ChangeTeam(3);  // CT
 player.Respawn();
 ```
 
+### Aim & flash state
+
+For angle/position analysis (anti-cheat, aim telemetry): `GetEyeAngles()` reads the pawn's
+networked eye angles, `GetEyePosition()` is the abs origin plus `m_vecViewOffset` - where the
+player's shots originate. `GetFlashDuration()` / `GetFlashMaxAlpha()` expose the flashbang
+state the last `player_blind` set on the pawn (`m_flFlashDuration`, `m_flFlashMaxAlpha`;
+255 max-alpha means a full blind). For blind-time bookkeeping, prefer the typed
+`Events::PlayerBlind` event, which carries `BlindDuration` directly.
+
+```cpp
+QAngle aim = player.GetEyeAngles();
+Vector muzzle = player.GetEyePosition();
+bool fullBlind = player.GetFlashMaxAlpha() >= 255.0f;
+```
+
 ### Visibility
 
 `SetVisible` toggles transparency on the player pawn body. Weapons, gloves, and grenades stay visible - they are separate networked entities that the render fields on the pawn do not reach. For full invisibility use the [TransmitFilter](@ref sdk_visibility_guide) instead.

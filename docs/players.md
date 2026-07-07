@@ -25,6 +25,20 @@ int hp = player->Controller().GetHealth();
 
 **Pointer lifetime:** a `Player*` is owned by the manager and dies on disconnect, slot reuse, or `Clear()`. Never store one across the disconnect callback - store the SteamID.
 
+### Per-slot plugin state
+
+Plugin state keyed by slot has one recurring bug: values leaking from a disconnected player to the next occupant of the slot. @ref CS2Kit::Players::PerSlot solves it once - a `std::array<T, MaxPlayers>` whose entries value-reset whenever a player joins or leaves the slot (backed by @ref CS2Kit::Players::PlayerManager::ListenSlotChange, which fires on AddPlayer/RemovePlayer/Clear):
+
+```cpp
+struct MyState { int Combo = 0; float Score = 0; };
+
+CS2Kit::PerSlot<MyState> _state;   // manager member; inert until bound
+_state.BindReset();                // in Initialize(), once services are live
+_state[slot].Combo++;              // plain indexed access afterwards
+```
+
+For time-decaying per-player scores (suspicion, rate limits), pair it with @ref CS2Kit::Utils::DecayingScore - a clock-free accumulator that drains linearly between caller-supplied timestamps. Angle bookkeeping helpers (`NormalizeAngleDelta`, `AnglesToPoint`, `AngularDistance`) live in `CS2Kit::AngleMath` (`<CS2Kit/Utils/AngleMath.hpp>`); both are unit-tested in the kit's SDK-free test suite.
+
 ## Target resolution
 
 @ref CS2Kit::Players::ResolveTargets resolves one token to players, applying the immunity policy (`Engine().Policy.CanTarget` unless you pass your own):

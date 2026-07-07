@@ -16,6 +16,7 @@ Player* PlayerManager::AddPlayer(int slot, int64_t steamId, const std::string& n
     _playersBySlot[slot] = std::move(player);
     _playersBySteamId[steamId] = playerPtr;
 
+    FireSlotChange(slot);
     return playerPtr;
 }
 
@@ -26,7 +27,14 @@ void PlayerManager::RemovePlayer(int slot)
     {
         _playersBySteamId.erase(it->second->GetSteamID());
         _playersBySlot.erase(it);
+        FireSlotChange(slot);
     }
+}
+
+void PlayerManager::FireSlotChange(int slot)
+{
+    for (const auto& [id, callback] : _slotChange.Items())
+        callback(slot);
 }
 
 Player* PlayerManager::GetPlayerBySlot(int slot)
@@ -86,8 +94,16 @@ size_t PlayerManager::GetPlayerCount() const
 
 void PlayerManager::Clear()
 {
+    std::vector<int> slots;
+    slots.reserve(_playersBySlot.size());
+    for (const auto& [slot, player] : _playersBySlot)
+        slots.push_back(slot);
+
     _playersBySlot.clear();
     _playersBySteamId.clear();
+
+    for (int slot : slots)
+        FireSlotChange(slot);
 }
 
 }  // namespace CS2Kit::Players

@@ -112,6 +112,15 @@ public:
     QAngle GetAbsAngles() const;
     QAngle GetEyeAngles() const;
 
+    /** Pawn abs origin plus its view offset (m_vecViewOffset) - where shots originate. */
+    Vector GetEyePosition() const;
+
+    /** CCSPlayerPawnBase::m_flFlashDuration - remaining full-blind fade seconds set by the last flash. */
+    float GetFlashDuration() const;
+
+    /** CCSPlayerPawnBase::m_flFlashMaxAlpha - 255 means the last flash was a full blind. */
+    float GetFlashMaxAlpha() const;
+
     void Slay() const;
     void ChangeTeam(int team) const;
     void Respawn() const;

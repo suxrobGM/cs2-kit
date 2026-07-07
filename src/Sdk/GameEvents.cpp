@@ -39,6 +39,15 @@ PlayerHurt PlayerHurt::From(IGameEvent& e)
     };
 }
 
+PlayerBlind PlayerBlind::From(IGameEvent& e)
+{
+    return {
+        .Slot = e.GetPlayerSlot("userid").Get(),
+        .AttackerSlot = e.GetPlayerSlot("attacker").Get(),
+        .BlindDuration = e.GetFloat("blind_duration"),
+    };
+}
+
 PlayerTeam PlayerTeam::From(IGameEvent& e)
 {
     return {

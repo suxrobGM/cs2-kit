@@ -106,6 +106,8 @@ endif()
 if(BUILD_TESTING)
     add_executable(cs2kit-utils-tests
         tests/MicroTestMain.cpp
+        tests/AngleMathTests.cpp
+        tests/DecayingScoreTests.cpp
         tests/EffectManagerTests.cpp
         tests/MemoryAccessTests.cpp
         tests/MigratorTests.cpp
