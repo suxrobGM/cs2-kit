@@ -5,7 +5,6 @@
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Sdk/MovementHook.hpp>
 #include <CS2Kit/Utils/Log.hpp>
-
 #include <algorithm>
 #include <cs_usercmd.pb.h>
 

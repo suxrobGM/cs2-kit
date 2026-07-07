@@ -63,8 +63,8 @@ private:
     Core::CallbackRegistry<Callback> _post;
     Core::CallbackRegistry<CmdCallback> _preCmd;
     Core::CallbackRegistry<CmdCallback> _postCmd;
-    UserCmdView _cmdView;     // decoded once per RunCommand, reused across pre/post dispatch
-    int _pbOffset = -1;       // gamedata "UserCmdPB"; negative disables decoding
+    UserCmdView _cmdView;  // decoded once per RunCommand, reused across pre/post dispatch
+    int _pbOffset = -1;    // gamedata "UserCmdPB"; negative disables decoding
     bool _installed = false;
     void* _vtable = nullptr;  // vtable of the hooked instance; see Remove()
     int _preSlot = -1;        // slot resolved in the pre hook, reused by the immediately-following post

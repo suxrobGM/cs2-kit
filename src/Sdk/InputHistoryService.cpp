@@ -1,7 +1,6 @@
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Core/Slot.hpp>
 #include <CS2Kit/Sdk/InputHistoryService.hpp>
-
 #include <algorithm>
 #include <cassert>
 
@@ -37,7 +36,8 @@ void InputHistoryService::Enable(int depth)
     }
 
     if (_cmdListener == 0)
-        _cmdListener = Engine().MovementHook.ListenPreCmd([this](int slot, const UserCmdView& cmd) { Record(slot, cmd); });
+        _cmdListener =
+            Engine().MovementHook.ListenPreCmd([this](int slot, const UserCmdView& cmd) { Record(slot, cmd); });
     if (_slotListener == 0)
         _slotListener = Engine().Players.ListenSlotChange([this](int slot) { Clear(slot); });
 }

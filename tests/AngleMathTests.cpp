@@ -1,7 +1,6 @@
-#include <CS2Kit/Utils/AngleMath.hpp>
-
 #include "MicroTest.hpp"
 
+#include <CS2Kit/Utils/AngleMath.hpp>
 #include <cmath>
 
 using namespace CS2Kit::Utils::AngleMath;
