@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstring>
 #include <iserver.h>
+#include <nlohmann/json.hpp>
 #include <string>
 
 // extern decls for the SourceHook globals the consumer's PLUGIN_EXPOSE defines; lets the base
@@ -58,10 +59,17 @@ bool MetamodPluginBase::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
     params.LogPrefix = _info.LogTag;
     if (!CS2Kit::Initialize(ismm, error, maxlen, *_services, params))
     {
+        if (!_services->LoadReport.Stages().empty())
+            Log::Info("{}", _services->LoadReport.Summary());
         SetActiveServices(nullptr);
         _services.reset();
         return false;
     }
+
+    _services->Status.RegisterSection("build", [info = _info] {
+        return nlohmann::json{
+            {"name", info.Name}, {"version", info.Version}, {"commit", info.Commit}, {"date", info.Date}};
+    });
 
     RegisterStandardHooks();
     OnRegisterHooks();
@@ -70,7 +78,9 @@ bool MetamodPluginBase::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
 
     if (!OnLoad(late))
     {
-        snprintf(error, maxlen, "Plugin initialization failed");
+        Log::Info("{}", _services->LoadReport.Summary());
+        const std::string failure = _services->LoadReport.FirstFailure();
+        snprintf(error, maxlen, "%s", failure.empty() ? "Plugin initialization failed" : failure.c_str());
         RunDeferred();
         CS2Kit::Shutdown(*_services);
         OnDestroyInstances();
@@ -79,7 +89,12 @@ bool MetamodPluginBase::Load(PluginId id, ISmmAPI* ismm, char* error, size_t max
         return false;
     }
 
-    Log::Info("Loaded successfully{}.", late ? " (late)" : "");
+    Log::Info("{}", _services->LoadReport.Summary());
+    if (_info.Commit != nullptr && *_info.Commit != '\0')
+        Log::Info("Loaded {} v{} ({}, committed {}){}.", _info.Name, _info.Version, _info.Commit, _info.Date,
+                  late ? " (late)" : "");
+    else
+        Log::Info("Loaded successfully{}.", late ? " (late)" : "");
     return true;
 }
 

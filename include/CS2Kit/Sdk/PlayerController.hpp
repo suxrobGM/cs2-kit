@@ -38,7 +38,7 @@ public:
     {
         if (!_controller)
             return T{};
-        int offset = SchemaOffset(className, fieldName);
+        int offset = SchemaOffset(className, fieldName, sizeof(T));
         if (offset < 0)
             return T{};
         return ReadAt<T>(_controller, offset);
@@ -50,7 +50,7 @@ public:
         auto* pawn = GetPawn();
         if (!pawn)
             return T{};
-        int offset = SchemaOffset(className, fieldName);
+        int offset = SchemaOffset(className, fieldName, sizeof(T));
         if (offset < 0)
             return T{};
         return ReadAt<T>(pawn, offset);
@@ -61,7 +61,7 @@ public:
     {
         if (!_controller)
             return;
-        int offset = SchemaOffset(className, fieldName);
+        int offset = SchemaOffset(className, fieldName, sizeof(T));
         if (offset < 0)
             return;
         WriteAt<T>(_controller, offset, value);
@@ -73,7 +73,7 @@ public:
         auto* pawn = GetPawn();
         if (!pawn)
             return;
-        int offset = SchemaOffset(className, fieldName);
+        int offset = SchemaOffset(className, fieldName, sizeof(T));
         if (offset < 0)
             return;
         WriteAt<T>(pawn, offset, value);
@@ -170,7 +170,8 @@ public:
 
 private:
     /** Resolve a schema field offset (delegates to the internal SchemaService). */
-    int SchemaOffset(const char* className, const char* fieldName) const;
+    // expectedSize > 0 validates the engine's field size on first lookup (warns on schema drift).
+    int SchemaOffset(const char* className, const char* fieldName, int expectedSize = 0) const;
 
     int _slot;
     CEntityInstance* _controller = nullptr;

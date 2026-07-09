@@ -18,12 +18,14 @@
 #include <CS2Kit/Sdk/UserMessage.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <ISmmAPI.h>
+#include <chrono>
 #include <eiface.h>
 #include <engine/igameeventsystem.h>
 #include <format>
 #include <icvar.h>
 #include <interfaces/interfaces.h>
 #include <networksystem/inetworkmessages.h>
+#include <nlohmann/json.hpp>
 #include <schemasystem/schemasystem.h>
 #include <tier1/convar.h>
 
@@ -90,50 +92,81 @@ bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, Core::Services& servi
     g_pCVar = gi.CVar;
     ConVar_Register(FCVAR_RELEASE | FCVAR_CLIENT_CAN_EXECUTE | FCVAR_SERVER_CAN_EXECUTE | FCVAR_GAMEDLL);
 
-    // 5. Load game data (signatures and offsets)
-    const char* gameDataPath = params.GameDataPath ? params.GameDataPath : DefaultGameDataPath;
-    Utils::Log::Info("Loading game data from {}...", gameDataPath);
-    services.GameData.Load(gameDataPath);
+    // 5-6. Load game data and initialize SDK subsystems as named, timed stages.
+    // Only the message system is load-aborting; MetamodPluginBase logs the
+    // summary and surfaces FirstFailure() in Metamod's error buffer.
+    using Core::StageResult;
+    auto& report = services.LoadReport;
 
-    // 6. Initialize SDK subsystems
-    Utils::Log::Info("Initializing SDK message system...");
-    if (!services.Messages.Initialize())
+    report.Run("GameData", [&] {
+        const char* gameDataPath = params.GameDataPath ? params.GameDataPath : DefaultGameDataPath;
+        if (!services.GameData.Load(gameDataPath))
+            return StageResult::Degraded(std::format("failed to load {}", gameDataPath));
+        services.GameData.ResolveAll();
+        if (auto failures = services.GameData.FailureSummary(); !failures.empty())
+            return StageResult::Degraded(std::move(failures));
+        return StageResult::Ok(std::format("{} offsets, {} signatures resolved", services.GameData.OffsetCount(),
+                                           services.GameData.SignatureCount()));
+    });
+
+    const auto messages = report.Run("Messages", [&] {
+        if (!services.Messages.Initialize())
+            return StageResult::Failed("message system init failed");
+        return StageResult::Ok();
+    });
+    if (messages == Core::StageStatus::Failed)
     {
-        Utils::Log::Error("Failed to initialize message system.");
+        ismm->Format(error, maxlen, "%s", report.FirstFailure().c_str());
         return false;
     }
 
-    Utils::Log::Info("Initializing schema system...");
-    if (!services.Schema().Initialize())
-        Utils::Log::Warn("Schema system init failed (button detection may not work).");
+    report.Run("Schema", [&] {
+        if (!services.Schema().Initialize())
+            return StageResult::Degraded("init failed; button detection may not work");
+        return StageResult::Ok();
+    });
 
-    Utils::Log::Info("Initializing entity system...");
-    if (!services.Entities.Initialize())
-        Utils::Log::Warn("Entity system init failed (menus may not work).");
+    report.Run("Entities", [&] {
+        if (!services.Entities.Initialize())
+            return StageResult::Degraded("init failed; menus may not work");
+        return StageResult::Ok();
+    });
 
-    Utils::Log::Info("Initializing entity ops...");
-    if (!services.EntityOps.Initialize())
-        Utils::Log::Warn("Entity ops unavailable (spawned effects degrade; see signature warnings above).");
+    report.Run("EntityOps", [&] {
+        if (!services.EntityOps.Initialize())
+            return StageResult::Degraded("unavailable; spawned effects degrade (see signature warnings)");
+        return StageResult::Ok();
+    });
 
-    Utils::Log::Info("Registering precache game system...");
-    if (!services.Precache.Initialize(std::format("{}_CS2KitPrecache", params.LogPrefix)))
-        Utils::Log::Warn("Precache game system not registered (resource precaching unavailable).");
+    report.Run("Precache", [&] {
+        if (!services.Precache.Initialize(std::format("{}_CS2KitPrecache", params.LogPrefix)))
+            return StageResult::Degraded("not registered; resource precaching unavailable");
+        return StageResult::Ok();
+    });
 
-    Utils::Log::Info("Resolving game event manager...");
-    if (!services.Messages.InitGameEventManager())
-        Utils::Log::Warn("Game event manager not resolved (center HTML display will not work).");
+    report.Run("GameEventManager", [&] {
+        if (!services.Messages.InitGameEventManager())
+            return StageResult::Degraded("not resolved; center HTML display will not work");
+        return StageResult::Ok();
+    });
 
-    Utils::Log::Info("Initializing ConVar service...");
-    if (!services.ConVars.Initialize())
-        Utils::Log::Warn("ConVar service init failed.");
+    report.Run("ConVars", [&] {
+        if (!services.ConVars.Initialize())
+            return StageResult::Degraded("init failed");
+        return StageResult::Ok();
+    });
 
-    Utils::Log::Info("Initializing game event service...");
-    if (!services.Events.Initialize())
-        Utils::Log::Warn("Game event service init failed.");
+    report.Run("Events", [&] {
+        if (!services.Events.Initialize())
+            return StageResult::Degraded("init failed");
+        return StageResult::Ok();
+    });
 
-    Utils::Log::Info("Initializing transmit filter...");
-    if (!services.Transmit.Initialize())
-        Utils::Log::Warn("Transmit filter inert (CheckTransmitPlayerSlot offset missing from gamedata).");
+    report.Run("Transmit", [&] {
+        if (!services.Transmit.Initialize())
+            return StageResult::Degraded("inert; CheckTransmitPlayerSlot offset missing from gamedata");
+        return StageResult::Ok();
+    });
 
     // Per-frame subsystems pump through the scheduler (PostgresDatabase registers its own pump
     // in Start), so OnGameFrame has exactly one thing to tick. CancelAll in Shutdown unhooks
@@ -141,7 +174,40 @@ bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, Core::Services& servi
     services.Scheduler.EveryFrame([&services] { services.Menus.OnGameFrame(); });
     services.Scheduler.EveryFrame([&services] { services.Http.DispatchCompletions(); });
 
-    Utils::Log::Info("CS2Kit initialized.");
+    // Kit status sections; plugins add theirs in OnLoad. Providers capture `services` by
+    // reference - it outlives them (both live for one Load/Unload cycle).
+    services.Status.RegisterSection("load", [&services] {
+        auto names = nlohmann::json::object();
+        int ok = 0;
+        for (const auto& stage : services.LoadReport.Stages())
+        {
+            if (stage.Status == Core::StageStatus::Ok)
+                ++ok;
+            else
+                names[std::string(Core::ToString(stage.Status))].push_back(stage.Name);
+        }
+        names["ok"] = ok;
+        return names;
+    });
+
+    services.Status.RegisterSection("gamedata", [&services] {
+        auto section = nlohmann::json{{"offsets", services.GameData.OffsetCount()},
+                                      {"signatures", services.GameData.SignatureCount()}};
+        for (const auto& [name, entry] : services.GameData.Resolutions())
+        {
+            if (!entry.Error.empty())
+                section["failed"].push_back(name);
+            else if (!entry.Unique)
+                section["ambiguous"].push_back(name);
+        }
+        return section;
+    });
+
+    services.Status.RegisterSection("uptime", [start = std::chrono::steady_clock::now()] {
+        const auto uptime = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start);
+        return nlohmann::json{{"seconds", uptime.count()}};
+    });
+
     return true;
 }
 

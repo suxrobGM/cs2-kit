@@ -24,7 +24,7 @@ bool SchemaService::Initialize()
     return true;
 }
 
-int SchemaService::GetOffset(const char* className, const char* fieldName)
+int SchemaService::GetOffset(const char* className, const char* fieldName, int expectedSize)
 {
     auto* schemaSystem = Engine().Interfaces.SchemaSystem;
     if (!schemaSystem)
@@ -64,9 +64,17 @@ int SchemaService::GetOffset(const char* className, const char* fieldName)
         SchemaClassFieldData_t& field = pClassInfo->m_pFields[i];
         if (strcmp(field.m_pszName, fieldName) == 0)
         {
+            if (expectedSize > 0 && field.m_pType)
+            {
+                int size = 0;
+                uint8_t alignment = 0;
+                if (field.m_pType->GetSizeAndAlignment(size, alignment) && size != expectedSize)
+                    Log::Warn("Schema: {}::{} is {} bytes but the caller expects {} (schema drift?).", className,
+                              fieldName, size, expectedSize);
+            }
+
             int offset = field.m_nSingleInheritanceOffset;
             _offsetCache[className][fieldName] = offset;
-            // Log::Info("Schema: {}::{} = 0x{:X} ({})", className, fieldName, offset, offset);
             return offset;
         }
     }

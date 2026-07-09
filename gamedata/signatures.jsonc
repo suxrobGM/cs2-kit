@@ -1,4 +1,5 @@
 {
+  "$schema": "./signatures.schema.json",
   // Platform-specific byte patterns and offsets, resolved at runtime by the
   // signature scanner. Fragile: re-verify after every CS2 engine update.
   // Pattern syntax: space-separated hex, "?" = wildcard byte, "offset" = byte

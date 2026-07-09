@@ -4,6 +4,7 @@
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Utils/Log.hpp>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <nlohmann/json.hpp>
 
@@ -75,6 +76,9 @@ int GameData::GetOffset(const std::string& name) const
 
 void* GameData::FindSignature(const std::string& name) const
 {
+    if (auto it = _resolved.find(name); it != _resolved.end())
+        return it->second.Match;
+
     auto it = _signatures.find(name);
     if (it == _signatures.end())
         return nullptr;
@@ -85,6 +89,9 @@ void* GameData::FindSignature(const std::string& name) const
 
 void* GameData::ResolveSignature(const std::string& name) const
 {
+    if (auto it = _resolved.find(name); it != _resolved.end())
+        return it->second.Resolved;
+
     void* match = FindSignature(name);
     if (!match)
         return nullptr;
@@ -99,6 +106,74 @@ void* GameData::ResolveSignature(const std::string& name) const
     if (addr == 0)
         return nullptr;
     return reinterpret_cast<void*>(addr);
+}
+
+void GameData::ResolveAll()
+{
+    _resolved.clear();
+    for (const auto& [name, sig] : _signatures)
+    {
+        ResolvedEntry entry;
+        if (sig.Pattern.empty())
+        {
+            entry.Error = "empty pattern";
+        }
+        else
+        {
+            auto scan = FindPatternEx(sig.Library.c_str(), sig.Pattern);
+            entry.Match = scan.Address;
+            entry.Unique = scan.Unique;
+            if (!scan.Address)
+            {
+                entry.Error = "pattern not found";
+            }
+            else if (sig.Offset == 0)
+            {
+                entry.Resolved = scan.Address;
+            }
+            else
+            {
+                auto addr = ResolveRelativeAddress(reinterpret_cast<uintptr_t>(scan.Address) + sig.Offset, 0, 4);
+                entry.Resolved = reinterpret_cast<void*>(addr);
+                if (addr == 0)
+                    entry.Error = "rel32 resolution failed";
+            }
+        }
+        _resolved[name] = std::move(entry);
+    }
+}
+
+std::string GameData::FailureSummary() const
+{
+    std::string failed;
+    std::string ambiguous;
+    size_t failedCount = 0;
+    for (const auto& [name, entry] : _resolved)
+    {
+        if (!entry.Error.empty())
+        {
+            failed += failed.empty() ? name : ", " + name;
+            ++failedCount;
+        }
+        else if (!entry.Unique)
+        {
+            ambiguous += ambiguous.empty() ? name : ", " + name;
+        }
+    }
+
+    if (failed.empty() && ambiguous.empty())
+        return {};
+
+    std::string summary;
+    if (!failed.empty())
+        summary = std::format("{}/{} signatures failed: {}", failedCount, _resolved.size(), failed);
+    if (!ambiguous.empty())
+    {
+        if (!summary.empty())
+            summary += "; ";
+        summary += std::format("ambiguous: {}", ambiguous);
+    }
+    return summary;
 }
 
 }  // namespace CS2Kit::Sdk

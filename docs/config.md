@@ -28,6 +28,10 @@ using ConfigManager = CS2Kit::JsonConfig<Settings>;
 
 Member names must match the JSON keys. The `_WITH_DEFAULT` macro means a missing key keeps the member's default - only a missing file, a parse error, or a wrong-typed value fails the load. JSONC comments are tolerated.
 
+### Editor validation with a JSON Schema
+
+Ship a `settings.schema.json` next to the jsonc and reference it with a relative `$schema` line as the file's first key - editors then autocomplete keys and squiggle typos (`additionalProperties: false` makes the schema stricter than the runtime, which is the point; the parser itself ignores unknown keys). The plugin scaffold emits a starter schema; keep it in sync when the Settings struct grows. The kit's own `gamedata/signatures.jsonc` follows the same convention.
+
 ```cpp
 bool MyPlugin::OnLoad(bool late)
 {

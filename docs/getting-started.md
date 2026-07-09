@@ -54,6 +54,34 @@ cs2_add_plugin(fun-votes
 - `cs2_add_plugin(<name> [SOURCES ...] [INCLUDE_DIRS ...] [LIBRARIES ...])` creates the Metamod MODULE: `SOURCES` defaults to a recursive glob of `src/*.cpp`; the required HL2SDK translation units (`memoverride.cpp`, `convar.cpp`) and the `CS2Kit::CS2Kit` link are added for you, along with C++23, the static MSVC runtime, and ccache when present.
 - `cs2_install_plugin(<name>)` (called automatically) defines the deploy bundle as an install component: the module under `addons/<name>/bin/{win64|linuxsteamrt64}`, a generated Metamod `.vdf` under `addons/metamod`, the plugin's `configs/`, and the kit's shared gamedata. `cmake --install build/<preset> --component <name> --prefix <dir>` stages a server-ready `addons/` tree.
 
+### Version and build provenance
+
+Every plugin build stamps a generated `<CS2Kit/BuildInfo.hpp>` (namespace `CS2Kit::BuildInfo`) with the display version, repo and kit commit hashes, branch, last-commit date, and a dirty flag. The display version is `<version.txt>+<short-sha>[-dirty]`, where `version.txt` is a single-line file at your repo root (missing file → `0.0.0`). Wire it into your `Info()` so `meta list` always identifies the exact deployed build:
+
+```cpp
+#include <CS2Kit/BuildInfo.hpp>  // only from Plugin.cpp - the header changes every commit
+
+CS2Kit::PluginInfo MyPlugin::Info() const {
+    return { .Name = "My Plugin",
+             .Version = CS2Kit::BuildInfo::Version,
+             .Date = CS2Kit::BuildInfo::BuildDate,
+             .Commit = CS2Kit::BuildInfo::RepoCommit,
+             .LogTag = "MINE" };
+}
+```
+
+The stamp reruns every build but rewrites the header only when committed state changes, so no-op builds stay no-op (that is also why `BuildDate` is the last-commit date, not wall-clock time). Outside a git checkout the fields degrade to `"unknown"`; in GitHub Actions, `GITHUB_SHA`/`GITHUB_REF_NAME` are used as fallbacks.
+
+### Build-system conventions
+
+The kit's CMake leans on standard mechanisms instead of hand-rolled flags wherever one exists:
+
+- SDK/Metamod headers are `SYSTEM` include dirs, so consumer warning levels don't apply to third-party headers; vendored SDK *sources* compiled into targets (`memoverride.cpp`, `convar.cpp`, the entity2/keyvalues3 TUs, protoc output) are silenced per-source via `cs2kit_mark_vendored_sources`.
+- Symbol visibility comes from the `CXX_VISIBILITY_PRESET hidden` / `VISIBILITY_INLINES_HIDDEN` target properties, not raw `-fvisibility` flags.
+- MSVC Release builds compile with `/Z7` and link with `/DEBUG /OPT:REF /OPT:ICF`, so every shipped plugin has a PDB for crash-dump symbolication (`/Z7` rather than `/Zi` because ccache cannot cache `/Zi`).
+- The static-MSVC-runtime and ccache fallbacks live once in `CS2KitSdk.cmake` as cache variables (visible to sibling plugin directories); a Conan toolchain that sets them wins.
+- Deliberately **not** used, so the audit isn't re-run later: `GenerateExportHeader` (no export macros exist - Metamod's `PLUGIN_EXPOSE` handles the entry point), `CMakePackageConfigHelpers` (the kit is consumed via `add_subdirectory`, never installed as a package), `install(... RUNTIME_DEPENDENCIES)` (runtimes are static), `VERSION`/`SOVERSION` (meaningless for MODULE libraries), and `protobuf_generate()` (it expects the protobuf CMake package; wiring it to the SDK's bundled protoc and the flat `cs_usercmd` proto layout would be more code than the small custom function).
+
 ## Adding to an existing repo
 
 If you already have a CMake project, you only need the submodule and the subdirectory:

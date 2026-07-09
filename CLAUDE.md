@@ -18,6 +18,7 @@ include/CS2Kit/        Public API headers
 src/                   Implementation
 gamedata/              Engine signatures and offsets
 cmake/                 CS2KitSdk.cmake + CS2Plugin.cmake (cs2_add_plugin) + plugin.vdf.in
+                       + CS2KitBuildInfo.cmake (git/version stamping -> <CS2Kit/BuildInfo.hpp>)
 scripts/               Build tooling (cwd-based; consumers invoke them directly),
                        init_project.py + new_plugin.py scaffold generators
 templates/plugin/      Plugin scaffold tree ($name/$ns/... placeholders)

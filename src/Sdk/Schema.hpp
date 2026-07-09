@@ -18,7 +18,13 @@ public:
     SchemaService() = default;
 
     bool Initialize();
-    int GetOffset(const char* className, const char* fieldName);
+
+    /**
+     * Field offset via the engine's schema system (cached). When `expectedSize` > 0, the
+     * first (uncached) lookup also compares the engine's field size against it and warns
+     * on mismatch - catches schema drift after a game update. Warning-only.
+     */
+    int GetOffset(const char* className, const char* fieldName, int expectedSize = 0);
 
 private:
     std::map<std::string, std::map<std::string, int>> _offsetCache;

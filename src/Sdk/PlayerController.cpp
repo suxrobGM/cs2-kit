@@ -69,7 +69,7 @@ T GetSceneNodeField(CEntityInstance* pawn, const char* fieldName)
     if (!node)
         return T{0.0f, 0.0f, 0.0f};
 
-    int offset = Engine().Schema().GetOffset("CGameSceneNode", fieldName);
+    int offset = Engine().Schema().GetOffset("CGameSceneNode", fieldName, sizeof(T));
     if (offset < 0)
         return T{0.0f, 0.0f, 0.0f};
     return ReadAt<T>(node, offset);
@@ -96,7 +96,7 @@ CEntityInstance* PlayerController::GetPawn() const
     if (!_controller)
         return nullptr;
 
-    int offset = Engine().Schema().GetOffset("CCSPlayerController", "m_hPlayerPawn");
+    int offset = Engine().Schema().GetOffset("CCSPlayerController", "m_hPlayerPawn", sizeof(uint32_t));
     if (offset < 0)
         return nullptr;
 
@@ -119,9 +119,9 @@ void PlayerController::Kick(const char* reason) const
     engine->DisconnectClient(CPlayerSlot(_slot), NETWORK_DISCONNECT_KICKED, reason);
 }
 
-int PlayerController::SchemaOffset(const char* className, const char* fieldName) const
+int PlayerController::SchemaOffset(const char* className, const char* fieldName, int expectedSize) const
 {
-    return Engine().Schema().GetOffset(className, fieldName);
+    return Engine().Schema().GetOffset(className, fieldName, expectedSize);
 }
 
 int PlayerController::GetHealth() const

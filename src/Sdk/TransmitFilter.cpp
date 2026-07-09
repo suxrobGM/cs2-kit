@@ -62,7 +62,7 @@ CEntityInstance* GetCurrentPawn(int slot)
     if (!controller)
         return nullptr;
     // m_hPawn is the possessed pawn (observer pawn while dead/spectating), unlike m_hPlayerPawn.
-    int offset = Engine().Schema().GetOffset("CBasePlayerController", "m_hPawn");
+    int offset = Engine().Schema().GetOffset("CBasePlayerController", "m_hPawn", sizeof(uint32_t));
     if (offset < 0)
         return nullptr;
     return Engine().Entities.ResolveEntityHandle(ReadAt<uint32_t>(controller, offset));

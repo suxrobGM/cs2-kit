@@ -18,6 +18,17 @@ void* addr = gd.FindSignature("CCSPlayerController_Kick");
 void* resolved = gd.ResolveSignature("SomeFunction");
 ```
 
+### Eager resolution and diagnostics
+
+`CS2Kit::Initialize()` runs `ResolveAll()` as the `GameData` load stage: every signature is scanned once, `FindSignature`/`ResolveSignature` answer from the cache afterwards, and the stage reports failures by name (`"2/13 signatures failed: X, Y"`). The scanner also detects **ambiguous** patterns - a pattern matching more than one location is a broken signature waiting to resolve to the wrong function after a game update, so it is warned about and listed in the stage detail. Per-entry results are available programmatically via `Resolutions()`.
+
+### Deliberately not implemented
+
+Two s2sdk-style mechanisms were evaluated and rejected for now; revisit if an engine update actually burns us:
+
+- **Ref-anchored fallback** (find functions by referenced strings when a pattern breaks): high machinery cost for a gamedata file this small whose signatures are synced from upstream projects with provenance comments.
+- **RTTI vtable-by-name resolution**: current consumers are index-based vcalls whose indexes historically break less often than byte patterns.
+
 ### signatures.jsonc Format
 
 ```json
@@ -60,6 +71,13 @@ auto& schema = Engine().Schema();
 // Get field offset
 int32_t offset = schema.GetOffset("CCSPlayerPawn", "m_iHealth");
 
+// Pass the expected size for fixed-size reads/writes: the first lookup validates it
+// against the engine's field size and warns "is N bytes but the caller expects M
+// (schema drift?)" after a game update changes a field type; still returns the offset.
+int32_t checked = schema.GetOffset("CCSPlayerPawn", "m_iHealth", sizeof(int));
+
 // Use with entity pointer
 int health = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(pawn) + offset);
 ```
+
+`PlayerController`'s typed field templates (`GetField<T>`, `GetPawnField<T>`, `SetField<T>`, `SetPawnField<T>`) pass `sizeof(T)` through automatically.

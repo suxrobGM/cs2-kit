@@ -31,6 +31,7 @@ public:
     bool HandleChatMessage(Players::Player* caller, const std::string& message);
     const CommandSpec* GetCommand(const std::string& name) const;
     std::vector<const CommandSpec*> GetAllCommands() const;
+    size_t Count() const { return _commands.size(); }
 
     void SetPrefixes(const std::vector<std::string>& prefixes) { _prefixes = prefixes; }
 

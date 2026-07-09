@@ -7,8 +7,10 @@ include_guard(GLOBAL)
 # Module dir at include time (CMAKE_CURRENT_LIST_DIR points at the caller inside a
 # function); used to locate plugin.vdf.in. Cached so sibling plugin directories see
 # it - this file is included from the kit's own scope, which they don't inherit.
-# cs2kit_platform_arch comes from CS2KitSdk.
+# CS2KIT_PLATFORM_ARCH comes from CS2KitSdk.
 set(CS2KIT_PLUGIN_CMAKE_DIR "${CMAKE_CURRENT_LIST_DIR}" CACHE INTERNAL "")
+
+include("${CMAKE_CURRENT_LIST_DIR}/CS2KitBuildInfo.cmake")
 
 # Route all of `target_name`'s build artifacts to
 # build/plugins/<name>/<platform_arch>/ with no rpath and no lib prefix.
@@ -47,26 +49,23 @@ function(cs2_add_plugin target_name)
         CXX_STANDARD 23
         CXX_STANDARD_REQUIRED ON
         CXX_EXTENSIONS OFF
+        CXX_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN ON
     )
 
-    # Per-target fallbacks so consumer roots stay minimal: the Conan toolchain
-    # normally pins the static MSVC runtime, and ccache is picked up when present.
-    if(NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
-        set_target_properties("${target_name}" PROPERTIES
-            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
-        )
-    endif()
-    if(NOT DEFINED CMAKE_CXX_COMPILER_LAUNCHER)
-        find_program(CCACHE_PROGRAM ccache)
-        if(CCACHE_PROGRAM)
-            set_target_properties("${target_name}" PROPERTIES
-                C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}"
-                CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}"
-            )
-        endif()
-    endif()
+    # Release PDBs for crash dumps; /Z7 rather than /Zi because ccache can't cache /Zi.
+    target_compile_options("${target_name}" PRIVATE
+        "$<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/Z7>"
+    )
+    target_link_options("${target_name}" PRIVATE
+        "$<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/DEBUG;/OPT:REF;/OPT:ICF>"
+    )
 
     target_sources("${target_name}" PRIVATE
+        "${CS2KIT_HL2SDK_DIR}/public/tier0/memoverride.cpp"
+        "${CS2KIT_HL2SDK_DIR}/tier1/convar.cpp"
+    )
+    cs2kit_mark_vendored_sources(
         "${CS2KIT_HL2SDK_DIR}/public/tier0/memoverride.cpp"
         "${CS2KIT_HL2SDK_DIR}/tier1/convar.cpp"
     )
@@ -81,8 +80,9 @@ function(cs2_add_plugin target_name)
         ${ARG_LIBRARIES}
     )
 
-    cs2kit_platform_arch(platform_arch)
-    cs2_set_output_dirs("${target_name}" "${platform_arch}")
+    cs2kit_stamp_build_info("${target_name}")
+
+    cs2_set_output_dirs("${target_name}" "${CS2KIT_PLATFORM_ARCH}")
 
     cs2_install_plugin("${target_name}")
 endfunction()

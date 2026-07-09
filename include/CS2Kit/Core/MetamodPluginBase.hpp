@@ -22,7 +22,8 @@ namespace CS2Kit::Core
 
 class Services;
 
-/** @brief Your plugin's name, author, version, and log tag. Return it from MetamodPluginBase::Info(). */
+/** @brief Your plugin's name, author, version, and log tag. Return it from MetamodPluginBase::Info().
+ *  Wire Version/Date/Commit to <CS2Kit/BuildInfo.hpp> so `meta list` shows the exact build. */
 struct PluginInfo
 {
     const char* Name = "CS2Kit Plugin";
@@ -32,6 +33,7 @@ struct PluginInfo
     const char* License = "MIT";
     const char* Version = "1.0.0";
     const char* Date = __DATE__;
+    const char* Commit = "";
     const char* LogTag = "CS2Kit";
 };
 

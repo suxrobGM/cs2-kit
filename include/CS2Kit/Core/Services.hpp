@@ -1,8 +1,10 @@
 #pragma once
 
 #include <CS2Kit/Commands/CommandManager.hpp>
+#include <CS2Kit/Core/LoadReport.hpp>
 #include <CS2Kit/Core/PluginPolicy.hpp>
 #include <CS2Kit/Core/Scheduler.hpp>
+#include <CS2Kit/Core/StatusService.hpp>
 #include <CS2Kit/Http/HttpClient.hpp>
 #include <CS2Kit/Menu/MenuManager.hpp>
 #include <CS2Kit/Players/PlayerManager.hpp>
@@ -50,6 +52,10 @@ public:
     // Declaration order == construction order.
     /** Plugin-supplied policy (permissions, targeting, replies). Set once in OnLoad. */
     PluginPolicy Policy;
+    /** Named/timed load stages recorded by Initialize and the plugin's OnLoad. */
+    Core::LoadReport LoadReport;
+    /** Status sections for diagnostics commands; kit sections registered during load. */
+    Core::StatusService Status;
     Sdk::GameInterfaces Interfaces;  // plain interface-pointer holder; populated in CS2Kit::Initialize
     Sdk::GameData GameData;
     Sdk::MessageSystem Messages;

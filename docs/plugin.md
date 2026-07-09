@@ -59,6 +59,52 @@ bool MyPlugin::OnLoad(bool late)
 }
 ```
 
+## Load stages: LoadReport
+
+`Engine().LoadReport` records named, timed load stages. `CS2Kit::Initialize` already runs every kit subsystem through it; run your own `OnLoad` steps through `Run()` too and the base class does the rest - it logs an aligned per-stage summary after load and, when `OnLoad` fails, copies `FirstFailure()` into Metamod's error buffer so `meta list` shows the actual reason instead of a generic message.
+
+```cpp
+auto& report = Engine().LoadReport;
+
+const auto config = report.Run("Configuration", [] {
+    if (!App().Config.Load("addons/my-plugin/configs/settings.jsonc"))
+        return CS2Kit::StageResult::Failed("failed to load settings.jsonc");
+    return CS2Kit::StageResult::Ok();
+});
+if (config == CS2Kit::StageStatus::Failed)
+    return false;                        // base surfaces "Configuration: failed to load settings.jsonc"
+
+report.Run("Database", [] {
+    if (!App().Db.Start(App().Config.Get().database))
+        return CS2Kit::StageResult::Degraded("unavailable");  // load continues, reduced functionality
+    return CS2Kit::StageResult::Ok();
+});
+
+report.Run("Admins", [&] {
+    if (!report.IsOk("Database"))        // dependency-aware skip: no confusing secondary error
+        return CS2Kit::StageResult::Skipped("database unavailable");
+    return LoadAdminData();
+});
+```
+
+Statuses: `Ok`, `Degraded` (loaded with reduced functionality), `Skipped` (dependency not Ok), `Failed` (aborts the load when you return `false`). `IsOk()` is true only for `Ok` - a degraded dependency skips its dependents.
+
+## Status sections: StatusService
+
+`Engine().Status` aggregates named sections into one diagnostics report. The kit registers `build` (PluginInfo), `load` (LoadReport rollup), `gamedata` (resolution results), and `uptime`; plugins register their own and expose the report via a server-console command:
+
+```cpp
+Engine().Status.RegisterSection("db", [] {
+    return nlohmann::json{{"connected", Engine().LoadReport.IsOk("Database")}};
+});
+
+// In a ServerCommand handler: BuildText() for humans, BuildJson() for tooling.
+// Convention: emit JSON as one line prefixed "STATUS_JSON " so RCON scripts can find it.
+Msg("STATUS_JSON %s\n", Engine().Status.BuildJson().dump().c_str());
+```
+
+Keep JSON sections compact (counts and names, not full lists) - RCON's console capture can truncate large responses. See admin-system's `admin_status` command for the full pattern.
+
 ## Overrides
 
 | Override | Fires | Notes |

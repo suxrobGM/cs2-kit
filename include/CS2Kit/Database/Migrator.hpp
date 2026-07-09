@@ -22,6 +22,16 @@ struct MigrationOptions
     int64_t AdvisoryLockKey = 727274;
 };
 
+/** Outcome of @ref RunMigrations. Contextually convertible to bool (success). */
+struct MigrationResult
+{
+    bool Success = false;
+    int Applied = 0;         ///< Migrations applied by this run.
+    int CurrentVersion = 0;  ///< Max version recorded in the history table after the run.
+
+    explicit operator bool() const { return Success; }
+};
+
 /** Leading `NNNN` version of a migration filename, or nullopt when it has none. */
 inline std::optional<int> ParseMigrationVersion(std::string_view filename)
 {
@@ -38,9 +48,9 @@ inline std::optional<int> ParseMigrationVersion(std::string_view filename)
  * Apply pending forward-only migrations to `db`. Reads `dir` for files named `NNNN_*.sql` (the leading
  * integer is the version), and applies every file whose version exceeds the max recorded in the history
  * table, in ascending order, each in its own transaction, under a session advisory lock so two
- * concurrent plugin loads cannot race. A missing directory is a no-op (logged). Returns false if a
- * migration failed - the database is left at the last successfully applied version.
+ * concurrent plugin loads cannot race. A missing directory is a successful no-op (logged). On failure
+ * the database is left at the last successfully applied version.
  */
-bool RunMigrations(PostgresDatabase& db, const std::string& dir, const MigrationOptions& options = {});
+MigrationResult RunMigrations(PostgresDatabase& db, const std::string& dir, const MigrationOptions& options = {});
 
 }  // namespace CS2Kit::Database

@@ -182,7 +182,7 @@ static bool GetScanRanges(const char* moduleName, std::vector<ScanRange>& ranges
 
 #endif
 
-void* FindPattern(const char* moduleName, const std::string& pattern)
+ScanResult FindPatternEx(const char* moduleName, const std::string& pattern)
 {
     std::string fullName;
 #ifdef _WIN32
@@ -195,26 +195,38 @@ void* FindPattern(const char* moduleName, const std::string& pattern)
     if (!GetScanRanges(fullName.c_str(), ranges))
     {
         Log::Error("SigScanner: Module '{}' not found.", fullName);
-        return nullptr;
+        return {};
     }
 
-    size_t totalSize = 0;
-    for (const auto& range : ranges)
-        totalSize += range.size;
-    Log::Info("SigScanner: Scanning '{}' ({} segment(s), 0x{:X} bytes)...", fullName, ranges.size(), totalSize);
-
     auto patternBytes = ParsePattern(pattern);
+    void* first = nullptr;
     for (const auto& range : ranges)
     {
-        if (void* result = ScanMemory(range.base, range.size, patternBytes))
+        const uint8_t* base = range.base;
+        size_t size = range.size;
+        while (void* hit = ScanMemory(base, size, patternBytes))
         {
-            Log::Info("SigScanner: Found match at {:#x}.", reinterpret_cast<uintptr_t>(result));
-            return result;
+            if (first)
+            {
+                Log::Warn("SigScanner: Pattern ambiguous in '{}' (2+ matches); using the first.", fullName);
+                return {first, false};
+            }
+            first = hit;
+            // Resume one byte past the hit to detect a second match.
+            const auto* next = static_cast<const uint8_t*>(hit) + 1;
+            size -= static_cast<size_t>(next - base);
+            base = next;
         }
     }
 
-    Log::Warn("SigScanner: Pattern not found in '{}'.", fullName);
-    return nullptr;
+    if (!first)
+        Log::Warn("SigScanner: Pattern not found in '{}'.", fullName);
+    return {first, true};
+}
+
+void* FindPattern(const char* moduleName, const std::string& pattern)
+{
+    return FindPatternEx(moduleName, pattern).Address;
 }
 
 uintptr_t ResolveRelativeAddress(uintptr_t addr, int ripOffset, int ripSize)

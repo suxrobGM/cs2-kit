@@ -6,6 +6,30 @@ set(CS2KIT_HL2SDK_DIR "${CS2KIT_ROOT_DIR}/vendor/hl2sdk-cs2" CACHE PATH "HL2SDK 
 set(CS2KIT_MMSOURCE_DIR "${CS2KIT_ROOT_DIR}/vendor/mmsource-2.0" CACHE PATH "Metamod:Source path")
 set(CS2KIT_GAMEDATA_DIR "${CS2KIT_ROOT_DIR}/gamedata" CACHE PATH "CS2Kit shared gamedata path")
 
+# Fallbacks when no toolchain sets these; CACHE so sibling plugin dirs see them.
+if(NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "")
+endif()
+if(NOT DEFINED CMAKE_CXX_COMPILER_LAUNCHER)
+    find_program(CCACHE_PROGRAM ccache)
+    if(CCACHE_PROGRAM)
+        set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}" CACHE FILEPATH "")
+        set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}" CACHE FILEPATH "")
+    endif()
+endif()
+
+# The `<os>-<arch>` folder name used for plugin output dirs.
+if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+    message(FATAL_ERROR "Only x86_64 builds are supported.")
+endif()
+if(WIN32)
+    set(CS2KIT_PLATFORM_ARCH "windows-x86_64" CACHE INTERNAL "CS2Kit platform architecture")
+elseif(UNIX)
+    set(CS2KIT_PLATFORM_ARCH "linux-x86_64" CACHE INTERNAL "CS2Kit platform architecture")
+else()
+    message(FATAL_ERROR "Only Windows and Linux builds are supported.")
+endif()
+
 # Fail configure with a submodule-init hint when `path` does not exist.
 function(cs2kit_require_path path description)
     if(NOT EXISTS "${path}")
@@ -13,19 +37,11 @@ function(cs2kit_require_path path description)
     endif()
 endfunction()
 
-# Set `out_var` to the `<os>-<arch>` folder name used for plugin output dirs.
-function(cs2kit_platform_arch out_var)
-    if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
-        message(FATAL_ERROR "Only x86_64 builds are supported.")
-    endif()
-
-    if(WIN32)
-        set("${out_var}" "windows-x86_64" PARENT_SCOPE)
-    elseif(UNIX)
-        set("${out_var}" "linux-x86_64" PARENT_SCOPE)
-    else()
-        message(FATAL_ERROR "Only Windows and Linux builds are supported.")
-    endif()
+# Disable warnings on vendored/generated TUs (SYSTEM includes only cover headers).
+function(cs2kit_mark_vendored_sources)
+    set_source_files_properties(${ARGN} PROPERTIES
+        COMPILE_OPTIONS "$<IF:$<CXX_COMPILER_ID:MSVC>,/w,-w>"
+    )
 endfunction()
 
 # Define the CS2Kit::Metamod and CS2Kit::HL2SDK interface targets carrying the
@@ -34,15 +50,12 @@ function(cs2kit_configure_sdk)
     cs2kit_require_path("${CS2KIT_HL2SDK_DIR}" "HL2SDK CS2")
     cs2kit_require_path("${CS2KIT_MMSOURCE_DIR}" "Metamod:Source")
 
-    cs2kit_platform_arch(CS2KIT_PLATFORM_ARCH)
-    set(CS2KIT_PLATFORM_ARCH "${CS2KIT_PLATFORM_ARCH}" CACHE INTERNAL "CS2Kit platform architecture")
-
     if(NOT TARGET cs2kit_metamod)
         add_library(cs2kit_metamod INTERFACE)
         add_library(CS2Kit::Metamod ALIAS cs2kit_metamod)
     endif()
 
-    target_include_directories(cs2kit_metamod INTERFACE
+    target_include_directories(cs2kit_metamod SYSTEM INTERFACE
         "${CS2KIT_MMSOURCE_DIR}/core"
         "${CS2KIT_MMSOURCE_DIR}/core/sourcehook"
     )
@@ -52,7 +65,7 @@ function(cs2kit_configure_sdk)
         add_library(CS2Kit::HL2SDK ALIAS cs2kit_hl2sdk)
     endif()
 
-    target_include_directories(cs2kit_hl2sdk INTERFACE
+    target_include_directories(cs2kit_hl2sdk SYSTEM INTERFACE
         "${CS2KIT_HL2SDK_DIR}/thirdparty/protobuf-3.21.8/src"
         "${CS2KIT_HL2SDK_DIR}/public"
         "${CS2KIT_HL2SDK_DIR}/public/engine"
@@ -76,26 +89,12 @@ function(cs2kit_configure_sdk)
     )
 
     set(gnu_flags
-        -pipe
         -fno-strict-aliasing
         -Wall
-        -Wno-sign-compare
-        -Wno-uninitialized
-        -Wno-unused
-        -Wno-switch
-        -msse
-        -fPIC
-        -fvisibility=hidden
-        -fvisibility-inlines-hidden
-        -Wno-non-virtual-dtor
-        -Wno-overloaded-virtual
-        -Wno-register
-        -Wno-invalid-offsetof
-        -Wno-delete-non-virtual-dtor
     )
     target_compile_options(cs2kit_hl2sdk INTERFACE
         "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:${gnu_flags}>"
-        "$<$<CXX_COMPILER_ID:MSVC>:/W3;/EHsc;/TP;/utf-8>"
+        "$<$<CXX_COMPILER_ID:MSVC>:/W3;/utf-8>"
     )
 
     if(WIN32)

@@ -18,6 +18,7 @@
 #include <CS2Kit/Core/EffectDescriptor.hpp>
 #include <CS2Kit/Core/EffectManager.hpp>
 #include <CS2Kit/Core/JsonConfig.hpp>
+#include <CS2Kit/Core/LoadReport.hpp>
 #include <CS2Kit/Core/MetamodPluginBase.hpp>
 #include <CS2Kit/Core/PluginBase.hpp>
 #include <CS2Kit/Core/PluginPolicy.hpp>
@@ -87,6 +88,7 @@ using Core::EffectScope;
 using Core::EffectSpec;
 using Core::Engine;
 using Core::JsonConfig;
+using Core::LoadReport;
 using Core::MetamodPluginBase;
 using Core::ParamEffectDescriptor;
 using Core::PluginBase;
@@ -95,6 +97,9 @@ using Core::PluginPolicy;
 using Core::Registry;
 using Core::Scheduler;
 using Core::Services;
+using Core::StageResult;
+using Core::StageStatus;
+using Core::StatusService;
 using Core::ToggleEffect;
 
 // Sdk
@@ -173,6 +178,7 @@ using Database::FromResult;
 using Database::FromRow;
 using Database::InsertParams;
 using Database::InsertSql;
+using Database::MigrationResult;
 using Database::PostgresConfig;
 using Database::PostgresDatabase;
 using Database::RunMigrations;

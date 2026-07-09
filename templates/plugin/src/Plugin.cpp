@@ -4,6 +4,7 @@
 #include "Managers.hpp"
 
 #include <CS2Kit/Api.hpp>
+#include <CS2Kit/BuildInfo.hpp>
 #include <CS2Kit/Commands/CommandManager.hpp>
 #include <CS2Kit/Core/Services.hpp>
 #include <CS2Kit/Sdk/UserMessage.hpp>
@@ -33,7 +34,9 @@ CS2Kit::PluginInfo $klass::Info() const
         .Description = "TODO",
         .Url = "",
         .License = "MIT",
-        .Version = "0.1.0",
+        .Version = CS2Kit::BuildInfo::Version,
+        .Date = CS2Kit::BuildInfo::BuildDate,
+        .Commit = CS2Kit::BuildInfo::RepoCommit,
         .LogTag = "$tag",
     };
 }

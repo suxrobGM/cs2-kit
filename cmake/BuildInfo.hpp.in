@@ -1,0 +1,18 @@
+#pragma once
+
+// Generated at build time - do not edit. Include only from your plugin's
+// Plugin.cpp: the values change every commit.
+
+namespace CS2Kit::BuildInfo
+{
+
+/// "<version.txt>+<short-sha>[-dirty]", e.g. "1.2.0+a1b2c3d".
+inline constexpr const char* Version = "@CS2KIT_BI_VERSION@";
+inline constexpr const char* RepoCommit = "@CS2KIT_BI_REPO_COMMIT@";
+inline constexpr const char* KitCommit = "@CS2KIT_BI_KIT_COMMIT@";
+inline constexpr const char* Branch = "@CS2KIT_BI_BRANCH@";
+/// ISO-8601 last-commit date (not wall clock, so no-op builds stay no-op).
+inline constexpr const char* BuildDate = "@CS2KIT_BI_DATE@";
+inline constexpr bool Dirty = @CS2KIT_BI_DIRTY@;
+
+}  // namespace CS2Kit::BuildInfo

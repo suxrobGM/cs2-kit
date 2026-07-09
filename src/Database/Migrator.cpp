@@ -47,12 +47,12 @@ std::string ReadFile(const fs::path& path)
 
 }  // namespace
 
-bool RunMigrations(PostgresDatabase& db, const std::string& dir, const MigrationOptions& options)
+MigrationResult RunMigrations(PostgresDatabase& db, const std::string& dir, const MigrationOptions& options)
 {
     if (!IsValidTableName(options.TableName))
     {
         Log::Error("Invalid migration table name '{}'; refusing to run migrations.", options.TableName);
-        return false;
+        return {};
     }
     const std::string& table = options.TableName;
 
@@ -63,7 +63,7 @@ bool RunMigrations(PostgresDatabase& db, const std::string& dir, const Migration
     if (!fs::exists(resolvedDir, ec))
     {
         Log::Warn("Migrations directory not found ({}); skipping schema setup.", resolvedDir.string());
-        return true;
+        return {.Success = true};
     }
 
     std::vector<Migration> migrations;
@@ -83,6 +83,9 @@ bool RunMigrations(PostgresDatabase& db, const std::string& dir, const Migration
               [](const Migration& a, const Migration& b) { return a.Version < b.Version; });
 
     // Runs on the database worker via the blocking WithConnection - load-time only.
+    // The result fields are filled through these captures (WithConnection blocks).
+    int appliedTotal = 0;
+    int finalVersion = 0;
     auto outcome = db.WithConnection([&](pqxx::connection& conn) -> bool {
         {
             pqxx::work txn(conn);
@@ -108,6 +111,7 @@ bool RunMigrations(PostgresDatabase& db, const std::string& dir, const Migration
             current = r[0][0].as<int>();
             txn.commit();
         }
+        finalVersion = current;
 
         int applied = 0;
         bool ok = true;
@@ -122,6 +126,7 @@ bool RunMigrations(PostgresDatabase& db, const std::string& dir, const Migration
                 txn.exec("INSERT INTO " + table + " (version, name) VALUES ($1, $2)", pqxx::params{m.Version, m.Name});
                 txn.commit();
                 ++applied;
+                finalVersion = m.Version;
                 Log::Info("Applied migration {} ({}).", m.Version, m.Name);
             }
             catch (const std::exception& e)
@@ -131,6 +136,7 @@ bool RunMigrations(PostgresDatabase& db, const std::string& dir, const Migration
                 break;
             }
         }
+        appliedTotal = applied;
 
         {
             pqxx::work txn(conn);
@@ -146,9 +152,9 @@ bool RunMigrations(PostgresDatabase& db, const std::string& dir, const Migration
     if (!outcome)
     {
         Log::Error("Migration runner failed: {}", outcome.error());
-        return false;
+        return {.Applied = appliedTotal, .CurrentVersion = finalVersion};
     }
-    return *outcome;
+    return {.Success = *outcome, .Applied = appliedTotal, .CurrentVersion = finalVersion};
 }
 
 }  // namespace CS2Kit::Database
