@@ -4,8 +4,6 @@
 Targets the working directory: python vendor/cs2-kit/scripts/bootstrap.py
 """
 
-from __future__ import annotations
-
 import subprocess
 from pathlib import Path
 

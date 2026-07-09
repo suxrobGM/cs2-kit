@@ -6,8 +6,6 @@ from the kit root, else plugins/ (the consumer-repo layout); pass explicit dirs
 to override.
 """
 
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 

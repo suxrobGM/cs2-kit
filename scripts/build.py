@@ -5,8 +5,6 @@ Targets the working directory, so it serves cs2-kit itself and any repo that
 vendors it: python vendor/cs2-kit/scripts/build.py [preset]
 """
 
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 

@@ -4,8 +4,6 @@ Import, don't execute. This is the single source of truth; consuming repos add t
 directory to sys.path and call build().
 """
 
-from __future__ import annotations
-
 import os
 import shutil
 import subprocess

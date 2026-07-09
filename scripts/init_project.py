@@ -18,8 +18,6 @@ string.Template.safe_substitute ($project only, so CMake/preset `${...}` syntax
 passes through). The first plugin is then scaffolded via new_plugin.py.
 """
 
-from __future__ import annotations
-
 import argparse
 import string
 from pathlib import Path
