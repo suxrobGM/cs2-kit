@@ -15,7 +15,6 @@ function(cs2kit_stamp_build_info target_name)
                 -D "OUTPUT_FILE=${header}"
                 -D "VERSION_FILE=${CMAKE_SOURCE_DIR}/version.txt"
                 -D "REPO_DIR=${CMAKE_SOURCE_DIR}"
-                -D "KIT_DIR=${CS2KIT_ROOT_DIR}"
                 -P "${CS2KIT_BUILDINFO_CMAKE_DIR}/GitBuildInfoScript.cmake"
             BYPRODUCTS "${header}"
             COMMENT "Stamping CS2Kit build info"

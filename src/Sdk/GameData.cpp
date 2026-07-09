@@ -3,10 +3,13 @@
 #include <CS2Kit/Core/Paths.hpp>
 #include <CS2Kit/Sdk/GameData.hpp>
 #include <CS2Kit/Utils/Log.hpp>
+#include <CS2Kit/Utils/StringUtils.hpp>
 #include <filesystem>
 #include <format>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <string>
+#include <vector>
 
 namespace CS2Kit::Sdk
 {
@@ -145,20 +148,14 @@ void GameData::ResolveAll()
 
 std::string GameData::FailureSummary() const
 {
-    std::string failed;
-    std::string ambiguous;
-    size_t failedCount = 0;
+    std::vector<std::string> failed;
+    std::vector<std::string> ambiguous;
     for (const auto& [name, entry] : _resolved)
     {
         if (!entry.Error.empty())
-        {
-            failed += failed.empty() ? name : ", " + name;
-            ++failedCount;
-        }
+            failed.push_back(name);
         else if (!entry.Unique)
-        {
-            ambiguous += ambiguous.empty() ? name : ", " + name;
-        }
+            ambiguous.push_back(name);
     }
 
     if (failed.empty() && ambiguous.empty())
@@ -166,12 +163,13 @@ std::string GameData::FailureSummary() const
 
     std::string summary;
     if (!failed.empty())
-        summary = std::format("{}/{} signatures failed: {}", failedCount, _resolved.size(), failed);
+        summary = std::format("{}/{} signatures failed: {}", failed.size(), _resolved.size(),
+                              StringUtils::Join(failed, ", "));
     if (!ambiguous.empty())
     {
         if (!summary.empty())
             summary += "; ";
-        summary += std::format("ambiguous: {}", ambiguous);
+        summary += std::format("ambiguous: {}", StringUtils::Join(ambiguous, ", "));
     }
     return summary;
 }

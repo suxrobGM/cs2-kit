@@ -91,19 +91,20 @@ Statuses: `Ok`, `Degraded` (loaded with reduced functionality), `Skipped` (depen
 
 ## Status sections: StatusService
 
-`Engine().Status` aggregates named sections into one diagnostics report. The kit registers `build` (PluginInfo), `load` (LoadReport rollup), `gamedata` (resolution results), and `uptime`; plugins register their own and expose the report via a server-console command:
+`Engine().Status` aggregates named sections into one diagnostics report. The kit registers `build` (PluginInfo), `load` (LoadReport rollup), `gamedata` (resolution results), and `uptime`; plugins register their own in `OnLoad` and call `InstallCommand` to expose the report:
 
 ```cpp
 Engine().Status.RegisterSection("db", [] {
     return nlohmann::json{{"connected", Engine().LoadReport.IsOk("Database")}};
 });
 
-// In a ServerCommand handler: BuildText() for humans, BuildJson() for tooling.
-// Convention: emit JSON as one line prefixed "STATUS_JSON " so RCON scripts can find it.
-Msg("STATUS_JSON %s\n", Engine().Status.BuildJson().dump().c_str());
+Engine().Status.InstallCommand("my_status", "Report plugin health; 'my_status json' emits STATUS_JSON.",
+                               [] { return Engine().LoadReport.IsOk("Database"); });
 ```
 
-Keep JSON sections compact (counts and names, not full lists) - RCON's console capture can truncate large responses. See admin-system's `admin_status` command for the full pattern.
+`my_status` prints the sections for humans; `my_status json` emits them as one `STATUS_JSON {...}` line RCON scripts can find amid console noise. Both carry a top-level `healthy` flag: no load stage `Failed`, ANDed with the optional predicate you pass (omit it for the baseline alone). The command unregisters itself on unload.
+
+Keep JSON sections compact (counts and names, not full lists) - RCON's console capture can truncate large responses.
 
 ## Overrides
 

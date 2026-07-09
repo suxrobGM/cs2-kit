@@ -56,7 +56,7 @@ cs2_add_plugin(fun-votes
 
 ### Version and build provenance
 
-Every plugin build stamps a generated `<CS2Kit/BuildInfo.hpp>` (namespace `CS2Kit::BuildInfo`) with the display version, repo and kit commit hashes, branch, last-commit date, and a dirty flag. The display version is `<version.txt>+<short-sha>[-dirty]`, where `version.txt` is a single-line file at your repo root (missing file → `0.0.0`). Wire it into your `Info()` so `meta list` always identifies the exact deployed build:
+Every plugin build stamps a generated `<CS2Kit/BuildInfo.hpp>` (namespace `CS2Kit::BuildInfo`) with a display `Version`, the `RepoCommit` short hash, and the last-commit `BuildDate`. The display version is `<version.txt>+<short-sha>[-dirty]`, where `version.txt` is a single-line file at your repo root (missing file → `0.0.0`). A clean `RepoCommit` pins your submodules (cs2-kit included), and a modified one is flagged `-dirty`, so those three fields identify a build exactly. Wire them into your `Info()` so `meta list` always identifies the exact deployed build:
 
 ```cpp
 #include <CS2Kit/BuildInfo.hpp>  // only from Plugin.cpp - the header changes every commit
@@ -70,7 +70,7 @@ CS2Kit::PluginInfo MyPlugin::Info() const {
 }
 ```
 
-The stamp reruns every build but rewrites the header only when committed state changes, so no-op builds stay no-op (that is also why `BuildDate` is the last-commit date, not wall-clock time). Outside a git checkout the fields degrade to `"unknown"`; in GitHub Actions, `GITHUB_SHA`/`GITHUB_REF_NAME` are used as fallbacks.
+The stamp reruns every build but rewrites the header only when committed state changes, so no-op builds stay no-op (that is also why `BuildDate` is the last-commit date, not wall-clock time). Outside a git checkout the fields degrade to `"unknown"`; in GitHub Actions, `GITHUB_SHA` is used as a fallback.
 
 ### Build-system conventions
 

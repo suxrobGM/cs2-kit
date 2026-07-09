@@ -27,6 +27,7 @@
 #include <networksystem/inetworkmessages.h>
 #include <nlohmann/json.hpp>
 #include <schemasystem/schemasystem.h>
+#include <string_view>
 #include <tier1/convar.h>
 
 namespace CS2Kit
@@ -120,53 +121,24 @@ bool Initialize(ISmmAPI* ismm, char* error, size_t maxlen, Core::Services& servi
         return false;
     }
 
-    report.Run("Schema", [&] {
-        if (!services.Schema().Initialize())
-            return StageResult::Degraded("init failed; button detection may not work");
-        return StageResult::Ok();
-    });
+    // The remaining subsystems all report the same way: a false return degrades the load
+    // with `detail` and the plugin keeps going without that capability.
+    auto degradable = [&report](std::string_view name, std::string detail, auto&& init) {
+        report.Run(name, [&] { return init() ? StageResult::Ok() : StageResult::Degraded(std::move(detail)); });
+    };
 
-    report.Run("Entities", [&] {
-        if (!services.Entities.Initialize())
-            return StageResult::Degraded("init failed; menus may not work");
-        return StageResult::Ok();
-    });
-
-    report.Run("EntityOps", [&] {
-        if (!services.EntityOps.Initialize())
-            return StageResult::Degraded("unavailable; spawned effects degrade (see signature warnings)");
-        return StageResult::Ok();
-    });
-
-    report.Run("Precache", [&] {
-        if (!services.Precache.Initialize(std::format("{}_CS2KitPrecache", params.LogPrefix)))
-            return StageResult::Degraded("not registered; resource precaching unavailable");
-        return StageResult::Ok();
-    });
-
-    report.Run("GameEventManager", [&] {
-        if (!services.Messages.InitGameEventManager())
-            return StageResult::Degraded("not resolved; center HTML display will not work");
-        return StageResult::Ok();
-    });
-
-    report.Run("ConVars", [&] {
-        if (!services.ConVars.Initialize())
-            return StageResult::Degraded("init failed");
-        return StageResult::Ok();
-    });
-
-    report.Run("Events", [&] {
-        if (!services.Events.Initialize())
-            return StageResult::Degraded("init failed");
-        return StageResult::Ok();
-    });
-
-    report.Run("Transmit", [&] {
-        if (!services.Transmit.Initialize())
-            return StageResult::Degraded("inert; CheckTransmitPlayerSlot offset missing from gamedata");
-        return StageResult::Ok();
-    });
+    degradable("Schema", "init failed; button detection may not work", [&] { return services.Schema().Initialize(); });
+    degradable("Entities", "init failed; menus may not work", [&] { return services.Entities.Initialize(); });
+    degradable("EntityOps", "unavailable; spawned effects degrade (see signature warnings)",
+               [&] { return services.EntityOps.Initialize(); });
+    degradable("Precache", "not registered; resource precaching unavailable",
+               [&] { return services.Precache.Initialize(std::format("{}_CS2KitPrecache", params.LogPrefix)); });
+    degradable("GameEventManager", "not resolved; center HTML display will not work",
+               [&] { return services.Messages.InitGameEventManager(); });
+    degradable("ConVars", "init failed", [&] { return services.ConVars.Initialize(); });
+    degradable("Events", "init failed", [&] { return services.Events.Initialize(); });
+    degradable("Transmit", "inert; CheckTransmitPlayerSlot offset missing from gamedata",
+               [&] { return services.Transmit.Initialize(); });
 
     // Per-frame subsystems pump through the scheduler (PostgresDatabase registers its own pump
     // in Start), so OnGameFrame has exactly one thing to tick. CancelAll in Shutdown unhooks
