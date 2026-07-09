@@ -13,11 +13,11 @@ import buildtools
 ROOT = Path.cwd()
 
 
-def main(argv: list[str] | None = None) -> None:
+def main() -> None:
     """Build the requested preset (default: release for this OS)."""
-    args = sys.argv[1:] if argv is None else argv
+    args = sys.argv[1:]
     preset = args[0] if args else buildtools.default_preset()
-    buildtools.build(ROOT, preset, workflow=True)
+    buildtools.build(ROOT, preset)
 
 
 if __name__ == "__main__":

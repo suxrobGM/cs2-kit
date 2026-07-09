@@ -14,6 +14,7 @@ can expose it as a task, e.g.:
     new-plugin = "python vendor/cs2-kit/scripts/new_plugin.py"
 """
 
+import argparse
 import re
 import string
 import sys
@@ -25,32 +26,39 @@ TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "templates" / "plugin"
 NAME_RE = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
 
 
-def pascal_case(name: str) -> str:
-    return "".join(part.capitalize() for part in name.split("-"))
+def kebab_case(value: str) -> str:
+    """argparse type: a kebab-case name like 'fun-votes'."""
+    if not NAME_RE.match(value):
+        raise argparse.ArgumentTypeError(f"'{value}' is not kebab-case (expected e.g. 'fun-votes')")
+    return value
 
 
 def substitutions(name: str) -> dict[str, str]:
-    pascal = pascal_case(name)
+    parts = [p.capitalize() for p in name.split("-")]
+    pascal = "".join(parts)
     return {
-        "name": name,                                              # fun-votes
-        "ns": pascal,                                              # FunVotes
-        "klass": f"{pascal}Plugin",                                # FunVotesPlugin
-        "title": " ".join(p.capitalize() for p in name.split("-")),  # Fun Votes
-        "tag": pascal.upper()[:12],                                # FUNVOTES
+        "name": name,                # fun-votes
+        "ns": pascal,                # FunVotes
+        "klass": f"{pascal}Plugin",  # FunVotesPlugin
+        "title": " ".join(parts),    # Fun Votes
+        "tag": pascal.upper()[:12],  # FUNVOTES
     }
 
 
-def render_tree(name: str, plugin_dir: Path) -> None:
-    subs = substitutions(name)
-    for template in sorted(TEMPLATE_DIR.rglob("*")):
+def render_tree(
+    template_dir: Path, dest: Path, subs: dict[str, str], *, safe: bool = False, label: str = ""
+) -> None:
+    """Render a template tree into dest; safe_substitute leaves unknown $vars intact."""
+    for template in sorted(template_dir.rglob("*")):
         if not template.is_file():
             continue
-        rel = template.relative_to(TEMPLATE_DIR)
-        content = string.Template(template.read_text(encoding="utf-8")).substitute(subs)
-        out = plugin_dir / rel
+        rel = template.relative_to(template_dir)
+        tmpl = string.Template(template.read_text(encoding="utf-8"))
+        content = tmpl.safe_substitute(subs) if safe else tmpl.substitute(subs)
+        out = dest / rel
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(content, encoding="utf-8", newline="\n")
-        print(f"  created plugins/{name}/{rel.as_posix()}")
+        print(f"  created {label}{rel.as_posix()}")
 
 
 def insert_subdirectory(root_cmake: Path, name: str) -> bool:
@@ -71,14 +79,11 @@ def insert_subdirectory(root_cmake: Path, name: str) -> bool:
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print(__doc__.strip())
-        return 2
-
-    name = sys.argv[1]
-    if not NAME_RE.match(name):
-        print(f"error: '{name}' is not kebab-case (expected e.g. 'fun-votes').")
-        return 2
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument("name", type=kebab_case, help="kebab-case plugin name, e.g. fun-votes")
+    name = parser.parse_args().name
 
     if not TEMPLATE_DIR.is_dir():
         print(f"error: template tree missing at {TEMPLATE_DIR}.")
@@ -93,7 +98,7 @@ def main() -> int:
         print(f"error: {plugin_dir} already exists; refusing to overwrite.")
         return 1
 
-    render_tree(name, plugin_dir)
+    render_tree(TEMPLATE_DIR, plugin_dir, substitutions(name), label=f"plugins/{name}/")
 
     if insert_subdirectory(REPO_ROOT / "CMakeLists.txt", name):
         print(f"  registered add_subdirectory(plugins/{name}) in CMakeLists.txt")

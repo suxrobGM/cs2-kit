@@ -9,12 +9,13 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import NoReturn
 
 WINDOWS = sys.platform == "win32"
 CPP_EXTS = (".cpp", ".hpp")
 
 
-def die(message: str) -> None:
+def die(message: str) -> NoReturn:
     """Exit with an error message."""
     raise SystemExit(f"ERROR: {message}")
 
@@ -41,7 +42,6 @@ def run_tool(tool: str, *args: str) -> subprocess.CompletedProcess[bytes]:
         f"'{tool}' was not found on PATH. Install CMake 4.3.4+, Conan 2.29.1+, and "
         "Ninja, or install uv and run `uv sync`."
     )
-    raise AssertionError  # unreachable; satisfies type checkers
 
 
 def format_sources(repo_root: Path, dirs: list[str], *, check: bool) -> None:
@@ -130,7 +130,7 @@ def ensure_msvc_env() -> None:
         die("cl still not on PATH after vcvars.")
 
 
-def build(repo_root: Path, preset: str, *, workflow: bool) -> None:
+def build(repo_root: Path, preset: str) -> None:
     """Conan install + CMake build for one preset under repo_root."""
     require_build_tools()
     build_type = "Debug" if "debug" in preset else "Release"
@@ -171,10 +171,6 @@ def build(repo_root: Path, preset: str, *, workflow: bool) -> None:
         *settings,
     )
 
-    if workflow:
-        run_tool("cmake", "--workflow", "--preset", preset)
-    else:
-        run_tool("cmake", "--preset", preset)
-        run_tool("cmake", "--build", "--preset", preset)
+    run_tool("cmake", "--workflow", "--preset", preset)
 
     print(f"\n=== Build Complete ===\nPreset: {preset}\nBuild directory: build/{preset}")

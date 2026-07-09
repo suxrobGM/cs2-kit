@@ -18,6 +18,10 @@ dependencies = [
 [tool.uv]
 package = false
 
+[tool.poe.env]
+# Lets repo scripts `import buildtools` from the vendored kit.
+PYTHONPATH = "${POE_ROOT}/vendor/cs2-kit/scripts"
+
 [tool.poe.tasks]
 build = "python vendor/cs2-kit/scripts/build.py"
 build-linux = "python vendor/cs2-kit/scripts/build.py linux-steamrt-release"
@@ -41,3 +45,4 @@ warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
 exclude = ["vendor"]
+mypy_path = "vendor/cs2-kit/scripts"

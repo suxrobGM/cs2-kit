@@ -19,31 +19,17 @@ passes through). The first plugin is then scaffolded via new_plugin.py.
 """
 
 import argparse
-import string
 from pathlib import Path
 
 import new_plugin
 
 REPO_ROOT = Path.cwd()
-TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "templates" / "project"
+KIT_ROOT = Path(__file__).resolve().parents[1]
+TEMPLATE_DIR = KIT_ROOT / "templates" / "project"
 SUBMODULE_HINT = (
     "    git submodule add https://github.com/suxrobGM/cs2-kit.git vendor/cs2-kit\n"
     "    git submodule update --init --recursive"
 )
-
-
-def render_project(name: str) -> None:
-    for template in sorted(TEMPLATE_DIR.rglob("*")):
-        if not template.is_file():
-            continue
-        rel = template.relative_to(TEMPLATE_DIR)
-        content = string.Template(template.read_text(encoding="utf-8")).safe_substitute(
-            {"project": name}
-        )
-        out = REPO_ROOT / rel
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(content, encoding="utf-8", newline="\n")
-        print(f"  created {rel.as_posix()}")
 
 
 def main() -> int:
@@ -52,22 +38,19 @@ def main() -> int:
     )
     parser.add_argument(
         "--name",
+        type=new_plugin.kebab_case,
         default=REPO_ROOT.name,
         help="kebab-case project name (default: current directory name)",
     )
     parser.add_argument(
         "--plugin",
+        type=new_plugin.kebab_case,
         default="my-plugin",
         help="kebab-case name for the first plugin (default: my-plugin)",
     )
     args = parser.parse_args()
 
-    for flag, value in (("--name", args.name), ("--plugin", args.plugin)):
-        if not new_plugin.NAME_RE.match(value):
-            print(f"error: {flag} '{value}' is not kebab-case (expected e.g. 'fun-votes').")
-            return 2
-
-    if Path(__file__).resolve() != (REPO_ROOT / "vendor/cs2-kit/scripts/init_project.py").resolve():
+    if (REPO_ROOT / "vendor/cs2-kit").resolve() != KIT_ROOT:
         print(
             "error: cs2-kit must be vendored at vendor/cs2-kit under the current\n"
             "directory. From your project root, run:\n" + SUBMODULE_HINT
@@ -95,8 +78,13 @@ def main() -> int:
             "`uv run poe bootstrap`) needs: git submodule update --init --recursive"
         )
 
-    render_project(args.name)
-    new_plugin.render_tree(args.plugin, plugin_dir)
+    new_plugin.render_tree(TEMPLATE_DIR, REPO_ROOT, {"project": args.name}, safe=True)
+    new_plugin.render_tree(
+        new_plugin.TEMPLATE_DIR,
+        plugin_dir,
+        new_plugin.substitutions(args.plugin),
+        label=f"plugins/{args.plugin}/",
+    )
     if new_plugin.insert_subdirectory(REPO_ROOT / "CMakeLists.txt", args.plugin):
         print(f"  registered add_subdirectory(plugins/{args.plugin}) in CMakeLists.txt")
 

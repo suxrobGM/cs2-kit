@@ -25,7 +25,7 @@ def main() -> None:
     buildtools.require_build_tools()
 
     print("==> [3/3] Building with Conan + CMake")
-    buildtools.build(ROOT, buildtools.default_preset(), workflow=True)
+    buildtools.build(ROOT, buildtools.default_preset())
 
     print(
         "\n============================================================\n"

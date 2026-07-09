@@ -31,7 +31,8 @@ format-check = "python scripts/format.py --check"
 [tool.ruff]
 line-length = 100
 target-version = "py314"
-extend-exclude = ["vendor"]
+# templates/ are $placeholder scaffolds; linting would drop a .ruff_cache there.
+extend-exclude = ["vendor", "templates"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP"]
