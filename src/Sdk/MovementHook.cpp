@@ -76,6 +76,7 @@ void MovementHook::RemoveListener(uint64_t id)
     _post.Remove(id);
     _preCmd.Remove(id);
     _postCmd.Remove(id);
+    _filter.Remove(id);
 }
 
 int MovementHook::SlotFromMovementServices(void* movementServices) const
@@ -118,7 +119,6 @@ void MovementHook::DecodeUserCmd(void* userCmd)
     _cmdView.MouseDy = base.mousedy();
     _cmdView.Attack1StartHistoryIndex = pb->attack1_start_history_index();
     _cmdView.Attack2StartHistoryIndex = pb->attack2_start_history_index();
-    _cmdView.InputHistoryCount = pb->input_history_size();
 
     int count = std::min(base.subtick_moves_size(), UserCmdView::MaxSubtickMoves);
     _cmdView.SubtickMoveCount = count;
@@ -133,13 +133,32 @@ void MovementHook::DecodeUserCmd(void* userCmd)
             .YawDelta = move.yaw_delta(),
         };
     }
+
+    int history = std::min(pb->input_history_size(), UserCmdView::MaxInputHistory);
+    _cmdView.InputHistorySampleCount = history;
+    for (int i = 0; i < history; ++i)
+    {
+        const auto& entry = pb->input_history(i);
+        auto& sample = _cmdView.InputHistorySamples[i];
+        sample.TargetEntIndex = entry.target_ent_index();
+        if (entry.has_view_angles())
+        {
+            sample.HasViewAngles = true;
+            sample.ViewPitch = entry.view_angles().x();
+            sample.ViewYaw = entry.view_angles().y();
+        }
+    }
 }
 
 void* MovementHook::Hook_RunCommandPre(void* userCmd)
 {
     _preSlot = SlotFromMovementServices(META_IFACEPTR(void));
-    if (!_preCmd.Empty() || !_postCmd.Empty())
+    if (!_preCmd.Empty() || !_postCmd.Empty() || !_filter.Empty())
         DecodeUserCmd(userCmd);
+    // Filters edit the decoded view before anyone reads it, so pre/preCmd/postCmd listeners
+    // and InputHistory all observe the same edited command.
+    for (const auto& [id, filter] : _filter.Items())
+        filter(_preSlot, _cmdView);
     for (const auto& [id, callback] : _pre.Items())
         callback(_preSlot);
     for (const auto& [id, callback] : _preCmd.Items())

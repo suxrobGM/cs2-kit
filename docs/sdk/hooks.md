@@ -39,7 +39,21 @@ Engine().MovementHook.ListenPreCmd([](int slot, const CS2Kit::UserCmdView& cmd) 
 });
 ```
 
-The decode happens only while at least one cmd listener is registered; plain `ListenPre`/`ListenPost` stay free of it. The payload's byte offset inside the `CUserCmd` wrapper lives in gamedata as `"UserCmdPB"` (cross-checked against CS2Fixes and SwiftlyS2) and, like the vtable index, **must be re-verified after CS2 updates** - a missing offset degrades to `Valid=false` views rather than crashing, but a *stale* one reads garbage.
+The decode happens only while at least one cmd (or filter) listener is registered; plain `ListenPre`/`ListenPost` stay free of it. The payload's byte offset inside the `CUserCmd` wrapper lives in gamedata as `"UserCmdPB"` (cross-checked against CS2Fixes and SwiftlyS2) and, like the vtable index, **must be re-verified after CS2 updates** - a missing offset degrades to `Valid=false` views rather than crashing, but a *stale* one reads garbage.
+
+`UserCmdView` also carries the per-shot input-history entries in `InputHistorySamples[k]` (`HasViewAngles`, `ViewPitch`/`ViewYaw`, `TargetEntIndex`), indexed by `Attack1StartHistoryIndex`/`Attack2StartHistoryIndex`. The shot's `view_angles` is the direction the bullet was actually fired along, which a cheat can diverge from the visible `ViewYaw`/`ViewPitch` - that divergence is a silent-aim signature.
+
+### Filter listeners: editing the decoded usercmd
+
+`ListenFilterCmd` hands you a **mutable** `UserCmdView&`. Filters run once, after the decode and before every pre/preCmd/postCmd listener, so whatever a filter writes is what `InputHistory` and every cmd listener then observe:
+
+```cpp
+Engine().MovementHook.ListenFilterCmd([](int slot, CS2Kit::UserCmdView& cmd) {
+    cmd.ViewYaw += 90.0f;  // every downstream reader now sees the rotated view
+});
+```
+
+The edit touches only the decoded snapshot - the underlying `CUserCmd` the engine processes is untouched (the hook still returns `MRES_IGNORED`), so the game is unaffected. This is for test/diagnostic input synthesis (feeding a detector a fabricated command), not for changing gameplay; leave it unused in normal operation.
 
 ### InputHistoryService: lookback over recent usercmds
 

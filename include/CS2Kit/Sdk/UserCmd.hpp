@@ -17,6 +17,18 @@ struct SubtickMove
 };
 
 /**
+ * One CSGOInputHistoryEntryPB. ViewYaw/ViewPitch is the angle the bullet was fired along, which
+ * a cheat can diverge from the visible viewangles (the silent-aim signature).
+ */
+struct InputHistorySample
+{
+    bool HasViewAngles = false;
+    float ViewPitch = 0.0f;       // view_angles.x
+    float ViewYaw = 0.0f;         // view_angles.y
+    int32_t TargetEntIndex = -1;  // entity the client claims it hit, -1 if none
+};
+
+/**
  * @brief Protobuf-free snapshot of the CUserCmd handed to
  * CPlayer_MovementServices::RunCommand, decoded by MovementHook for its
  * cmd listeners (ListenPreCmd/ListenPostCmd).
@@ -47,11 +59,17 @@ struct UserCmdView
     // Sub-tick shooting bookkeeping (-1 = no attack started this command)
     int32_t Attack1StartHistoryIndex = -1;
     int32_t Attack2StartHistoryIndex = -1;
-    int32_t InputHistoryCount = 0;
 
     static constexpr int MaxSubtickMoves = 12;
     int SubtickMoveCount = 0;  // clamped to MaxSubtickMoves
     std::array<SubtickMove, MaxSubtickMoves> SubtickMoves{};
+
+    // Per-shot input-history entries (the fired view angles), clamped to MaxInputHistory.
+    // Attack1/Attack2StartHistoryIndex address the client's *full* input_history: an index at or
+    // past InputHistorySampleCount means that shot's entry was capped away and is absent here.
+    static constexpr int MaxInputHistory = 12;
+    int InputHistorySampleCount = 0;
+    std::array<InputHistorySample, MaxInputHistory> InputHistorySamples{};
 };
 
 }  // namespace CS2Kit::Sdk

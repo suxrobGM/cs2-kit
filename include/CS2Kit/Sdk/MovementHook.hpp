@@ -26,6 +26,11 @@ namespace CS2Kit::Sdk
  * The view is decoded once per RunCommand and shared by the pre and post dispatch;
  * when the offset is missing or the pointer is null its Valid flag is false.
  *
+ * Filter listeners (ListenFilterCmd) get mutable access to that view and run once, before every
+ * pre/preCmd/postCmd listener. They edit only the decoded snapshot (every downstream reader,
+ * InputHistory included, sees the edit); the usercmd the engine processes is untouched, since the
+ * hook still returns MRES_IGNORED. Intended for test/diagnostic input synthesis only.
+ *
  * The vtable index is gamedata-maintained and drifts with CS2 updates; a wrong index
  * calls an unrelated vfunc and crashes, so re-verify it after every update.
  */
@@ -34,6 +39,7 @@ class MovementHook
 public:
     using Callback = std::function<void(int slot)>;
     using CmdCallback = std::function<void(int slot, const UserCmdView& cmd)>;
+    using CmdFilter = std::function<void(int slot, UserCmdView& cmd)>;
 
     MovementHook() = default;
     ~MovementHook() { Remove(); }
@@ -45,10 +51,13 @@ public:
     bool Installed() const { return _installed; }
     void Remove();
 
-    uint64_t ListenPre(Callback callback) { return _pre.Add(std::move(callback)); }
-    uint64_t ListenPost(Callback callback) { return _post.Add(std::move(callback)); }
-    uint64_t ListenPreCmd(CmdCallback callback) { return _preCmd.Add(std::move(callback)); }
-    uint64_t ListenPostCmd(CmdCallback callback) { return _postCmd.Add(std::move(callback)); }
+    uint64_t ListenPre(Callback callback) { return _pre.Add(std::move(callback), _nextId++); }
+    uint64_t ListenPost(Callback callback) { return _post.Add(std::move(callback), _nextId++); }
+    uint64_t ListenPreCmd(CmdCallback callback) { return _preCmd.Add(std::move(callback), _nextId++); }
+    uint64_t ListenPostCmd(CmdCallback callback) { return _postCmd.Add(std::move(callback), _nextId++); }
+
+    /** Mutable pre-decode-time edit of the shared UserCmdView; see the class docs. */
+    uint64_t ListenFilterCmd(CmdFilter filter) { return _filter.Add(std::move(filter), _nextId++); }
     void RemoveListener(uint64_t id);
 
     /** Slot whose pawn owns @p movementServices, or -1. */
@@ -63,6 +72,8 @@ private:
     Core::CallbackRegistry<Callback> _post;
     Core::CallbackRegistry<CmdCallback> _preCmd;
     Core::CallbackRegistry<CmdCallback> _postCmd;
+    Core::CallbackRegistry<CmdFilter> _filter;
+    uint64_t _nextId = 1;  // one handle space across all five registries, so RemoveListener is unambiguous
     UserCmdView _cmdView;  // decoded once per RunCommand, reused across pre/post dispatch
     int _pbOffset = -1;    // gamedata "UserCmdPB"; negative disables decoding
     bool _installed = false;
